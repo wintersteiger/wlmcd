@@ -1,0 +1,71 @@
+// Copyright (c) Christoph M. Wintersteiger
+// Licensed under the MIT License.
+
+#ifndef _DEVICE_H_
+#define _DEVICE_H_
+
+#include <cstdint>
+#include <vector>
+
+#include "register.h"
+#include "decoder.h"
+
+class DeviceBase {
+public:
+  DeviceBase() : responsive(true) {}
+  virtual ~DeviceBase() {}
+
+  virtual const char* Name() const = 0;
+
+  virtual void UpdateTimed() {}
+  virtual double TimerFrequency() const { return 0; }
+  virtual void UpdateFrequent() {}
+  virtual void UpdateInfrequent() {}
+
+  virtual void WriteConfig(const std::string &filename) = 0;
+  virtual void ReadConfig(const std::string &filename) = 0;
+
+  virtual void Reset() {}
+
+  bool Responsive() const { return responsive; }
+
+  virtual void Test(const std::vector<uint8_t> &data) {}
+
+protected:
+  bool responsive;
+};
+
+template <typename AT, typename VT>
+class Device : public DeviceBase {
+public:
+  Device() {}
+  Device(std::vector<Decoder*> &decoders) : decoders(decoders) {}
+  virtual ~Device() {}
+
+  virtual VT Read(const AT &addr) = 0;
+  virtual std::vector<VT> Read(const AT &addr, size_t length) = 0;
+
+  virtual void Write(const AT &addr, const VT &value) = 0;
+  virtual void Write(const AT &addr, const std::vector<VT> &values) = 0;
+
+  virtual VT Read(const Register<AT, VT> &r) {
+    return Read(r.Address());
+  }
+
+  virtual std::vector<VT> Read(const Register<AT, VT> &r, size_t length) {
+    return Read(r.Address(), length);
+  }
+
+  virtual void Write(const Register<AT, VT> &r, const VT &value) {
+    Write(r.Address(), value);
+  }
+
+  virtual void Write(const Register<AT, VT> &r, const std::vector<VT> &values) {
+    Write(r.Address(), values);
+  }
+
+protected:
+  std::vector<Decoder*> decoders;
+};
+
+#endif

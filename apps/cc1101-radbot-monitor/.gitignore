@@ -1,0 +1,7 @@
+*.o
+*.d
+
+cc1101-radbot-monitor
+cc1101-radbot-monitor-shared
+radbot.cfg
+log.csv

@@ -1,0 +1,43 @@
+// Copyright (c) Christoph M. Wintersteiger
+// Licensed under the MIT License.
+
+#ifndef _GPIO_BUTTON_H_
+#define _GPIO_BUTTON_H_
+
+#include <mutex>
+
+#include "device.h"
+
+class GPIOButton : public DeviceBase {
+public:
+  GPIOButton(const char *chip_path, int offset, bool inverted=false);
+  virtual ~GPIOButton();
+
+  virtual const char* Name() const { return name; }
+
+  virtual void UpdateTimed();
+  virtual void UpdateFrequent();
+  virtual void UpdateInfrequent();
+
+  virtual void WriteConfig(const std::string &filename);
+  virtual void ReadConfig(const std::string &filename);
+
+  virtual void Reset();
+
+  bool Read();
+  bool ReadBuffered() const;
+  void Write(bool value);
+
+protected:
+  std::mutex mtx;
+  char name[256];
+  const char *chip_path;
+  static constexpr const char *gpio_consumer = "relays";
+  struct gpiod_chip *chip;
+  struct gpiod_line *line;
+  unsigned offset;
+  bool inverted;
+  int buffer;
+};
+
+#endif // _GPIO_BUTTON_H_
