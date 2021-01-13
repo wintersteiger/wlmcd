@@ -12,23 +12,25 @@
 #include <wiringPiSPI.h>
 
 #include "json.hpp"
-#include "rfm69h.h"
-#include "rfm69h_rt.h"
+#include "rfm69.h"
+#include "rfm69_rt.h"
 
 using json = nlohmann::json;
 
-static std::map<int, RFM69H*> gpio_to_device;
+static std::map<int, RFM69*> gpio_to_device;
 
-RFM69H::RFM69H(int NSS, int INT, int RST, std::vector<Decoder*> decoders, double f_xosc) :
+RFM69::RFM69(int spi_channel, int NSS, int INT, int RST, std::vector<Decoder*> decoders, double f_xosc) :
   Device(decoders),
   RT(*new RegisterTable(*this)),
   f_xosc(f_xosc),
   f_step(f_xosc / pow(2, 19)),
+  spi_channel(spi_channel),
   NSS(NSS),
   INT(INT),
   RST(RST)
 {
   Reset();
+  return;
 
   SetMode(Mode::SLEEP);
   SetMode(Mode::STDBY);
@@ -40,14 +42,14 @@ RFM69H::RFM69H(int NSS, int INT, int RST, std::vector<Decoder*> decoders, double
   gpio_to_device[NSS] = this;
 
   // if (INT != -1)
-  //   wiringPiISR(GDO[2], INT_EDGE_RISING, RFM69H_RX);
+  //   wiringPiISR(GDO[2], INT_EDGE_RISING, RFM69_RX);
 }
 
-RFM69H::~RFM69H() {
+RFM69::~RFM69() {
   delete &RT;
 }
 
-void RFM69H::Reset()
+void RFM69::Reset()
 {
   if (RST != -1) {
     digitalWrite(RST, HIGH);
@@ -64,45 +66,45 @@ void RFM69H::Reset()
   ClearFlags();
 }
 
-uint8_t RFM69H::Read(const uint8_t &addr)
+uint8_t RFM69::Read(const uint8_t &addr)
 {
   mtx.lock();
   digitalWrite(NSS, LOW); delayMicroseconds(1);
   uint8_t res[2];
   res[0] = addr & 0x7F;
-  wiringPiSPIDataRW(0, res, 2);
+  wiringPiSPIDataRW(spi_channel, res, 2);
   digitalWrite(NSS, HIGH); delayMicroseconds(1);
   mtx.unlock();
   return res[1];
 }
 
-std::vector<uint8_t> RFM69H::Read(const uint8_t &addr, size_t length)
+std::vector<uint8_t> RFM69::Read(const uint8_t &addr, size_t length)
 {
   mtx.lock();
   digitalWrite(NSS, LOW); delayMicroseconds(1);
   std::vector<uint8_t> res;
   res.resize(length + 1);
   res[0] = addr & 0x7F;
-  wiringPiSPIDataRW(0, res.data(), res.size());
+  wiringPiSPIDataRW(spi_channel, res.data(), res.size());
   res.erase(res.begin());
   digitalWrite(NSS, HIGH); delayMicroseconds(1);
   mtx.unlock();
   return res;
 }
 
-void RFM69H::Write(const uint8_t &addr, const uint8_t &value)
+void RFM69::Write(const uint8_t &addr, const uint8_t &value)
 {
   mtx.lock();
   digitalWrite(NSS, LOW); delayMicroseconds(1);
   uint8_t res[2];
   res[0] = 0x80 | (addr & 0x7F);;
   res[1] = value;
-  wiringPiSPIDataRW(0, res, 2);
+  wiringPiSPIDataRW(spi_channel, res, 2);
   digitalWrite(NSS, HIGH); delayMicroseconds(1);
   mtx.unlock();
 }
 
-void RFM69H::Write(const uint8_t &addr, const std::vector<uint8_t> &values)
+void RFM69::Write(const uint8_t &addr, const std::vector<uint8_t> &values)
 {
   mtx.lock();
   digitalWrite(NSS, LOW); delayMicroseconds(1);
@@ -110,18 +112,18 @@ void RFM69H::Write(const uint8_t &addr, const std::vector<uint8_t> &values)
   uint8_t b[n+1];
   b[0] = 0x80 | (addr & 0x7F);;
   memcpy(&b[1], values.data(), n);
-  wiringPiSPIDataRW(0, b, n+1);
+  wiringPiSPIDataRW(spi_channel, b, n+1);
   digitalWrite(NSS, HIGH); delayMicroseconds(1);
   mtx.unlock();
 }
 
-RFM69H::Mode RFM69H::GetMode()
+RFM69::Mode RFM69::GetMode()
 {
   uint8_t r = RT._vMode(Read(RT._rOpMode));
   return (Mode)r;
 }
 
-void RFM69H::SetMode(Mode m)
+void RFM69::SetMode(Mode m)
 {
   uint8_t nv = RT._vMode.Set(Read(RT._rOpMode), m);
   Write(RT._rOpMode, nv);
@@ -137,37 +139,37 @@ void RFM69H::SetMode(Mode m)
   responsive = false;
 }
 
-RFM69H::Status::Status(RFM69H *c) :
+RFM69::Status::Status(RFM69 *c) :
   c(c)
 {
   Update();
 }
 
-void RFM69H::Status::Update()
+void RFM69::Status::Update()
 {
 }
 
-void RFM69H::UpdateFrequent()
+void RFM69::UpdateFrequent()
 {
   RT.Refresh(true);
 }
 
-void RFM69H::UpdateInfrequent()
+void RFM69::UpdateInfrequent()
 {
   RT.Refresh(false);
 }
 
-void RFM69H::WriteConfig(const std::string &filename)
+void RFM69::WriteConfig(const std::string &filename)
 {
   RT.WriteFile(filename);
 }
 
-void RFM69H::ReadConfig(const std::string &filename)
+void RFM69::ReadConfig(const std::string &filename)
 {
   RT.ReadFile(filename);
 }
 
-void RFM69H::ClearFlags()
+void RFM69::ClearFlags()
 {
   uint8_t irq1 = Read(RT._rIrqFlags1);
   uint8_t irq2 = Read(RT._rIrqFlags2);
@@ -175,7 +177,7 @@ void RFM69H::ClearFlags()
   Write(RT._rIrqFlags2, irq2 | 0x10); // FifoOverrun
 }
 
-void RFM69H::Receive(std::vector<uint8_t> &pkt)
+void RFM69::Receive(std::vector<uint8_t> &pkt)
 {
   pkt.clear();
   pkt = Read(0x00, 64);
@@ -183,7 +185,7 @@ void RFM69H::Receive(std::vector<uint8_t> &pkt)
   Write(RT._rIrqFlags1, irq1 | 0x0A);
 }
 
-void RFM69H::Transmit(const std::vector<uint8_t> &pkt)
+void RFM69::Transmit(const std::vector<uint8_t> &pkt)
 {
   // uint8_t mode = Read(RT._rOpMode, RT._vMode);
   // uint8_t from_mode = mode;
@@ -215,12 +217,12 @@ void RFM69H::Transmit(const std::vector<uint8_t> &pkt)
   // Write(RT._rOpMode, (mode & 0xF8) | from_mode);
 }
 
-void RFM69H::Test(const std::vector<uint8_t> &data)
+void RFM69::Test(const std::vector<uint8_t> &data)
 {
   Transmit(data);
 }
 
-void RFM69H::RegisterTable::Refresh(bool frequent)
+void RFM69::RegisterTable::Refresh(bool frequent)
 {
   RegisterTable &rt = device.RT;
   uint8_t om = device.Read(rt._rOpMode.Address());
@@ -244,7 +246,7 @@ void RFM69H::RegisterTable::Refresh(bool frequent)
       buffer[i] = device.Read(i);
 }
 
-void RFM69H::RegisterTable::WriteFile(const std::string &filename)
+void RFM69::RegisterTable::WriteFile(const std::string &filename)
 {
   json j, dev, regs;
   dev["Name"] = device.Name();
@@ -260,7 +262,7 @@ void RFM69H::RegisterTable::WriteFile(const std::string &filename)
   os << std::setw(2) << j << std::endl;
 }
 
-void RFM69H::RegisterTable::ReadFile(const std::string &filename)
+void RFM69::RegisterTable::ReadFile(const std::string &filename)
 {
   json j = json::parse(std::ifstream(filename));
   if (j["Device"]["Name"] != device.Name())
@@ -286,7 +288,7 @@ void RFM69H::RegisterTable::ReadFile(const std::string &filename)
   }
 }
 
-void RFM69H::RegisterTable::Write(const Register<uint8_t, uint8_t> &reg, const uint8_t &value)
+void RFM69::RegisterTable::Write(const Register<uint8_t, uint8_t> &reg, const uint8_t &value)
 {
   device.Write(reg.Address(), value);
 }

@@ -21,7 +21,7 @@ SRC = decoder.cpp basic.cpp logfile.cpp \
 	gpio_device.cpp \
 	gpio_button.cpp \
 	si4463.cpp si4463_rt.cpp \
-	rfm69h.cpp \
+	rfm69.cpp \
 	ble100.cpp \
 	relay_device.cpp \
 	ina219.cpp \
@@ -34,7 +34,7 @@ UI_SRC = field.cpp ui.cpp basic_ui.cpp controller.cpp \
 	gpio_ui.cpp \
 	gpio_button_field.cpp \
 	si4463_ui_raw.cpp \
-	rfm69h_ui_raw.cpp \
+	rfm69_ui_raw.cpp \
 	relay_ui.cpp \
 	ina219_ui.cpp ina219_ui_raw.cpp
 

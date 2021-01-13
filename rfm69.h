@@ -1,8 +1,8 @@
 // Copyright (c) Christoph M. Wintersteiger
 // Licensed under the MIT License.
 
-#ifndef _RFM69H_H_
-#define _RFM69H_H_
+#ifndef _RFM69_H_
+#define _RFM69_H_
 
 #include <cstdint>
 #include <vector>
@@ -14,7 +14,7 @@
 
 // Supposedly a second-source Semtech SX1231H
 
-class RFM69H : public Device<uint8_t, uint8_t>
+class RFM69 : public Device<uint8_t, uint8_t>
 {
 public:
   class RegisterTable;
@@ -29,11 +29,11 @@ public:
   } Mode;
 
   class Status {
-    RFM69H *c;
+    RFM69 *c;
   public:
     Status() : c(NULL) {}
-    Status(RFM69H *c);
-    Status(const RFM69H::Status &other) : c(other.c) {}
+    Status(RFM69 *c);
+    Status(const RFM69::Status &other) : c(other.c) {}
     ~Status() {};
 
     void Update();
@@ -41,14 +41,15 @@ public:
 
 protected:
   std::mutex mtx;
+  int spi_channel;
   const double f_xosc, f_step;
   int NSS, INT, RST;
 
 public:
-  RFM69H(int NSS, int INT = -1, int RST = -1, std::vector<Decoder*> decoders = {}, double f_xosc = 32.0*1e6);
-  virtual ~RFM69H();
+  RFM69(int spi_channel, int NSS, int INT = -1, int RST = -1, std::vector<Decoder*> decoders = {}, double f_xosc = 32.0*1e6);
+  virtual ~RFM69();
 
-  virtual const char* Name() const { return "RFM69H"; }
+  virtual const char* Name() const { return "RFM69"; }
 
   const double& F_XOSC() const { return f_xosc; }
   const double& F_STEP() const { return f_step; }
@@ -85,4 +86,4 @@ public:
   virtual void Test(const std::vector<uint8_t> &data);
 };
 
-#endif // _RFM69H_H_
+#endif // _RFM69_H_

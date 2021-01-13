@@ -5,25 +5,25 @@
 
 #include <wiringPi.h>
 
-#include "rfm69h.h"
-#include "rfm69h_rt.h"
+#include "rfm69.h"
+#include "rfm69_rt.h"
 #include "field_types.h"
-#include "rfm69h_ui_raw.h"
+#include "rfm69_ui_raw.h"
 
-class RFM69HRawField : public Field<uint8_t> {
+class RFM69RawField : public Field<uint8_t> {
 protected:
   const Register<uint8_t, uint8_t> &reg;
   const Variable<uint8_t> *var;
-  RFM69H::RegisterTable &rt;
+  RFM69::RegisterTable &rt;
 
 public:
-  RFM69HRawField(int row, const Register<uint8_t, uint8_t> *reg, RFM69H::RegisterTable &rt) :
+  RFM69RawField(int row, const Register<uint8_t, uint8_t> *reg, RFM69::RegisterTable &rt) :
     Field<uint8_t>(UI::statusp, row, 1, reg->Name(), "", ""), reg(*reg), var(NULL), rt(rt) {
       value_width = 2;
       units_width = 0;
       attributes = A_BOLD;
   }
-  RFM69HRawField(int row, const Register<uint8_t, uint8_t> *reg, const Variable<uint8_t> *var, RFM69H::RegisterTable &rt) :
+  RFM69RawField(int row, const Register<uint8_t, uint8_t> *reg, const Variable<uint8_t> *var, RFM69::RegisterTable &rt) :
     Field<uint8_t>(UI::statusp, row, 1, var->Name(), "", ""), reg(*reg), var(var), rt(rt) {
       value_width = 2;
       units_width = 0;
@@ -76,34 +76,34 @@ public:
 
 class Responsiveness : public IndicatorField {
 public:
-  const RFM69H &rfm69h;
-  Responsiveness(int r, int c, const RFM69H &rfm69h)
-      : IndicatorField(UI::statusp, row, col, "R"), rfm69h(rfm69h) {}
+  const RFM69 &rfm69;
+  Responsiveness(int r, int c, const RFM69 &rfm69)
+      : IndicatorField(UI::statusp, row, col, "R"), rfm69(rfm69) {}
   virtual ~Responsiveness() {}
-  virtual bool Get() { return rfm69h.Responsive(); }
+  virtual bool Get() { return rfm69.Responsive(); }
 };
 
 #define EMPTY() fields.push_back(new Empty(row++, col));
 
-RFM69HUIRaw::RFM69HUIRaw(RFM69H &rfm69h) :
+RFM69UIRaw::RFM69UIRaw(RFM69 &rfm69) :
   UI(),
-  rfm69h(rfm69h)
+  rfm69(rfm69)
 {
-  devices.insert(&rfm69h);
+  devices.insert(&rfm69);
 
   int row = 1, col = 1;
 
-  fields.push_back(new Responsiveness(row++, col, rfm69h));
+  fields.push_back(new Responsiveness(row++, col, rfm69));
   EMPTY();
 
   bool first = true;
-  for (auto reg : rfm69h.RT) {
+  for (auto reg : rfm69.RT) {
     if (first) { first = false; /* Skip FIFO */ continue; }
-    fields.push_back(new RFM69HRawField(row++, reg, rfm69h.RT));
+    fields.push_back(new RFM69RawField(row++, reg, rfm69.RT));
     for (auto var : *reg)
-      fields.push_back(new RFM69HRawField(row++, reg, var, rfm69h.RT));
+      fields.push_back(new RFM69RawField(row++, reg, var, rfm69.RT));
     fields.push_back(new Empty(row++, col));
   }
 }
 
-RFM69HUIRaw::~RFM69HUIRaw() {}
+RFM69UIRaw::~RFM69UIRaw() {}

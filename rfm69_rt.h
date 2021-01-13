@@ -1,15 +1,15 @@
 // Copyright (c) Christoph M. Wintersteiger
 // Licensed under the MIT License.
 
-#ifndef _RFM69H_NORMAL_RT_
-#define _RFM69H_NORMAL_RT_
+#ifndef _RFM69_NORMAL_RT_
+#define _RFM69_NORMAL_RT_
 
 #include "register_table.h"
 
 #define REG(N, P, A, RW, H, V) REGDECL(uint8_t, uint8_t, N, P, A, RW, H, V)
 #define VAR(R, N, P, M, RW, D) VARDECL(uint8_t, uint8_t, R, N, P, M, RW, D)
 
-REGISTER_TABLE_W(RFM69H, RegisterTable, uint8_t, uint8_t,
+REGISTER_TABLE_W(RFM69, RegisterTable, uint8_t, uint8_t,
 
   REG(Fifo, "Fifo", 0x00, RW, "FIFO read/write access", );
   REG(OpMode, "OpMode", 0x01, RW, "Operating modes of the transceiver",
