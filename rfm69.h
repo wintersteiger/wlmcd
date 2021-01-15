@@ -11,14 +11,15 @@
 
 #include "device.h"
 #include "register.h"
+#include "spidev.h"
 
 // Supposedly a second-source Semtech SX1231H
 
-class RFM69 : public Device<uint8_t, uint8_t>
+class RFM69 : public Device<uint8_t, uint8_t>, SPIDev
 {
 public:
   class RegisterTable;
-  RegisterTable &RT;
+  RegisterTable *RT;
 
   typedef enum {
     SLEEP = 0x00, // Sleep mode (SLEEP)
@@ -28,25 +29,15 @@ public:
     RX    = 0x04, // Receive mode (RX)
   } Mode;
 
-  class Status {
-    RFM69 *c;
-  public:
-    Status() : c(NULL) {}
-    Status(RFM69 *c);
-    Status(const RFM69::Status &other) : c(other.c) {}
-    ~Status() {};
-
-    void Update();
-  };
-
 protected:
   std::mutex mtx;
   int spi_channel;
   const double f_xosc, f_step;
-  int NSS, INT, RST;
+  // uint8_t *recv_buf;
+  // size_t recv_buf_sz, recv_buf_begin, recv_buf_pos;
 
 public:
-  RFM69(int spi_channel, int NSS, int INT = -1, int RST = -1, std::vector<Decoder*> decoders = {}, double f_xosc = 32.0*1e6);
+  RFM69(unsigned spi_bus, unsigned spi_channel, const std::string &config_file = "", double f_xosc = 32.0*1e6);
   virtual ~RFM69();
 
   virtual const char* Name() const { return "RFM69"; }
@@ -84,6 +75,15 @@ public:
   virtual void ReadConfig(const std::string &filename);
 
   virtual void Test(const std::vector<uint8_t> &data);
+
+  double rRSSI() const;
+
+protected:
+  // inline size_t recv_buf_held() const {
+  //   return recv_buf_begin <= recv_buf_pos ?
+  //               (recv_buf_pos - recv_buf_begin) :
+  //               (recv_buf_sz - recv_buf_begin + recv_buf_pos);
+  // }
 };
 
 #endif // _RFM69_H_

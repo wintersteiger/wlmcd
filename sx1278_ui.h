@@ -4,11 +4,9 @@
 #ifndef _SX1278_UI_H_
 #define _SX1278_UI_H_
 
-#include <cstdint>
-#include <vector>
-
 #include "ui.h"
-#include "sx1278.h"
+
+class SX1278;
 
 class SX1278UI: public UI {
 protected:

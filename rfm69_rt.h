@@ -39,10 +39,10 @@ REGISTER_TABLE_W(RFM69, RegisterTable, uint8_t, uint8_t,
     VAR(FrfMsb, Frf_23_16, "Frf(23:16)", 0xFF, RW,                            "");
   );
   REG(FrfMid, "FrfMid", 0x08, RW, "RF Carrier Frequency, Intermediate Bits",
-    VAR(FrfMsb, Frf_15_8, "Frf(15:8)", 0xFF, RW,                              "");
+    VAR(FrfMid, Frf_15_8, "Frf(15:8)", 0xFF, RW,                              "");
   );
   REG(FrfLsb, "FrfLsb", 0x09, RW, "RF Carrier Frequency, Least Significant Bits",
-    VAR(FrfMsb, Frf_7_0, "Frf(7:0)", 0xFF, RW,                                "");
+    VAR(FrfLsb, Frf_7_0, "Frf(7:0)", 0xFF, RW,                                "");
   );
   REG(Osc1, "Osc1", 0x0A, RW, "RC Oscillators Settings",
     VAR(Osc1, RcCalStart, "RcCalStart", 0x80, WO,                             "");
@@ -93,11 +93,31 @@ REGISTER_TABLE_W(RFM69, RegisterTable, uint8_t, uint8_t,
     VAR(RxBw, RxBwMant, "RxBwMant", 0x18, RW,                                 "");
     VAR(RxBw, RxBwExp, "RxBwExp", 0x07, RW,                                   "");
   );
-  REG(AfcBw, "AfcBw", 0x1A, RW, "Channel Filter BW control during the AFC routine", );
-  REG(OokPeak, "OokPeak", 0x1B, RW, "OOK demodulator selection and control in peak mode", );
-  REG(OokAvg, "OokAvg", 0x1C, RW, "Average threshold control of the OOK demodulator", );
-  REG(OokFix, "OokFix", 0x1D, RW, "Fixed threshold control of the OOK demodulator", );
-  REG(AfcFei, "AfcFei", 0x1E, RW, "AFC and FEI control and status", );
+  REG(AfcBw, "AfcBw", 0x1A, RW, "Channel Filter BW control during the AFC routine",
+    VAR(AfcBw, DccFreqAfc, "DccFreqAfc", 0xE0, RW,                            "");
+    VAR(AfcBw, RxBwMantAfc, "RxBwMantAfc", 0x18, RW,                          "");
+    VAR(AfcBw, RxBwExpAfc, "RxBwExpAfc", 0x07, RW,                            "");
+  );
+  REG(OokPeak, "OokPeak", 0x1B, RW, "OOK demodulator selection and control in peak mode",
+    VAR(OokPeak, OokThreshType, "OokThreshType", 0xC0, RW,                    "");
+    VAR(OokPeak, OokPeakTheshStep, "OokPeakTheshStep", 0x38, RW,              "");
+    VAR(OokPeak, OokPeakThreshDec, "OokPeakThreshDec", 0x07, RW,              "");
+  );
+  REG(OokAvg, "OokAvg", 0x1C, RW, "Average threshold control of the OOK demodulator",
+    VAR(OokAvg, OokAverageThreshFilt, "OokAverageThreshFilt", 0xC0, RW,       "");
+  );
+  REG(OokFix, "OokFix", 0x1D, RW, "Fixed threshold control of the OOK demodulator",
+    VAR(OokFix, OokFixedThresh, "OokFixedThresh", 0xFF, RW,                   "");
+  );
+  REG(AfcFei, "AfcFei", 0x1E, RW, "AFC and FEI control and status",
+    VAR(AfcFei, FeiDone, "FeiDone", 0x40, RW,                                 "");
+    VAR(AfcFei, FeiStart, "FeiStart", 0x20, RW,                               "");
+    VAR(AfcFei, AfcDone, "AfcDone", 0x10, RW,                                 "");
+    VAR(AfcFei, AfcAutoclearOn, "AfcAutoclearOn", 0x08, RW,                   "");
+    VAR(AfcFei, AfcAutoOn, "AfcAutoOn", 0x04, RW,                             "");
+    VAR(AfcFei, AfcClear, "AfcClear", 0x02, RW,                               "");
+    VAR(AfcFei, AfcStart, "AfcStart", 0x01, RW,                               "");
+  );
   REG(AfcMsb, "AfcMsb", 0x1F, RW, "MSB of the frequency correction of the AFC", );
   REG(AfcLsb, "AfcLsb", 0x20, RW, "LSB of the frequency correction of the AFC", );
   REG(FeiMsb, "FeiMsb", 0x21, RW, "MSB of the calculated frequency error", );
@@ -106,44 +126,58 @@ REGISTER_TABLE_W(RFM69, RegisterTable, uint8_t, uint8_t,
   REG(RssiValue, "RssiValue", 0x24, RW, "RSSI value in dBm", );
   REG(DioMapping1, "DioMapping1", 0x25, RW, "Mapping of pins DIO0 to DIO3", );
   REG(DioMapping2, "DioMapping2", 0x26, RW, "Mapping of pins DIO4 and DIO5, ClkOut frequency", );
-  REG(IrqFlags1, "IrqFlags1", 0x27, RW, "Status register: PLL Lock state, Timeout, RSSI > Threshold...", );
-  REG(IrqFlags2, "IrqFlags2", 0x28, RW, "Status register: FIFO handling flags...", );
+  REG(IrqFlags1, "", 0x27, RW,                                                  "Status register: PLL Lock state, Timeout, RSSI > Threshold...",
+    VAR(IrqFlags1, ModeReady, "ModeReady", 0x80, RW,                            "");
+    VAR(IrqFlags1, RxReady, "RxReady", 0x40, RW,                                "");
+    VAR(IrqFlags1, TxReady, "TxReady", 0x20, RW,                                "");
+    VAR(IrqFlags1, PllLock, "PllLock", 0x10, RW,                                "");
+    VAR(IrqFlags1, Rssi, "Rssi", 0x08, RW,                                      "");
+    VAR(IrqFlags1, Timeout, "Timeout", 0x04, RW,                                "");
+    VAR(IrqFlags1, AutoMode, "AutoMode", 0x02, RW,                              "");
+    VAR(IrqFlags1, SyncAddressMatch, "SyncAddressMatch", 0x01, RW,              "");
+  );
+  REG(IrqFlags2, "", 0x28, RW,                                                  "Status register: FIFO handling flags...",
+    VAR(IrqFlags2, FifoFull, "FifoFull", 0x80, RW,                              "");
+    VAR(IrqFlags2, FifoEmpty, "FifoEmpty", 0x40, RW,                            "");
+    VAR(IrqFlags2, FifoLevel, "FifoLevel", 0x20, RW,                            "");
+    VAR(IrqFlags2, FifoOverrun, "FifoOverrun", 0x10, RW,                        "");
+    VAR(IrqFlags2, PacketSent, "PacketSent", 0x08, RW,                          "");
+    VAR(IrqFlags2, PayloadReady, "PayloadReady", 0x04, RW,                      "");
+    VAR(IrqFlags2, CrcOk, "CrcOk", 0x02, RW,                                    "");
+  );
   REG(RssiThresh, "RssiThresh", 0x29, RW, "RSSI Threshold control", );
   REG(RxTimeout1, "RxTimeout1", 0x2A, RW, "Timeout duration between Rx request and RSSI detection", );
   REG(RxTimeout2, "RxTimeout2", 0x2B, RW, "Timeout duration between RSSI detection and PayloadReady", );
   REG(PreambleMsb, "PreambleMsb", 0x2C, RW, "Preamble length, MSB", );
   REG(PreambleLsb, "PreambleLsb", 0x2D, RW, "Preamble length, LSB", );
-  REG(SyncConfig, "SyncConfig", 0x2E, RW, "Sync Word Recognition control", );
-  REG(SyncValue1, "", 0x2F, RW,                                                 "1st byte of Sync word. (MSB byte)."
-                                                                                "Used if SyncOn is set.",
+  REG(SyncConfig, "SyncConfig", 0x2E, RW, "Sync Word Recognition control",
+    VAR(SyncConfig, SyncOn, "SyncOn", 0x80, RW,                                 "");
+    VAR(SyncConfig, FifoFillCondition, "FifoFillCondition", 0x40, RW,           "");
+    VAR(SyncConfig, SyncSize, "SyncSize", 0x38, RW,                             "");
+    VAR(SyncConfig, SyncTol, "SyncTol", 0x07, RW,                               "");
+  );
+  REG(SyncValue1, "", 0x2F, RW,                                                 "1st byte of Sync word. (MSB byte).",
     VAR(SyncValue1, SyncValue_63_56, "SyncValue(63:56)", 0xFF, RW,              "");
   );
-  REG(SyncValue2, "", 0x30, RW,                                                 "2nd byte of Sync word."
-                                                                                "Used if SyncOn is set and (SyncSize+1) >= 2",
+  REG(SyncValue2, "", 0x30, RW,                                                 "2nd byte of Sync word.",
     VAR(SyncValue2, SyncValue_55_48, "SyncValue(55:48)", 0xFF, RW,              "");
   );
-  REG(SyncValue3, "", 0x31, RW,                                                 "3rd byte of Sync word."
-                                                                                "Used if SyncOn is set and (SyncSize+1) >= 3",
+  REG(SyncValue3, "", 0x31, RW,                                                 "3rd byte of Sync word.",
     VAR(SyncValue3, SyncValue_47_40, "SyncValue(47:40)", 0xFF, RW,              "");
   );
-  REG(SyncValue4, "", 0x32, RW,                                                 "4th byte of Sync word."
-                                                                                "Used if SyncOn is set and (SyncSize+1) >= 4",
+  REG(SyncValue4, "", 0x32, RW,                                                 "4th byte of Sync word.",
     VAR(SyncValue4, SyncValue_39_32, "SyncValue(39:32)", 0xFF, RW,              "");
   );
-  REG(SyncValue5, "", 0x33, RW,                                                 "5th byte of Sync word."
-                                                                                "Used if SyncOn is set and (SyncSize+1) >= 5",
+  REG(SyncValue5, "", 0x33, RW,                                                 "5th byte of Sync word.",
     VAR(SyncValue5, SyncValue_31_24, "SyncValue(31:24)", 0xFF, RW,              "");
   );
-  REG(SyncValue6, "", 0x34, RW,                                                 "6th byte of Sync word."
-                                                                                "Used if SyncOn is set and (SyncSize+1) >= 6",
+  REG(SyncValue6, "", 0x34, RW,                                                 "6th byte of Sync word.",
     VAR(SyncValue6, SyncValue_23_16, "SyncValue(23:16)", 0xFF, RW,              "");
   );
-  REG(SyncValue7, "", 0x35, RW,                                                 "7th byte of Sync word."
-                                                                                "Used if SyncOn is set and (SyncSize+1) >= 7",
+  REG(SyncValue7, "", 0x35, RW,                                                 "7th byte of Sync word.",
     VAR(SyncValue7, SyncValue_15_8, "SyncValue(15:8)", 0xFF, RW,                "");
   );
-  REG(SyncValue8, "", 0x36, RW,                                                 "8th byte of Sync word."
-                                                                                "Used if SyncOn is set and (SyncSize+1) >= 8",
+  REG(SyncValue8, "", 0x36, RW,                                                 "8th byte of Sync word.",
     VAR(SyncValue8, SyncValue_7_0, "SyncValue(7:0)", 0xFF, RW,                  "");
   );
   REG(PacketConfig1, "PacketConfig1", 0x37, RW, "Packet mode settings", );
@@ -209,7 +243,6 @@ REGISTER_TABLE_W(RFM69, RegisterTable, uint8_t, uint8_t,
   REG(TestDagc, "TestDagc", 0x6F, RW, "Fading Margin Improvement", );
   REG(TestAfc, "TestAfc", 0x71, RW, "AFC offset for low modulation index AFC", );
   // REG(Test, "Test", 0x50+, RW, "Internal test registers", );
-
 );
 
 #undef VAR

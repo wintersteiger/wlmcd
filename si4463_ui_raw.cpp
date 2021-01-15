@@ -3,8 +3,6 @@
 
 #include <cstring>
 
-#include <wiringPi.h>
-
 #include "field_types.h"
 #include "si4463.h"
 #include "si4463_rt.h"

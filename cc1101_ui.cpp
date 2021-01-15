@@ -4,8 +4,6 @@
 #include <cstring>
 #include <cmath>
 
-#include <wiringPi.h>
-
 #include "field_types.h"
 #include "cc1101.h"
 #include "cc1101_rt.h"
@@ -20,7 +18,7 @@ protected:
   CC1101::RegisterTable &rt;
 public:
   StatusField<T>(int row, int col, const std::string &key, const std::string &value, const std::string &units, const CC1101 &cc1101) :
-    Field<T>(UI::statusp, row, col, key, value, units), cc1101(cc1101), rt(cc1101.RT) {}
+    Field<T>(UI::statusp, row, col, key, value, units), cc1101(cc1101), rt(*cc1101.RT) {}
   virtual T Get() = 0;
 };
 
@@ -37,7 +35,7 @@ protected:
   CC1101::RegisterTable &rt;
 public:
   StatusIndicator(int r, int c, const std::string &key, const CC1101 &cc1101) :
-    IndicatorField(UI::statusp, r, c, key), rt(cc1101.RT) {}
+    IndicatorField(UI::statusp, r, c, key), rt(*cc1101.RT) {}
   virtual bool Get() = 0;
 };
 
@@ -57,7 +55,7 @@ protected:
 
 public:
   ConfigField<T>(int row, int col, const std::string &key, const std::string &value, const std::string &units, CC1101 &cc1101) :
-    Field<T>(UI::statusp, row, col, key, value, units), rt(cc1101.RT) {}
+    Field<T>(UI::statusp, row, col, key, value, units), rt(*cc1101.RT) {}
   virtual ~ConfigField<T>() {}
   virtual T Get() = 0;
   virtual void Update(bool full=false) { Field<T>::Update(full); }
@@ -109,9 +107,9 @@ public:
   };
 
 
-TSF(FREQEST,  "Freq O/S E", "kHz",  uint8_t,      { return rt.FREQEST(); });
-TSF(LQI,      "LQI",        "%",    uint8_t,      { return rt.LQI(); });
-TSF(RSSI,     "RSSI",       "dBm",  double,       { return rt.RSSI(); });
+TSF(FREQEST,  "Freq O/S E", "kHz",  uint8_t,      { return cc1101.rFOE(); });
+TSF(LQI,      "LQI",        "%",    uint8_t,      { return cc1101.rLQI(); });
+TSF(RSSI,     "RSSI",       "dBm",  double,       { return cc1101.rRSSI(); });
 TSF(State,    "State",      "",     std::string,  {
   if (cc1101.Responsive()) {
     this->colors = -1;
@@ -411,9 +409,9 @@ void GDOField::Update(bool full)
       uint8_t iocfg = i == 0 ? rt.IOCFG0() : i == 1 ? rt.IOCFG1() : rt.IOCFG2();
       snprintf(tmp, sizeof(tmp), "%1s%02x", iocfg & 0x40 ? "~" : " ", iocfg & 0x3F);
 
-      uint8_t gdoi = rt.Device().rGDO(i);
-      if (gdoi != 0)
-        lcol = COLOR_PAIR(digitalRead(gdoi) ? HIGH_PAIR : LOW_PAIR);
+      // uint8_t gdoi = rt.Device().rGDO(i);
+      // if (gdoi != 0)
+      //   lcol = COLOR_PAIR(digitalRead(gdoi) ? HIGH_PAIR : LOW_PAIR);
 
       if (lcol != -1) wattron(Field<uint8_t>::wndw, lcol);
       mvwprintw(Field<uint8_t>::wndw, r, gc, tmp);
@@ -582,8 +580,8 @@ CC1101UI::CC1101UI(CC1101 &cc1101) :
 }
 
 void CC1101UI::Layout() {
-  int h, w, widest = 0;
-  size_t r = 1, c = 30;
+  int h, w;
+  size_t r = 1, c = 30, widest = 0;
   getmaxyx(statusp, h, w);
 
   // Skip the 17 status fields
@@ -608,7 +606,7 @@ void CC1101UI::Layout() {
     if (w > widest)
       widest = w;
 
-    if (r >= h) {
+    if (r >= (unsigned)h) {
       r = 1;
       c += widest + 1;
       widest = 0;

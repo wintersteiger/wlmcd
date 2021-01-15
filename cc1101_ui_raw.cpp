@@ -3,8 +3,6 @@
 
 #include <cstring>
 
-#include <wiringPi.h>
-
 #include "field_types.h"
 #include "cc1101.h"
 #include "cc1101_rt.h"
@@ -112,13 +110,13 @@ CC1101UIRaw::CC1101UIRaw(CC1101 &cc1101) : UI()
 
   int row = 1, col = 1;
   bool first = true;
-  for (auto reg : cc1101.RT) {
-    if (reg->Address() == cc1101.RT._rFIFO.Address() ||
-        reg->Address() == cc1101.RT._rPATABLE.Address())
+  for (auto reg : *cc1101.RT) {
+    if (reg->Address() == cc1101.RT->_rFIFO.Address() ||
+        reg->Address() == cc1101.RT->_rPATABLE.Address())
       continue;
-    fields.push_back(new RawField(row++, reg, cc1101.RT));
+    fields.push_back(new RawField(row++, reg, *cc1101.RT));
     for (auto var : *reg)
-      fields.push_back(new RawField(row++, reg, var, cc1101.RT));
+      fields.push_back(new RawField(row++, reg, var, *cc1101.RT));
     fields.push_back(new Empty(row++, col));
   }
 
@@ -126,7 +124,7 @@ CC1101UIRaw::CC1101UIRaw(CC1101 &cc1101) : UI()
   fields.push_back(new HexField(UI::statusp, row++, col + 9, 16, [&cc1101](void){
     uint64_t r = 0;
     for (size_t i = 0; i < 8; i++)
-      r = (r << 8) | cc1101.RT.PATableBuffer[i];
+      r = (r << 8) | cc1101.RT->PATableBuffer[i];
     return r;
   }));
 }

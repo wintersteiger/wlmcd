@@ -236,7 +236,11 @@ const std::string& Radbot::Decoder::Decode(std::vector<uint8_t> &bytes)
   size_t id_len = *hdr2 & 0x0F;
   size_t header_len = 4 + id_len;
 
-  FAIL_IF(frame_len >= num_bytes, "not enough frame bytes");
+  if (frame_len >= num_bytes) {
+    char buf[2048];
+    sprintf(buf, "not enough frame bytes: frame_len=%d num_bytes=%d", frame_len, num_bytes);
+    FAIL_IF(frame_len >= num_bytes, buf);
+  }
   FAIL_IF(frame_type == 0x00 || frame_type == 0x7F || frame_type == 0xFF, "invalid frame type");
   FAIL_IF(frame_type != 0x4f, "unknown frame type");
   FAIL_IF(pos + id_len >= num_bytes, "not enough ID bytes");
@@ -308,8 +312,8 @@ const std::string& Radbot::Decoder::Decode(std::vector<uint8_t> &bytes)
 
     size_t pad = msg[msg.size()-1];
     FAIL_IF(pad >= msg.size() - 1, "excessive padding in message");
-    msg.resize(msg.size() - 1 - pad);
-    msg.push_back('}');
+    msg.resize(msg.size() - pad);
+    msg[msg.size()-1] = '}';
 
 #ifdef TEST_VERBOSE
     printf("pddng : %lu\n", pad);

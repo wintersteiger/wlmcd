@@ -7,15 +7,19 @@
 #include <ostream>
 #include <mutex>
 #include <stdexcept>
+#include <functional>
+#include <thread>
 
 #include "device.h"
 #include "register.h"
+#include "spidev.h"
+#include "gpio_watcher.h"
 
-class CC1101 : public Device<uint8_t, uint8_t>
+class CC1101 : public Device<uint8_t, uint8_t>, SPIDev
 {
 public:
   class RegisterTable;
-  RegisterTable &RT;
+  RegisterTable *RT;
 
   typedef enum {
     // Command Strobes (burst bit zero)
@@ -65,8 +69,7 @@ public:
   } State;
 
 protected:
-  const int (&GDO)[3];
-  const int CSN;
+  int spi_channel;
   const double f_xosc;
   uint8_t *recv_buf;
   size_t recv_buf_sz, recv_buf_begin, recv_buf_pos;
@@ -79,33 +82,6 @@ protected:
   }
 
 public:
-  class Status {
-    CC1101 *c;
-  public:
-    Status() : c(NULL) {}
-    Status(CC1101 *c);
-    Status(const CC1101::Status &other) : c(other.c) {}
-    ~Status() {};
-
-    void Update();
-
-    uint8_t PARTNUM;
-    uint8_t VERSION;
-    uint8_t FREQEST;
-    uint8_t LQI;
-    uint8_t RSSI;
-    uint8_t MARCSTATE;
-    uint8_t WORTIME[2];
-    uint8_t PKTSTATUS;
-    uint8_t VCO_VC_DAC;
-    uint8_t TXBYTES;
-    uint8_t RXBYTES;
-    uint8_t RCCTRL_STATUS[2];
-
-    double rRSSI() const;
-    double rLQI() const;
-  };
-
   class StatusByte {
     uint8_t s;
     public:
@@ -181,15 +157,13 @@ public:
     void Update();
   };
 
-  // WiringPi pin indices.
-  CC1101(int (&GDO)[3], int CSN=10, const std::string &config_file = "", std::vector<Decoder*> decoders = {}, double f_xosc = 26.0*1e6);
+  CC1101(unsigned spi_bus, unsigned spi_channel, const std::string &config_file = "", double f_xosc = 26.0*1e6);
   virtual ~CC1101();
 
   void Reset();
 
   State GetState();
 
-  Status GetStatus();
   Config GetConfig();
 
   StatusByte Strobe(CommandStrobe cs, size_t delay_ms = 0);
@@ -224,6 +198,9 @@ public:
 
   double F_XOSC() const { return f_xosc; }
 
+  double rFOE() const;
+  double rRSSI() const;
+  double rLQI() const;
   double rFrequency() const;
   double rDataRate() const;
   double rDeviation() const;
@@ -233,13 +210,11 @@ public:
   double rEvent0() const;
   double rRXTimeout() const;
 
-  int rCSN() const { return CSN; }
-
-  int rGDO(int i) const {
-    if (i < 0 || i > 2)
-      throw std::runtime_error("invalid index");
-    return GDO[i];
-  }
+  // int rGDO(int i) const {
+  //   if (i < 0 || i > 2)
+  //     throw std::runtime_error("invalid index");
+  //   return GDO[i];
+  // }
 };
 
 #endif

@@ -4,6 +4,8 @@
 #include <cinttypes>
 #include <ctime>
 #include <cstring>
+#include <cassert>
+
 #include <mutex>
 #include <curses.h>
 
@@ -24,6 +26,8 @@ void FieldBase::Move(int row, int col)
 
 void FieldBase::Update(bool full)
 {
+  assert(key_width > 0);
+
   if (wndw) {
     if (attributes != -1) wattron(wndw, attributes);
     if (full) {
@@ -40,8 +44,10 @@ void FieldBase::Update(bool full)
     if (stale && !active) wattroff(wndw, A_DIM);
     if (colors != -1) wattroff(wndw, COLOR_PAIR(colors));
     if (full) {
-      snprintf(tmp, sizeof(tmp), "%%- %ds", units_width);
-      mvwprintw(wndw, row, col + key_width + 2 + value_width + 1, tmp, units.c_str());
+      if (units_width > 0) {
+        snprintf(tmp, sizeof(tmp), "%%- %ds", units_width);
+        mvwprintw(wndw, row, col + key_width + 2 + value_width + 1, tmp, units.c_str());
+      }
     }
     if (attributes != -1) wattroff(wndw, attributes);
   }
@@ -204,6 +210,7 @@ void Field<opt_uint64_t>::Update(bool full)
 
 void Label::Update(bool full)
 {
+  assert(key_width > 0);
   if (wndw && full) {
     snprintf(tmp, sizeof(tmp), "%%- %ds", key_width);
     if (colors != -1) wattron(wndw, COLOR_PAIR(colors));
@@ -252,10 +259,9 @@ void StringField::Update(bool full)
   }
 }
 
-
-
 void DecField::Update(bool full)
 {
+  assert(key_width > 0);
   if (wndw) {
     char tmp2[256];
     snprintf(tmp, sizeof(tmp), "%%0%dd", key_width);
@@ -270,6 +276,7 @@ void DecField::Update(bool full)
 
 void HexField::Update(bool full)
 {
+  assert(key_width > 0);
   if (wndw) {
     char tmp2[256];
     snprintf(tmp, sizeof(tmp), "%%0%d" PRIx64, key_width);

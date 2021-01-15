@@ -16,23 +16,25 @@
 
 #include <controller.h>
 #include <ui.h>
-#include <cc1101.h>
-#include <cc1101_ui.h>
-#include <cc1101_ui_raw.h>
+#include <rfm69.h>
+#include <rfm69_ui.h>
+#include <rfm69_ui_raw.h>
 #include <radbot.h>
 #include <radbot_ui.h>
+#include <gpio_watcher.h>
+#include <gpio_button.h>
 #include <sleep.h>
 
 static volatile int rx_cnt = 0;
 static FILE *logfile = NULL;
 static Controller *controller = NULL;
 static int exit_code = 0;
-static CC1101 *cc1101 = NULL;
-static CC1101UI *cc1101_ui = NULL;
-static CC1101UIRaw *cc1101_ui_raw = NULL;
-static RadbotUI *radbot_ui = NULL;
 static Radbot::Decoder *radbot_decoder = NULL;
-static std::vector<GPIOWatcher<CC1101>*> gpio_watchers;
+static RadbotUI *radbot_ui = NULL;
+static RFM69 *rfm69 = NULL;
+static RFM69UI *rfm69_ui = NULL;
+static RFM69UIRaw *rfm69_ui_raw = NULL;
+static std::vector<GPIOWatcher<RFM69>*> gpio_watchers;
 
 static std::mutex mtx;
 
@@ -55,15 +57,15 @@ void cleanup(int signal = 0)
   controller = NULL;
   delete(radbot_ui);
   radbot_ui = NULL;
-  delete(cc1101_ui);
-  cc1101_ui = NULL;
-  delete(cc1101_ui_raw);
-  cc1101_ui_raw = NULL;
+  delete(rfm69_ui);
+  rfm69_ui = NULL;
+  delete(rfm69_ui_raw);
+  rfm69_ui_raw = NULL;
 
   delete(radbot_decoder);
   radbot_decoder = NULL;
-  delete(cc1101);
-  cc1101 = NULL;
+  delete(rfm69);
+  rfm69 = NULL;
 
   if (logfile) {
     fclose(logfile);
@@ -73,15 +75,15 @@ void cleanup(int signal = 0)
   mtx.unlock();
 
   if (UI::End() != OK)
-    std::cout << "UI cleanup error" << std::endl;
+    printf("UI cleanup error\n");
 
   if (signal != 0) {
-    std::cout << "Signal " << signal << " (" << strsignal(signal) << "); bailing out." << std::endl;
+    printf("Signal %d (%s); bailing out.\n", signal, strsignal(signal));
     exit_code = 2;
   }
 }
 
-int rxlog(double rssi, double lqi, const std::vector<uint8_t> &raw_packet, const std::string &msg, const std::string &err)
+int rxlog(double rssi, const std::vector<uint8_t> &raw_packet, const std::string &msg, const std::string &err)
 {
   int r = 0;
   if (logfile) {
@@ -90,7 +92,7 @@ int rxlog(double rssi, double lqi, const std::vector<uint8_t> &raw_packet, const
     time(&t);
     struct tm * lt = localtime(&t);
     strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", lt);
-    fprintf(logfile, "%s,%0.2f,%0.2f,", time_buf, rssi, lqi);
+    fprintf(logfile, "%s,%0.2f,", time_buf, rssi);
     for (auto b : raw_packet)
       fprintf(logfile, "%02x", b);
     fprintf(logfile, ",\"");
@@ -108,27 +110,24 @@ int rxlog(double rssi, double lqi, const std::vector<uint8_t> &raw_packet, const
   return r;
 }
 
-static bool CC1101_fRX(CC1101 *cc1101, Radbot::Decoder *decoder)
+static bool RFM69_fRX(RFM69 *rfm69, Radbot::Decoder *decoder)
 {
   if (!decoder) {
-    UI::Log("CC1101_fRX: no decoder");
+    UI::Log("RFM69_fRX: no decoder");
     return true;
   }
 
   mtx.lock();
 
-  std::vector<uint8_t> packet;
-  cc1101->Receive(packet);
-  size_t pkt_sz = packet.size();
+  static std::vector<uint8_t> packet;
+  double rssi = rfm69->rRSSI();
+  rfm69->Receive(packet);
 
-  char lbuf[1024];
+  static char lbuf[1024];
   char *p = &lbuf[0];
 
-  if (pkt_sz > 0) {
-    if (pkt_sz > 64) pkt_sz = 64;
-    double rssi = cc1101->rRSSI();
-    double lqi = cc1101->rLQI();
-    p += snprintf(p, sizeof(lbuf), "RX rssi=%4.0fdBm lqi=%3.0f%% N=%d ", rssi, lqi, packet.size());
+  if (packet.size() > 0) {
+    p += snprintf(p, sizeof(lbuf), "RX rssi=%4.0fdBm N=%d ", rssi, packet.size());
 
     std::vector<uint8_t> raw_packet = packet;
     std::string msg_str = "", err_str = "";
@@ -143,7 +142,7 @@ static bool CC1101_fRX(CC1101 *cc1101, Radbot::Decoder *decoder)
       p += sprintf(p, "ERROR: %s", err.what());
     }
 
-    rxlog(rssi, lqi, raw_packet, msg_str, err_str);
+    rxlog(rssi, raw_packet, msg_str, err_str);
   }
   else
     p += sprintf(p, "RX failed.");
@@ -156,11 +155,17 @@ static bool CC1101_fRX(CC1101 *cc1101, Radbot::Decoder *decoder)
   return true;
 }
 
-int main()
+int main(void)
 {
   try {
     UI::Start();
     logfile = fopen("log.csv", "a");
+
+    GPIOButton reset_button("/dev/gpiochip0", 6);
+
+    rfm69 = new RFM69(1, 2, "rfm69-radbot.cfg");
+    rfm69_ui = new RFM69UI(*rfm69, &reset_button);
+    rfm69_ui_raw = new RFM69UIRaw(*rfm69);
 
     auto radbot_cfg = nlohmann::json::parse(std::ifstream("radbot.cfg"));
     std::string radbot_id = radbot_cfg["radbot"]["id"];
@@ -168,13 +173,9 @@ int main()
     radbot_decoder = new Radbot::Decoder(radbot_id, radbot_key);
     radbot_ui = new RadbotUI(radbot_decoder->state);
 
-    cc1101 = new CC1101(0, 0, "cc1101-radbot.cfg");
-    cc1101_ui = new CC1101UI(*cc1101);
-    cc1101_ui_raw = new CC1101UIRaw(*cc1101);
-
-    gpio_watchers.push_back(new GPIOWatcher<CC1101>("/dev/gpiochip0", 25, "WLMCD-CC1101", cc1101,
-      [](int, unsigned, const timespec*, CC1101 *cc1101) {
-        return CC1101_fRX(cc1101, radbot_decoder);
+    gpio_watchers.push_back(new GPIOWatcher<RFM69>("/dev/gpiochip0", 26, "WLMCD-RFM69", rfm69,
+      [](int, unsigned, const timespec*, RFM69 *rfm69) {
+        return RFM69_fRX(rfm69, radbot_decoder);
       }));
 
     controller = new Controller(0);
@@ -182,8 +183,8 @@ int main()
     std::signal(SIGINT, cleanup);
     std::signal(SIGABRT, cleanup);
 
-    controller->AddSystem(cc1101_ui);
-    controller->AddSystem(cc1101_ui_raw);
+    controller->AddSystem(rfm69_ui);
+    controller->AddSystem(rfm69_ui_raw);
     controller->AddSystem(radbot_ui, radbot_decoder);
 
     controller->Run();

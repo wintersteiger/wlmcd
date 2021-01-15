@@ -4,11 +4,9 @@
 #ifndef _SI4463_UI_RAW_H_
 #define _SI4463_UI_RAW_H_
 
-#include <cstdint>
-#include <vector>
-
 #include "ui.h"
-#include "field.h"
+
+class SI4463;
 
 class SI4463UIRaw: public UI {
 protected:

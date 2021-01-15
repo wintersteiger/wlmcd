@@ -8,7 +8,7 @@
 
 std::mutex UI::mtx;
 WINDOW *UI::mainw = NULL, *UI::logp = NULL, *UI::logboxw = NULL, *UI::cmdw = NULL, *UI::statusp = NULL;
-int UI::screen_height = 0, UI::screen_width = 0;
+unsigned  UI::screen_height = 0, UI::screen_width = 0;
 uint64_t UI::reset_cnt = 0;
 uint64_t UI::indicator_value = 0, UI::max_indicator_value = 0;
 
@@ -21,8 +21,12 @@ UI::UI() :
 
 UI::~UI()
 {
-  for (auto f: fields)
-    if (f) delete(f);
+  // for (auto f: fields)
+  //  delete(f);
+  for (size_t i=0; i < fields.size(); i++) {
+    delete(fields[i]);
+    fields[i] = NULL;
+  }
 }
 
 void UI::Start()
@@ -71,8 +75,8 @@ void UI::Reset()
     nodelay(UI::cmdw, TRUE);
   }
 
-  int logboxw_h = std::max(screen_height/4, 3);
-  int logboxw_w = std::max(screen_width, 3);
+  int logboxw_h = std::max(screen_height/4, 3U);
+  int logboxw_w = std::max(screen_width, 3U);
   int logboxw_x = 0;
   int logboxw_y = screen_height - logboxw_h - 1;
   wresize(logboxw, logboxw_h, logboxw_w);

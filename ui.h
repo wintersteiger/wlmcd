@@ -16,9 +16,9 @@ class DeviceBase;
 class UI {
 protected:
   static std::mutex mtx;
-  static int screen_height, screen_width;
+  static unsigned screen_height, screen_width;
   static uint64_t reset_cnt;
-  int logp_b, logp_x, logp_y, logp_h, logp_w, logp_scrollback;
+  unsigned logp_b, logp_x, logp_y, logp_h, logp_w, logp_scrollback;
   std::vector<FieldBase*> fields;
   size_t active_field_index;
   std::set<DeviceBase*> devices;
@@ -41,7 +41,7 @@ public:
 
   virtual void Describe();
 
-  static int ScreenWidth() { return screen_width; }
+  static unsigned ScreenWidth() { return screen_width; }
 
   void ScrollUp();
   void ScrollDown();

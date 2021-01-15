@@ -71,13 +71,13 @@ GPIOUI::GPIOUI(GPIODevice &gpio)
 
   row = 4; col = 2;
 
-  for (int i = 0; i < gpio.NumChips(); i++)
+  for (size_t i = 0; i < gpio.NumChips(); i++)
   {
     auto cs = gpio.ChipState(i);
     Add(new Label(UI::statusp, row++, col, cs.name));
     Add(new Label(UI::statusp, row++, col, cs.label, 0));
 
-    for (int j = 0; j < gpio.NumLines(i); j++)
+    for (size_t j = 0; j < gpio.NumLines(i); j++)
     {
       Add(new DecField(UI::statusp, row, col, 2,
         [&gpio, i, j](void) {

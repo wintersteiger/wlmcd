@@ -31,10 +31,10 @@ public:
 protected:
   std::mutex mtx;
   char name[256];
-  const char *chip_path;
   static constexpr const char *gpio_consumer = "relays";
   struct gpiod_chip *chip;
   struct gpiod_line *line;
+  const char *chip_path;
   unsigned offset;
   bool inverted;
   int buffer;

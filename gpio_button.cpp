@@ -12,8 +12,8 @@ GPIOButton::GPIOButton(const char *chip_path, int offset, bool inverted) :
   line(NULL),
   chip_path(chip_path),
   offset(offset),
-  buffer(0),
-  inverted(inverted)
+  inverted(inverted),
+  buffer(0)
 {
   snprintf(name, sizeof(name), "GPIO %02d", offset);
   Reset();

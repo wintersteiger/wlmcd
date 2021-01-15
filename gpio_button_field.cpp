@@ -3,6 +3,7 @@
 
 #include <unistd.h>
 
+#include "sleep.h"
 #include "gpio_button_field.h"
 
 GPIOButtonField::GPIOButtonField(WINDOW *wndw, int row, int col, const std::string &key, GPIOButton &button, bool bumpy) :
@@ -34,7 +35,7 @@ void GPIOButtonField::Bump()
   if (bumpy) {
     bool val = button.ReadBuffered();
     button.Write(!val);
-    usleep(50000);
+    sleep_ms(50);
     button.Write(val);
     bump_state = !bump_state;
   }

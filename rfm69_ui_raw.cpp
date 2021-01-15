@@ -3,8 +3,6 @@
 
 #include <cstring>
 
-#include <wiringPi.h>
-
 #include "rfm69.h"
 #include "rfm69_rt.h"
 #include "field_types.h"
@@ -77,7 +75,7 @@ public:
 class Responsiveness : public IndicatorField {
 public:
   const RFM69 &rfm69;
-  Responsiveness(int r, int c, const RFM69 &rfm69)
+  Responsiveness(int row, int col, const RFM69 &rfm69)
       : IndicatorField(UI::statusp, row, col, "R"), rfm69(rfm69) {}
   virtual ~Responsiveness() {}
   virtual bool Get() { return rfm69.Responsive(); }
@@ -97,11 +95,11 @@ RFM69UIRaw::RFM69UIRaw(RFM69 &rfm69) :
   EMPTY();
 
   bool first = true;
-  for (auto reg : rfm69.RT) {
+  for (auto reg : *rfm69.RT) {
     if (first) { first = false; /* Skip FIFO */ continue; }
-    fields.push_back(new RFM69RawField(row++, reg, rfm69.RT));
+    fields.push_back(new RFM69RawField(row++, reg, *rfm69.RT));
     for (auto var : *reg)
-      fields.push_back(new RFM69RawField(row++, reg, var, rfm69.RT));
+      fields.push_back(new RFM69RawField(row++, reg, var, *rfm69.RT));
     fields.push_back(new Empty(row++, col));
   }
 }

@@ -59,15 +59,41 @@ REGISTER_TABLE_W(CC1101, RegisterTable, uint8_t, uint8_t,
   REG(FSCTRL1, "FSCTRL1", 0x0B, RW,                                       "Frequency synthesizer control (1)",
     VAR(FSCTRL1, FREQ_IF_4_0, "FREQ_IF[4:0]", 0x1F, RW,                   "");
   );
-  REG(FSCTRL0, "FSCTRL0", 0x0C, RW,                                       "Frequency synthesizer control (0)", );
-  REG(FREQ2, "FREQ2", 0x0D, RW, "Frequency control word, high byte", );
-  REG(FREQ1, "FREQ1", 0x0E, RW, "Frequency control word, middle byte", );
-  REG(FREQ0, "FREQ0", 0x0F, RW, "Frequency control word, low byte", );
-  REG(MDMCFG4, "MDMCFG4", 0x10, RW, "Modem configuration", );
-  REG(MDMCFG3, "MDMCFG3", 0x11, RW, "Modem configuration", );
-  REG(MDMCFG2, "MDMCFG2", 0x12, RW, "Modem configuration", );
-  REG(MDMCFG1, "MDMCFG1", 0x13, RW, "Modem configuration", );
-  REG(MDMCFG0, "MDMCFG0", 0x14, RW, "Modem configuration", );
+  REG(FSCTRL0, "FSCTRL0", 0x0C, RW,                                       "Frequency synthesizer control (0)",
+    VAR(FSCTRL0, FREQOFF_7_0, "FREQOFF[7:0]", 0xFF, RW,                   "");
+  );
+  REG(FREQ2, "FREQ2", 0x0D, RW, "Frequency control word, high byte",
+    VAR(FREQ2, FREQ_32_22, "FREQ[23:22]", 0xC0, RW,                       "");
+    VAR(FREQ2, FREQ_21_16, "FREQ[23:22]", 0x3F, RW,                       "");
+    );
+  REG(FREQ1, "FREQ1", 0x0E, RW, "Frequency control word, middle byte",
+    VAR(FREQ1, FREQ_15_8, "FREQ[15:8]", 0xFF, RW,                         "");
+  );
+  REG(FREQ0, "FREQ0", 0x0F, RW, "Frequency control word, low byte",
+    VAR(FREQ0, FREQ_7_0, "FREQ[7:0]", 0xFF, RW,                           "");
+  );
+  REG(MDMCFG4, "MDMCFG4", 0x10, RW, "Modem configuration",
+    VAR(MDMCFG4, CHANBW_E_1_0, "CHANBW_E[1:0]", 0xC0, RW,                 "");
+    VAR(MDMCFG4, CHANBW_M_1_0, "CHANBW_M[1:0]", 0x30, RW,                 "");
+    VAR(MDMCFG4, DRATE_E_3_0, "DRATE_E[3:0]", 0x0F, RW,                   "");
+  );
+  REG(MDMCFG3, "MDMCFG3", 0x11, RW, "Modem configuration",
+    VAR(MDMCFG3, DRATE_M_7_0, "DRATE_M[7:0]", 0xFF, RW,                   "");
+  );
+  REG(MDMCFG2, "MDMCFG2", 0x12, RW, "Modem configuration",
+    VAR(MDMCFG2, DEM_DCFILT_OFF, "DEM_DCFILT_OFF", 0x80, RW,              "");
+    VAR(MDMCFG2, MOD_FORMAT_2_0, "MOD_FORMAT[2:0]", 0x70, RW,             "");
+    VAR(MDMCFG2, MANCHESTER_EN, "MANCHESTER_EN", 0x08, RW,                "");
+    VAR(MDMCFG2, SYNC_MODE, "SYNC_MODE[2:0]", 0x07, RW,                   "");
+  );
+  REG(MDMCFG1, "MDMCFG1", 0x13, RW, "Modem configuration",
+    VAR(MDMCFG1, FEC_EN, "FEC_EN", 0x80, RW,                              "");
+    VAR(MDMCFG1, NUM_PREAMBLE_2_0, "NUM_PREAMBLE[2:0]", 0x70, RW,         "");
+    VAR(MDMCFG1, CHANSPC_E_1_0, "CHANSPC_E[1:0]", 0x03, RW,               "");
+  );
+  REG(MDMCFG0, "MDMCFG0", 0x14, RW, "Modem configuration",
+    VAR(MDMCFG0, CHANSPC_M_7_0, "CHANSPC_M[7:0]", 0xFF, RW,               "");
+  );
   REG(DEVIATN, "DEVIATN", 0x15, RW, "Modem deviation setting", );
   REG(MCSM2, "MCSM2", 0x16, RW, "Main Radio Control State Machine configuration", );
   REG(MCSM1, "MCSM1", 0x17, RW, "Main Radio Control State Machine configuration", );

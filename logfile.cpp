@@ -40,7 +40,7 @@ void LogFile::UpdateTimed()
   gettimeofday(&tv, NULL);
   if ((tm = localtime(&tv.tv_sec)) != NULL) {
     size_t n = strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", tm);
-    snprintf(time_str+n, sizeof(time_str)-n, ".%06u", tv.tv_usec);
+    snprintf(time_str+n, sizeof(time_str)-n, ".%06ld", tv.tv_usec);
   }
   fprintf(file, "%s", time_str);
   std::vector<std::string> columns = fun();

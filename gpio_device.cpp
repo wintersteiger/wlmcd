@@ -23,7 +23,8 @@ int GPIODevice::Read(const gpio_address_t &addr)
 {
   int r = 0;
 
-  if (addr.chip >= line_buffer.size() || addr.line >= line_buffer[addr.chip].size())
+  if (((unsigned)addr.chip) >= line_buffer.size() ||
+      ((unsigned)addr.line) >= line_buffer[addr.chip].size())
       throw std::runtime_error("no such GPIO address");
 
   const line_state_t &lb = line_buffer[addr.chip][addr.line];
@@ -83,7 +84,7 @@ void GPIODevice::UpdateFrequent()
 
 void GPIODevice::UpdateInfrequent()
 {
-  int j = 0;
+  size_t j = 0;
   struct gpiod_chip *chip;
 
   struct gpiod_chip_iter *cit = gpiod_chip_iter_new();

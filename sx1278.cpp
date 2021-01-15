@@ -26,6 +26,8 @@ SX1278::SX1278(int NSS, std::vector<Decoder*> decoders, double f_xosc) :
   f_step(f_xosc / pow(2, 19)),
   NSS(NSS)
 {
+  pinMode(NSS, OUTPUT);
+
   Reset();
 
   uint8_t mode = Read(Normal._rOpMode);

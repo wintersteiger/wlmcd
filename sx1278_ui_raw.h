@@ -4,11 +4,9 @@
 #ifndef _SX1278_UI_RAW_H_
 #define _SX1278_UI_RAW_H_
 
-#include <cstdint>
-#include <vector>
-
 #include "ui.h"
-#include "field.h"
+
+class SX1278;
 
 class SX1278UIRaw: public UI {
 protected:

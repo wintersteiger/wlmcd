@@ -13,9 +13,9 @@ SI4463::RegisterTableSet::RegisterTableSet(SI4463 &device) :
   DeviceState(device),
   Interrupts(device),
   PacketInfo(device),
-  Property(device),
   ModemStatus(device),
-  ADC(device)
+  ADC(device),
+  Property(device)
 {
 }
 

@@ -92,7 +92,7 @@ public:
   virtual void Set(const char *v_str) {
     uint16_t v = 0;
     size_t v_str_len = strlen(v_str);
-    if (v_str_len == 0 || v_str_len > 2 || sscanf(v_str, "%04hhx", &v) != 1)
+    if (v_str_len == 0 || v_str_len > 2 || sscanf(v_str, "%04hx", &v) != 1)
       UI::Error("invalid value '%s'", v_str);
     else if (var != NULL)
       rt.Write(reg, var->Set(reg(rt.Buffer()), v));

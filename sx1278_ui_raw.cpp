@@ -3,8 +3,6 @@
 
 #include <cstring>
 
-#include <wiringPi.h>
-
 #include "sx1278.h"
 #include "sx1278_rt.h"
 #include "field_types.h"

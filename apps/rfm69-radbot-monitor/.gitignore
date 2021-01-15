@@ -1,0 +1,7 @@
+*.o
+*.d
+
+rfm69-radbot-monitor
+rfm69-radbot-monitor-shared
+radbot.cfg
+log.csv

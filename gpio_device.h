@@ -11,8 +11,8 @@ struct gpiod_line;
 struct gpiod_line_bulk;
 
 typedef struct {
-  int chip;
-  int line;
+  size_t chip;
+  size_t line;
 } gpio_address_t;
 
 class GPIODevice : public Device<gpio_address_t, int>

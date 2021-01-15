@@ -39,7 +39,7 @@ protected:
 public:
   FieldBase(WINDOW *wndw, int row, int col, const std::string &key, const std::string &value, const std::string &units) :
     wndw(wndw), row(row), col(col), key(key), value(value), units(units), colors(-1),
-    key_width(14), value_width(8), units_width(3), active(false), attributes(-1), stale(false) {}
+    key_width(14), value_width(8), units_width(3), active(false), stale(false), attributes(-1) {}
   virtual ~FieldBase() {}
 
   const std::string& Key() const { return key; }
@@ -94,7 +94,7 @@ protected:
   int bold;
 public:
   Label(WINDOW *w, int row, int col, const std::string &key, int bold = 1, int colors = -1)
-    : FieldBase(w, row, col, key, "A", "B"), bold(bold) { this->colors = colors; }
+    : FieldBase(w, row, col, key, "A", std::string("B")), bold(bold) { this->colors = colors; }
   virtual ~Label() {}
   virtual size_t Width() { return key.size(); }
   virtual void Update(bool full=false);

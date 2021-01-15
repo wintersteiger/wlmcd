@@ -4,12 +4,9 @@
 #ifndef _CC1101_UI_H_
 #define _CC1101_UI_H_
 
-#include <cstdint>
-#include <vector>
-
-#include "cc1101.h"
 #include "ui.h"
-#include "field.h"
+
+class CC1101;
 
 class CC1101UI: public UI {
 public:

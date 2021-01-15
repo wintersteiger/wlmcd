@@ -12,8 +12,8 @@
 #include <memory>
 
 #include <curses.h>
-#include <wiringPi.h>
 
+#include "sleep.h"
 #include "device.h"
 #include "ui.h"
 #include "decoder.h"
@@ -106,16 +106,16 @@ Controller::Controller(
   double frequency,
   size_t frequent_interval,
   size_t infrequent_interval) :
-  running(false),
   frequent_interval(frequent_interval),
   infrequent_interval(infrequent_interval),
   frequency(frequency),
-  ui_inx(-1),
-  decoder_inx(-1),
-  encoder_inx(-1),
+  running(false),
   cur_frequent_interval(frequent_interval),
   cur_infrequent_interval(infrequent_interval),
-  cur_frequency(frequency)
+  cur_frequency(frequency),
+  ui_inx(-1),
+  decoder_inx(-1),
+  encoder_inx(-1)
 {
   if (!have_timer && cur_frequency != 0)
     timer_setup(cur_frequency);
@@ -261,7 +261,7 @@ void Controller::ThreadCleanup()
       for (UpdateThread *t : threads) {
         if (t && t->Done()) {
           t->Join();
-          delete t;
+          delete(t);
           joined.insert(t);
         }
       }
@@ -359,17 +359,17 @@ void Controller::Run()
         }
       }
 
-      delay(11);
+      sleep_ms(11);
     }
     catch (std::exception &ex) {
       UI::Log("Exception: %s", ex.what());
       uis[ui_inx]->Update(false);
-      delay(250);
+      sleep_ms(250);
     }
     catch (...) {
       UI::Log("Caught unknown exception.");
       uis[ui_inx]->Update(false);
-      delay(250);
+      sleep_ms(250);
     }
   }
 
@@ -390,7 +390,7 @@ void Controller::Stop()
         UI::Info("threads to join: %lu", num_threads);
         uis[ui_inx]->Update(false);
       }
-      usleep(10000);
+      sleep_ms(10);
       last = num_threads;
       num_threads = threads.size();
     }
