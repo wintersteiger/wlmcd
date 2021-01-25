@@ -1,0 +1,6 @@
+*.o
+*.d
+
+rfm69-evohome-monitor
+rfm69-evohome-monitor-shared
+log.csv
