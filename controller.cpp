@@ -305,7 +305,7 @@ void Controller::Run()
           if (inx >= uis.size())
             UI::Error("No such UI");
           else if (ui_inx != inx) {
-            ui_inx = inx;
+            SelectSystem(inx);
             uis[ui_inx]->Reset();
           }
         }

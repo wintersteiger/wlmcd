@@ -356,11 +356,21 @@ const std::string& Radbot::Decoder::Decode(std::vector<uint8_t> &bytes)
   return tmp_str;
 }
 
-Radbot::Encoder::Encoder() : ::Encoder() {}
+Radbot::Encoder::Encoder(const std::string &id, const std::string &key) : ::Encoder() {
+  for (size_t i=0; i < 8; i++)
+    sscanf(id.c_str() + (2*i), "%02hhx", &this->id[i]);
+  for (size_t i=0; i < 16; i++)
+    sscanf(key.c_str() + (2*i), "%02hhx", &this->key[i]);
+}
 
 Radbot::Encoder::~Encoder() {}
 
 std::vector<uint8_t> Radbot::Encoder::Encode(const std::vector<uint8_t> &data)
 {
-  return { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09 };
+  std::string pkt = "3ecf94d2b2a0fd20f960db0a57b708317c5d054cb2d1d5a92e78cf847f175e44c9169c2a04f0e5ef09d526057d59789bcd352625be614b1b5e06a9798a718001740449b978be5a729dfe9b7727a8f986d2b4d05fb5fbe92e4b85570fcb1f5f7bb9432ebf682b731b02f05303ac37a35e2e5ceffbba737a84f5cfabc1c4de882f";
+  size_t len = pkt.length()/2;
+  std::vector<uint8_t> res(len, 0);
+  for (size_t i=0; i < len; i++)
+    sscanf(pkt.c_str() + (2*i), "%02hhx", &res.data()[i]);
+  return res;
 }

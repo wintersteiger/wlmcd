@@ -32,6 +32,7 @@ static CC1101UI *cc1101_ui = NULL;
 static CC1101UIRaw *cc1101_ui_raw = NULL;
 static RadbotUI *radbot_ui = NULL;
 static Radbot::Decoder *radbot_decoder = NULL;
+static Radbot::Encoder *radbot_encoder = NULL;
 static std::vector<GPIOWatcher<CC1101>*> gpio_watchers;
 
 static std::mutex mtx;
@@ -62,6 +63,8 @@ void cleanup(int signal = 0)
 
   delete(radbot_decoder);
   radbot_decoder = NULL;
+  delete(radbot_encoder);
+  radbot_encoder = NULL;
   delete(cc1101);
   cc1101 = NULL;
 
@@ -166,9 +169,11 @@ int main()
     std::string radbot_id = radbot_cfg["radbot"]["id"];
     std::string radbot_key = radbot_cfg["radbot"]["key"];
     radbot_decoder = new Radbot::Decoder(radbot_id, radbot_key);
-    radbot_ui = new RadbotUI(radbot_decoder->state);
+    radbot_encoder = new Radbot::Encoder(radbot_id, radbot_key);
 
     cc1101 = new CC1101(0, 0, "cc1101-radbot.cfg");
+
+    radbot_ui = new RadbotUI(radbot_decoder->state, { cc1101 });
     cc1101_ui = new CC1101UI(*cc1101);
     cc1101_ui_raw = new CC1101UIRaw(*cc1101);
 
@@ -184,7 +189,7 @@ int main()
 
     controller->AddSystem(cc1101_ui);
     controller->AddSystem(cc1101_ui_raw);
-    controller->AddSystem(radbot_ui, radbot_decoder);
+    controller->AddSystem(radbot_ui, radbot_decoder, radbot_encoder);
 
     controller->Run();
   }

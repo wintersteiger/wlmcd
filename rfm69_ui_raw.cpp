@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 #include <cstring>
+#include <curses.h>
 
 #include "rfm69.h"
 #include "rfm69_rt.h"
@@ -15,11 +16,12 @@ protected:
   RFM69::RegisterTable &rt;
 
 public:
-  RFM69RawField(int row, const Register<uint8_t, uint8_t> *reg, RFM69::RegisterTable &rt) :
+  RFM69RawField(int row, const Register<uint8_t, uint8_t> *reg, RFM69::RegisterTable &rt, bool bold=false) :
     Field<uint8_t>(UI::statusp, row, 1, reg->Name(), "", ""), reg(*reg), var(NULL), rt(rt) {
       value_width = 2;
       units_width = 0;
-      attributes = A_BOLD;
+      if (bold)
+        attributes = A_BOLD;
   }
   RFM69RawField(int row, const Register<uint8_t, uint8_t> *reg, const Variable<uint8_t> *var, RFM69::RegisterTable &rt) :
     Field<uint8_t>(UI::statusp, row, 1, var->Name(), "", ""), reg(*reg), var(var), rt(rt) {
@@ -97,7 +99,7 @@ RFM69UIRaw::RFM69UIRaw(RFM69 &rfm69) :
   bool first = true;
   for (auto reg : *rfm69.RT) {
     if (first) { first = false; /* Skip FIFO */ continue; }
-    fields.push_back(new RFM69RawField(row++, reg, *rfm69.RT));
+    fields.push_back(new RFM69RawField(row++, reg, *rfm69.RT, true));
     for (auto var : *reg)
       fields.push_back(new RFM69RawField(row++, reg, var, *rfm69.RT));
     fields.push_back(new Empty(row++, col));

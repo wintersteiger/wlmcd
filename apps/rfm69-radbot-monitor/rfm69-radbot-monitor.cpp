@@ -30,6 +30,7 @@ static FILE *logfile = NULL;
 static Controller *controller = NULL;
 static int exit_code = 0;
 static Radbot::Decoder *radbot_decoder = NULL;
+static Radbot::Encoder *radbot_encoder = NULL;
 static RadbotUI *radbot_ui = NULL;
 static RFM69 *rfm69 = NULL;
 static RFM69UI *rfm69_ui = NULL;
@@ -64,6 +65,8 @@ void cleanup(int signal = 0)
 
   delete(radbot_decoder);
   radbot_decoder = NULL;
+  delete(radbot_encoder);
+  radbot_encoder = NULL;
   delete(rfm69);
   rfm69 = NULL;
 
@@ -164,14 +167,16 @@ int main(void)
     GPIOButton reset_button("/dev/gpiochip0", 6);
 
     rfm69 = new RFM69(1, 2, "rfm69-radbot.cfg");
-    rfm69_ui = new RFM69UI(*rfm69, &reset_button);
-    rfm69_ui_raw = new RFM69UIRaw(*rfm69);
 
     auto radbot_cfg = nlohmann::json::parse(std::ifstream("radbot.cfg"));
     std::string radbot_id = radbot_cfg["radbot"]["id"];
     std::string radbot_key = radbot_cfg["radbot"]["key"];
     radbot_decoder = new Radbot::Decoder(radbot_id, radbot_key);
-    radbot_ui = new RadbotUI(radbot_decoder->state);
+    radbot_encoder = new Radbot::Encoder(radbot_id, radbot_key);
+
+    rfm69_ui = new RFM69UI(*rfm69, &reset_button);
+    rfm69_ui_raw = new RFM69UIRaw(*rfm69);
+    radbot_ui = new RadbotUI(radbot_decoder->state, { rfm69 });
 
     gpio_watchers.push_back(new GPIOWatcher<RFM69>("/dev/gpiochip0", 26, "WLMCD-RFM69", rfm69,
       [](int, unsigned, const timespec*, RFM69 *rfm69) {
@@ -185,7 +190,7 @@ int main(void)
 
     controller->AddSystem(rfm69_ui);
     controller->AddSystem(rfm69_ui_raw);
-    controller->AddSystem(radbot_ui, radbot_decoder);
+    controller->AddSystem(radbot_ui, radbot_decoder, radbot_encoder);
 
     controller->Run();
   }

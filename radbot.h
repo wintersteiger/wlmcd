@@ -65,8 +65,10 @@ public:
   };
 
   class Encoder : public ::Encoder {
+  protected:
+    uint8_t id[8], key[16];
   public:
-    Encoder();
+    Encoder(const std::string &id, const std::string &key);
     virtual ~Encoder();
 
     virtual std::vector<uint8_t> Encode(const std::vector<uint8_t> &data);

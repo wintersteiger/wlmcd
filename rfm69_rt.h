@@ -118,14 +118,34 @@ REGISTER_TABLE_W(RFM69, RegisterTable, uint8_t, uint8_t,
     VAR(AfcFei, AfcClear, "AfcClear", 0x02, RW,                               "");
     VAR(AfcFei, AfcStart, "AfcStart", 0x01, RW,                               "");
   );
-  REG(AfcMsb, "AfcMsb", 0x1F, RW, "MSB of the frequency correction of the AFC", );
-  REG(AfcLsb, "AfcLsb", 0x20, RW, "LSB of the frequency correction of the AFC", );
-  REG(FeiMsb, "FeiMsb", 0x21, RW, "MSB of the calculated frequency error", );
-  REG(FeiLsb, "FeiLsb", 0x22, RW, "LSB of the calculated frequency error", );
-  REG(RssiConfig, "RssiConfig", 0x23, RW, "RSSI-related settings", );
+  REG(AfcMsb, "AfcMsb", 0x1F, RW, "MSB of the frequency correction of the AFC",
+    VAR(AfcMsb, AfcValue_15_8, "AfcValue[15:8]", 0xFF, RO,                    "");
+  );
+  REG(AfcLsb, "AfcLsb", 0x20, RW, "LSB of the frequency correction of the AFC",
+    VAR(AfcLsb, AfcValue_7_0, "AfcValue[7:0]", 0xFF, RO,                      "");
+  );
+  REG(FeiMsb, "FeiMsb", 0x21, RW, "MSB of the calculated frequency error",
+    VAR(FeiMsb, FeiValue_15_8, "FeiValue[15:8]", 0xFF, RO,                    "");
+  );
+  REG(FeiLsb, "FeiLsb", 0x22, RW, "LSB of the calculated frequency error",
+    VAR(FeiLsb, FeiValue_7_0, "FeiValue[7:0]", 0xFF, RO,                      "");
+  );
+  REG(RssiConfig, "RssiConfig", 0x23, RW, "RSSI-related settings",
+    VAR(RssiConfig, RssiDone, "RssiDone", 0x02, RO,                           "");
+    VAR(RssiConfig, RssiStart, "RssiStart", 0x01, WO,                         "");
+  );
   REG(RssiValue, "RssiValue", 0x24, RW, "RSSI value in dBm", );
-  REG(DioMapping1, "DioMapping1", 0x25, RW, "Mapping of pins DIO0 to DIO3", );
-  REG(DioMapping2, "DioMapping2", 0x26, RW, "Mapping of pins DIO4 and DIO5, ClkOut frequency", );
+  REG(DioMapping1, "DioMapping1", 0x25, RW, "Mapping of pins DIO0 to DIO3",
+    VAR(DioMapping1, Dio0Mapping, "Dio0Mapping", 0xC0, RW,                    "");
+    VAR(DioMapping1, Dio1Mapping, "Dio1Mapping", 0x30, RW,                    "");
+    VAR(DioMapping1, Dio2Mapping, "Dio2Mapping", 0x0C, RW,                    "");
+    VAR(DioMapping1, Dio3Mapping, "Dio3Mapping", 0x03, RW,                    "");
+  );
+  REG(DioMapping2, "DioMapping2", 0x26, RW, "Mapping of pins DIO4 and DIO5, ClkOut frequency",
+    VAR(DioMapping2, Dio4Mapping, "Dio4Mapping", 0xC0, RW,                    "");
+    VAR(DioMapping2, Dio5Mapping, "Dio5Mapping", 0x30, RW,                    "");
+    VAR(DioMapping2, ClkOut, "ClkOut", 0x07, RW,                              "");
+  );
   REG(IrqFlags1, "", 0x27, RW,                                                  "Status register: PLL Lock state, Timeout, RSSI > Threshold...",
     VAR(IrqFlags1, ModeReady, "ModeReady", 0x80, RW,                            "");
     VAR(IrqFlags1, RxReady, "RxReady", 0x40, RW,                                "");
@@ -145,11 +165,21 @@ REGISTER_TABLE_W(RFM69, RegisterTable, uint8_t, uint8_t,
     VAR(IrqFlags2, PayloadReady, "PayloadReady", 0x04, RW,                      "");
     VAR(IrqFlags2, CrcOk, "CrcOk", 0x02, RW,                                    "");
   );
-  REG(RssiThresh, "RssiThresh", 0x29, RW, "RSSI Threshold control", );
-  REG(RxTimeout1, "RxTimeout1", 0x2A, RW, "Timeout duration between Rx request and RSSI detection", );
-  REG(RxTimeout2, "RxTimeout2", 0x2B, RW, "Timeout duration between RSSI detection and PayloadReady", );
-  REG(PreambleMsb, "PreambleMsb", 0x2C, RW, "Preamble length, MSB", );
-  REG(PreambleLsb, "PreambleLsb", 0x2D, RW, "Preamble length, LSB", );
+  REG(RssiThresh, "RssiThresh", 0x29, RW, "RSSI Threshold control",
+    VAR(RssiThresh, RssiThreshold, "RssiThreshold", 0xFF, RW,                   "");
+  );
+  REG(RxTimeout1, "RxTimeout1", 0x2A, RW, "Timeout duration between Rx request and RSSI detection",
+    VAR(RxTimeout1, TimeoutRxStart, "TimeoutRxStart", 0xFF, RW,                 "");
+  );
+  REG(RxTimeout2, "RxTimeout2", 0x2B, RW, "Timeout duration between RSSI detection and PayloadReady",
+    VAR(RxTimeout2, TimeoutRssiThresh, "TimeoutRssiThresh", 0xFF, RW,           "");
+  );
+  REG(PreambleMsb, "PreambleMsb", 0x2C, RW, "Preamble length, MSB",
+    VAR(PreambleMsb, PreambleSize_15_8, "PreambleSize[15:8]", 0xFF, RW,         "");
+  );
+  REG(PreambleLsb, "PreambleLsb", 0x2D, RW, "Preamble length, LSB",
+    VAR(PreambleLsb, PreambleSize_7_0, "PreambleSize[7:0]", 0xFF, RW,           "");
+  );
   REG(SyncConfig, "SyncConfig", 0x2E, RW, "Sync Word Recognition control",
     VAR(SyncConfig, SyncOn, "SyncOn", 0x80, RW,                                 "");
     VAR(SyncConfig, FifoFillCondition, "FifoFillCondition", 0x40, RW,           "");
@@ -180,13 +210,31 @@ REGISTER_TABLE_W(RFM69, RegisterTable, uint8_t, uint8_t,
   REG(SyncValue8, "", 0x36, RW,                                                 "8th byte of Sync word.",
     VAR(SyncValue8, SyncValue_7_0, "SyncValue(7:0)", 0xFF, RW,                  "");
   );
-  REG(PacketConfig1, "PacketConfig1", 0x37, RW, "Packet mode settings", );
+  REG(PacketConfig1, "PacketConfig1", 0x37, RW, "Packet mode settings",
+    VAR(PacketConfig1, PacketFormat, "PacketFormat", 0x80, RW,                  "");
+    VAR(PacketConfig1, DcFree, "DcFree", 0x60, RW,                              "");
+    VAR(PacketConfig1, CrcOn, "CrcOn", 0x10, RW,                                "");
+    VAR(PacketConfig1, CrcAutoClearOff, "CrcAutoClearOff", 0x08, RW,            "");
+    VAR(PacketConfig1, AddressFiltering, "AddressFiltering", 0x06, RW,          "");
+  );
   REG(PayloadLength, "PayloadLength", 0x38, RW, "Payload length setting", );
   REG(NodeAdrs, "NodeAdrs", 0x39, RW, "Node address", );
   REG(BroadcastAdrs, "BroadcastAdrs", 0x3A, RW, "Broadcast address", );
-  REG(AutoModes, "AutoModes", 0x3B, RW, "Auto modes settings", );
-  REG(FifoThresh, "FifoThresh", 0x3C, RW, "Fifo threshold, Tx start condition", );
-  REG(PacketConfig2, "PacketConfig2", 0x3D, RW, "Packet mode settings", );
+  REG(AutoModes, "AutoModes", 0x3B, RW, "Auto modes settings",
+    VAR(AutoModes, EnterCondition, "EnterCondition", 0xE0, RW,                  "");
+    VAR(AutoModes, ExitCondition, "ExitCondition", 0x1C, RW,                    "");
+    VAR(AutoModes, IntermediateMode, "IntermediateMode", 0x03, RW,              "");
+  );
+  REG(FifoThresh, "FifoThresh", 0x3C, RW, "Fifo threshold, Tx start condition",
+    VAR(FifoThresh, TxStartCondition, "TxStartCondition", 0x80, RW,             "");
+    VAR(FifoThresh, FifoThreshold, "FifoThreshold", 0x7F, RW,                   "");
+  );
+  REG(PacketConfig2, "PacketConfig2", 0x3D, RW, "Packet mode settings",
+    VAR(PacketConfig2, InterPacketRxDelay, "InterPacketRxDelay", 0xF0, RW,      "");
+    VAR(PacketConfig2, RestartRx, "RestartRx", 0x04, RW,                        "");
+    VAR(PacketConfig2, AutoRxRestartOn, "AutoRxRestartOn", 0x02, RW,            "");
+    VAR(PacketConfig2, AesOn, "AesOn", 0x01, RW,                                "");
+  );
   REG(AesKey1, "AesKey1", 0x3E, RW, "16 bytes of the cypher key",
     VAR(AesKey1, AesKey_127_120, "AesKey(127:120)", 0xFF, WO,                   "1st byte of cipher key (MSB byte)");
   );
@@ -235,14 +283,30 @@ REGISTER_TABLE_W(RFM69, RegisterTable, uint8_t, uint8_t,
   REG(AesKey16, "AesKey16", 0x3E, RW, "16 bytes of the cypher key",
     VAR(AesKey16, AesKey_7_0, "AesKey(7:0)", 0xFF, WO,                          "16th byte of cipher key");
   );
-  REG(Temp1, "Temp1", 0x4E, RW, "Temperature Sensor control", );
-  REG(Temp2, "Temp2", 0x4F, RW, "Temperature readout", );
-  REG(TestLna, "TestLna", 0x58, RW, "Sensitivity boost", );
-  REG(TestPa1, "TestPa1", 0x5A, RW, "High Power PA settings", );
-  REG(TestPa2, "TestPa2", 0x5C, RW, "High Power PA settings", );
-  REG(TestDagc, "TestDagc", 0x6F, RW, "Fading Margin Improvement", );
-  REG(TestAfc, "TestAfc", 0x71, RW, "AFC offset for low modulation index AFC", );
-  // REG(Test, "Test", 0x50+, RW, "Internal test registers", );
+  REG(Temp1, "Temp1", 0x4E, RW, "Temperature Sensor control",
+    VAR(Temp1, TempMeasStart, "TempMeasStart", 0x08, WO,                        "");
+    VAR(Temp1, TempMeasRunning, "TempMeasRunning", 0x04, RO,                    "");
+  );
+  REG(Temp2, "Temp2", 0x4F, RW, "Temperature readout",
+    VAR(Temp2, TempValue, "TempValue", 0xFF, RO,                                "");
+  );
+  REG(TestLna, "TestLna", 0x58, RW, "Sensitivity boost",
+    VAR(TestLna, SensitivityBoost, "SensitivityBoost", 0xFF, RW,                "");
+  );
+  REG(TestPa1, "TestPa1", 0x5A, RW, "High Power PA settings",
+    VAR(TestPa1, Pa13dBm1, "Pa13dBm1", 0xFF, RW,                                "");
+  );
+  REG(TestPa2, "TestPa2", 0x5C, RW, "High Power PA settings",
+    VAR(TestPa2, Pa13dBm2, "Pa13dBm2", 0xFF, RW,                                "");
+  );
+  REG(TestDagc, "TestDagc", 0x6F, RW, "Fading Margin Improvement",
+    VAR(TestDagc, ContinuousDagc, "ContinuousDagc", 0xFF, RW,                   "");
+  );
+  REG(TestAfc, "TestAfc", 0x71, RW, "AFC offset for low modulation index AFC",
+    VAR(TestAfc, LowBetaAfcOffset, "LowBetaAfcOffset", 0xFF, RW,                "");
+  );
+
+  void Set(const std::string &key, const std::string &value);
 );
 
 #undef VAR

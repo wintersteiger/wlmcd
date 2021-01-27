@@ -7,13 +7,15 @@
 #include <ui.h>
 #include <radbot.h>
 
+class DeviceBase;
+
 class RadbotUI : public UI {
 protected:
   time_t last_update;
   const Radbot::State &state;
 
 public:
-  RadbotUI(const Radbot::State &state);
+  RadbotUI(const Radbot::State &state, std::vector<DeviceBase*> devices = {});
   virtual ~RadbotUI();
 
   void Update(bool full) { UI::Update(full); }

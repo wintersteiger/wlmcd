@@ -77,6 +77,7 @@ public:
   virtual void Test(const std::vector<uint8_t> &data);
 
   double rRSSI() const;
+  uint64_t rSyncWord() const;
 
 protected:
   // inline size_t recv_buf_held() const {

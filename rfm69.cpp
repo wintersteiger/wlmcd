@@ -153,7 +153,12 @@ void RFM69::ClearFlags()
 void RFM69::Receive(std::vector<uint8_t> &packet)
 {
   uint8_t length = Read(RT->_rPayloadLength);
-  packet = Read(0x00, length);
+  // packet = Read(0x00, length);
+  packet.reserve(length);
+  packet.resize(0);
+  for (; length > 0; length--)
+    packet.push_back(Read(RT->_rFifo));
+
 
   // uint8_t crc;
 
@@ -210,6 +215,19 @@ double RFM69::rRSSI() const {
   return - (RT->RssiValue() / 2.0);
 }
 
+uint64_t RFM69::rSyncWord() const {
+  uint64_t r = 0;
+  r = (r << 8) | RT->SyncValue1();
+  r = (r << 8) | RT->SyncValue2();
+  r = (r << 8) | RT->SyncValue3();
+  r = (r << 8) | RT->SyncValue4();
+  r = (r << 8) | RT->SyncValue5();
+  r = (r << 8) | RT->SyncValue6();
+  r = (r << 8) | RT->SyncValue7();
+  r = (r << 8) | RT->SyncValue8();
+  return r;
+}
+
 void RFM69::RegisterTable::Refresh(bool frequent)
 {
   RegisterTable &rt = *device.RT;
@@ -250,6 +268,23 @@ void RFM69::RegisterTable::WriteFile(const std::string &filename)
   os << std::setw(2) << j << std::endl;
 }
 
+void RFM69::RegisterTable::Set(const std::string &key, const std::string &value)
+{
+  if (value.size() != 2)
+    throw std::runtime_error(std::string("invalid value length for '" + key + "'"));
+  bool found = false;
+  for (const auto &r : registers)
+    if (r->Name() == key && r->Address() != 0) {
+      uint8_t val;
+      sscanf(value.c_str(), "%02hhx", &val);
+      device.Write(*r, val);
+      found = true;
+      break;
+    }
+  if (!found)
+    throw std::runtime_error(std::string("invalid register '") + key + "'");
+}
+
 void RFM69::RegisterTable::ReadFile(const std::string &filename)
 {
   device.SetMode(Mode::STDBY);
@@ -259,24 +294,15 @@ void RFM69::RegisterTable::ReadFile(const std::string &filename)
   if (j["Device"]["Name"] != device.Name())
     throw std::runtime_error("device mismatch");
   for (const auto &e : j["Registers"].items()) {
+    const std::string &name = e.key();
+    if (name == "OpMode")
+      continue;
     if (!e.value().is_string())
       throw std::runtime_error(std::string("invalid value for '" + e.key() + "'"));
-    std::string sval = e.value().get<std::string>();
-    if (sval.size() != 2)
-      throw std::runtime_error(std::string("invalid value length for '" + e.key() + "'"));
-    bool found = false;
-    for (const auto &r : registers)
-      if (r->Name() == e.key() && r->Address() != 0) {
-        uint8_t val;
-        sscanf(sval.c_str(), "%02hhx", &val);
-        device.Write(*r, val);
-        found = true;
-        break;
-      }
-    if (!found) {
-      throw std::runtime_error(std::string("invalid register '") + e.key() + "'");
-    }
+    Set(name, e.value().get<std::string>());
   }
+  if (j["Registers"].contains("OpMode"))
+    Set("OpMode", j["Registers"]["OpMode"]);
 }
 
 void RFM69::RegisterTable::Write(const Register<uint8_t, uint8_t> &reg, const uint8_t &value)

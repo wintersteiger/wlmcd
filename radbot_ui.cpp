@@ -42,11 +42,14 @@ RBW(Battery, "Battery", state.low_battery);
 RBW(Tamper, "Tamper", state.tamper_protect);
 RBW(Frost, "Frost", state.frost_risk);
 
-RadbotUI::RadbotUI(const Radbot::State &state_) :
+RadbotUI::RadbotUI(const Radbot::State &state_, std::vector<DeviceBase*> devices) :
   UI(),
   last_update(time(NULL)),
   state(state_)
 {
+  for (auto d: devices)
+    this->devices.insert(d);
+
   size_t row = 1, col = 1;
 
   Add(new TimeField(UI::statusp, row, col));

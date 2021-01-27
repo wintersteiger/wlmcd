@@ -136,7 +136,7 @@ double CC1101::rDataRate() const {
   uint32_t drate_m = RT->MDMCFG3();
   uint32_t drate_e = RT->MDMCFG4() & 0x0F;
   double m = (256 + drate_m) * pow(2, drate_e);
-  return ((m / pow(2, 28)) * f_xosc);
+  return (m / pow(2, 28)) * f_xosc;
 }
 
 double CC1101::rDeviation() const {
@@ -347,6 +347,7 @@ void CC1101::Receive(std::vector<uint8_t> &packet)
 
 void CC1101::Transmit(const std::vector<uint8_t> &pkt)
 {
+  State state_before = (State)RT->MARCSTATE();
   uint8_t pktctrl0_before = Read(RT->_rPKTCTRL0);
   StatusByte sb = WriteS(RT->_rPKTCTRL0.Address(), (pktctrl0_before & 0xFC) | 0x02);
 
@@ -383,6 +384,9 @@ void CC1101::Transmit(const std::vector<uint8_t> &pkt)
   } while (sb.State() == StatusByte::SState::TX);
 
   Write(RT->_rPKTCTRL0, pktctrl0_before);
+
+  if (state_before == State::RX)
+    StrobeFor(SRX, State::RX, 10);
 }
 
 void CC1101::Test(const std::vector<uint8_t> &data)
