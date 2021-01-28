@@ -59,7 +59,7 @@ libwlmcd-ui.so: $(UI_OBJ) libwlmcd-dev.so
 	${CXX} -shared -o $@ $^ ${LDFLAGS} -lncurses -L . -lwlmcd-dev
 
 tests: tests.o evohome_tests.o radbot_tests.o $(OBJ)
-	${CXX} -o $@ $^ ${LDFLAGS}
+	${CXX} ${CXXFLAGS} -o $@ $^ ${LDFLAGS}
 
 clean:
 	rm -rf *.d *.o libwlmcd-dev.a libwlmcd-ui.a libwlmcd-dev.so libwlmcd-ui.so tests

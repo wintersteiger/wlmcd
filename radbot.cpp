@@ -262,7 +262,7 @@ const std::string& Radbot::Decoder::Decode(std::vector<uint8_t> &bytes)
   size_t trailer_len = frame_len - 3 - body_len - id_len;
 
   FAIL_IF(trailer_len == 0, "trailer_len == 0");
-  FAIL_IF(pos + trailer_len >= num_bytes, "not enough trailer bytes");
+  FAIL_IF(pos + trailer_len > num_bytes, "not enough trailer bytes");
 
   const uint8_t *trailer = &bytes[pos];
   pos += trailer_len;

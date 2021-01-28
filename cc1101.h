@@ -200,7 +200,9 @@ public:
 
   double rFOE() const;
   double rRSSI() const;
+  static double rRSSI(uint8_t value);
   double rLQI() const;
+  static double rLQI(uint8_t value);
   double rFrequency() const;
   double rDataRate() const;
   double rDeviation() const;

@@ -1,6 +1,7 @@
 // Copyright (c) Christoph M. Wintersteiger
 // Licensed under the MIT License.
 
+#include <chrono>
 #include <cstring>
 #include <cinttypes>
 #include <cmath>
@@ -18,6 +19,8 @@
 #include "sleep.h"
 #include "cc1101.h"
 #include "cc1101_rt.h"
+
+#include "ui.h"
 
 using json = nlohmann::json;
 
@@ -112,8 +115,12 @@ double CC1101::rFOE() const {
 }
 
 double CC1101::rRSSI() const {
+  return rRSSI(RT->RSSI());
+}
+
+double CC1101::rRSSI(uint8_t value) {
   uint8_t rssi_offset = 74; // Tbl. 31 says so...
-  int16_t rssi_dec = RT->RSSI();
+  int16_t rssi_dec = value;
   if (rssi_dec >= 128)
     return (rssi_dec - 256)/2.0 - (double)rssi_offset;
   else
@@ -121,7 +128,12 @@ double CC1101::rRSSI() const {
 }
 
 double CC1101::rLQI() const {
-  uint8_t ilqi = 128 - (RT->LQI() & 0x7F);
+  return rLQI(RT->LQI());
+}
+
+double CC1101::rLQI(uint8_t value)
+{
+  uint8_t ilqi = 128 - (value & 0x7F);
   return 100.0 * (ilqi / 128.0);
 }
 
@@ -300,10 +312,15 @@ void CC1101::Receive(std::vector<uint8_t> &packet)
 {
   uint8_t crc;
 
-  // uint8_t pktctrl0_before = Read(RT->_rPKTCTRL0);
-  // Write(RT->_rPKTCTRL0, pktctrl0_before & 0xFC);
+  uint8_t pktctrl0 = Read(RT->_rPKTCTRL0);
+  uint8_t pktctrl1 = Read(RT->_rPKTCTRL1);
+  bool variable = (pktctrl0 & 0x3) == 1;
+  size_t variable_remaining = (size_t)-1;
+  bool status_appended = (pktctrl1 & 0x04) != 0;
+  unsigned sleep_interval = 16 * (1e6 / rDataRate());
 
-  size_t rxbytes_last = 0, rxbytes = 1;
+  size_t rxbytes_last = 0, rxbytes = 1, waited = 0;
+
   while (true)
   {
     do {
@@ -316,21 +333,37 @@ void CC1101::Receive(std::vector<uint8_t> &packet)
 
     size_t m = n <= 1 ? n : n-1;
 
-    if (n == 0)
+    if ((!variable && n == 0) ||
+        (variable && variable_remaining == 0))
       break;
-    else if (overflow) {
+    else if (overflow)
       break;
-    }
-    else
+    else if (m != 0)
     {
       std::vector<uint8_t> buf = Read(RT->_rFIFO.Address(), m);
       for (uint8_t &bi : buf) {
         recv_buf[recv_buf_pos++] = bi;
         recv_buf_pos %= recv_buf_sz;
       }
+      if (variable) {
+        if (variable_remaining == (size_t)-1) {
+          uint8_t first = recv_buf[recv_buf_begin];
+          if (first == 0)
+            break;
+          else {
+            variable_remaining = first - (m-1);
+            if (status_appended)
+              variable_remaining += 2;
+          }
+        }
+        else
+          variable_remaining -= m;
+      }
     }
+    else if (waited++ > 5)
+      break;
 
-    sleep_us(1000); // give the FIFO a chance to catch up
+    sleep_us(sleep_interval); // give the FIFO a chance to catch up
   }
 
   // Write(RT->_rPKTCTRL0, pktctrl0_before);

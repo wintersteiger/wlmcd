@@ -16,8 +16,6 @@
 #include "rfm69.h"
 #include "rfm69_rt.h"
 
-#include "ui.h"
-
 using json = nlohmann::json;
 
 RFM69::RFM69(

@@ -127,10 +127,12 @@ static bool CC1101_fRX(CC1101 *cc1101, Radbot::Decoder *decoder)
   char lbuf[1024];
   char *p = &lbuf[0];
 
-  if (pkt_sz > 0) {
-    if (pkt_sz > 64) pkt_sz = 64;
-    double rssi = cc1101->rRSSI();
-    double lqi = cc1101->rLQI();
+  if (pkt_sz > 2) {
+    double rssi = cc1101->rRSSI(packet.back());
+    packet.pop_back();
+    double lqi = cc1101->rLQI(packet.back());
+    packet.pop_back();
+
     p += snprintf(p, sizeof(lbuf), "RX rssi=%4.0fdBm lqi=%3.0f%% N=%d ", rssi, lqi, packet.size());
 
     std::vector<uint8_t> raw_packet = packet;
