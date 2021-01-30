@@ -3,15 +3,16 @@
 
 #include <ctime>
 #include <algorithm>
+#include <iostream>
 
-#include <wiringPi.h>
+#include <gpiod.h>
 
+#include "sleep.h"
 #include "dht22.h"
 #include "dht22_rt.h"
 
 static const uint64_t MAX_WAIT = 80000;
-static const uint64_t MAX_TRIES = 10;
-static const float INTERVAL = 60.0; /* seconds */
+static const uint64_t MAX_TRIES = 1;
 
 struct timespec time_point;
 clockid_t clk = CLOCK_BOOTTIME;
@@ -35,20 +36,57 @@ static double estimate_clock_gettime() {
   return (xs[n-1] - xs[0]) / (double)n;
 }
 
-DHT22::DHT22(int pin)
-    : RT(*new DHT22::RegisterTable(*this)), pin(pin), read_time(0), tries(0),
-      reads(0), bad_reads(0), blocked_until(0),
-      block_2s(false) {
-  pullUpDnControl(pin, PUD_OFF);
+DHT22::DHT22(const char *gpio_device, int gpio_offset) :
+  RT(*new DHT22::RegisterTable(*this)),
+  gpio_device(gpio_device),
+  gpio_offset(gpio_offset),
+  chip(NULL),
+  line(NULL),
+  read_time(0), tries(0),
+  reads(0), bad_reads(0),
+  blocked_until(0),
+  block_2s(false)
+{
+  Reset();
   RT.Initialize();
+  RT.Refresh(false);
 }
 
 DHT22::~DHT22()
 {
+  Release();
+}
+
+void DHT22::Release()
+{
+  if (line) {
+    gpiod_line_release(line);
+    line = NULL;
+  }
+
+  if (chip) {
+    gpiod_chip_close(chip);
+    chip = NULL;
+  }
 }
 
 void DHT22::Reset()
-{}
+{
+  mtx.lock();
+
+  Release();
+
+  if ((chip = gpiod_chip_open(gpio_device)) == NULL)
+    throw std::runtime_error("gpiod_chip_open failed\n");
+
+  if ((line = gpiod_chip_get_line(chip, gpio_offset)) == NULL)
+    throw std::runtime_error("gpiod_chip_get_line failed\n");
+
+  if (gpiod_line_request_output(line, gpio_consumer, 1) == -1)
+    throw std::runtime_error("gpiod_line_request_output failed\n");
+
+  mtx.unlock();
+}
 
 void DHT22::WriteConfig(const std::string &filename)
 {}
@@ -67,7 +105,7 @@ uint64_t DHT22::Read(const uint8_t &addr)
   uint64_t data = 0;
   std::pair<uint64_t, uint64_t> ms[42];
 
-  while (!ok && ++tries < MAX_TRIES) {
+  while (!ok && tries++ < MAX_TRIES) {
 
     if (block_2s)
       while (get_time_ns() < this->blocked_until)
@@ -77,37 +115,45 @@ uint64_t DHT22::Read(const uint8_t &addr)
     this->reads++;
 
     // warmup
-    pinMode(pin, OUTPUT);
-    digitalWrite(pin, HIGH);
-    delayMicroseconds(1100);
+    if (gpiod_line_set_value(line, 1) == -1) {
+      printf("errno=%d\n", errno);
+      throw std::runtime_error("Could not set GPIO line value A");
+    }
+    sleep_us(1100);
 
     // pull pin down for at least 1ms
-    digitalWrite(pin, LOW);
-    delayMicroseconds(1100);
+    if (gpiod_line_set_value(line, 0) == -1)
+      throw std::runtime_error("Could not set GPIO line value B");
+    sleep_us(1100);
 
-    digitalWrite(pin, HIGH);
-    delayMicroseconds(40);
+    if (gpiod_line_set_value(line, 1) == -1)
+      throw std::runtime_error("Could not set GPIO line value C");
+    sleep_us(40);
 
     // Switch to input mode
-    pinMode(pin, INPUT);
+    gpiod_line_release(line);
+    if ((line = gpiod_chip_get_line(chip, gpio_offset)) == NULL)
+      throw std::runtime_error("gpiod_chip_get_line failed\n");
+    if (gpiod_line_request_input(line, gpio_consumer) == -1)
+      throw std::runtime_error("Could not switch GPIO line direction");
 
     before = get_time_ns();
 
-    for (size_t i = 0; i < 42; i++) {
+    for (size_t i = 0; i < 42; i++)
+    {
       uint64_t mid = before, after;
-      while (digitalRead(pin) == LOW && (mid - before) < MAX_WAIT) {
+      while (gpiod_line_get_value(line) == 0 && (mid - before) < MAX_WAIT) {
         mid = get_time_ns();
-        delayMicroseconds(1);
+        sleep_us(1);
       }
       after = mid;
-      while (digitalRead(pin) == HIGH && (after - mid) < MAX_WAIT) {
+      while (gpiod_line_get_value(line) == 1 && (after - mid) < MAX_WAIT) {
         after = get_time_ns();
-        delayMicroseconds(1);
+        sleep_us(1);
       }
       ms[i].first = mid - before;
       ms[i].second = after - mid;
       before = after;
-
     }
 
     // Sensor should pull low for 80us then high for 80us
@@ -129,27 +175,27 @@ uint64_t DHT22::Read(const uint8_t &addr)
       checksum_dev = data & 0xFF;
       checksum_ok = checksum == checksum_dev;
 
-      // if (!checksum_ok)
-      //  ok = false;
-
-      if (!checksum_ok)
-        this->bad_reads++;
+      if (!checksum_ok) {
+        // ok = false;
+      }
     }
 
-    if (!ok)
-      this->bad_reads++;
+    // Back to output mode
+    gpiod_line_release(line);
+    if ((line = gpiod_chip_get_line(chip, gpio_offset)) == NULL)
+      throw std::runtime_error("gpiod_chip_get_line failed\n");
+    if (gpiod_line_request_output(line, gpio_consumer, 0) == -1)
+      throw std::runtime_error("Could not switch GPIO line direction");
 
-    if (!ok)
-      delay(2000);
+    if (!ok) {
+      this->bad_reads++;
+      sleep_ms(2000);
+    }
   }
 
   uint64_t all_after = get_time_ns();
   this->read_time = (all_after >= before) ? all_after - all_before : 0;
   this->tries = tries;
-
-  // Prepare for next read
-  pinMode(pin, OUTPUT);
-  digitalWrite(pin, HIGH);
 
   // Wait at last 2 seconds
   this->blocked_until = get_time_ns() + 2000000000ul;

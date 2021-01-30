@@ -113,7 +113,7 @@ protected:
   DHT22 &dht22;
 
 public:
-  Tries(DHT22 &dht22, int row, int col) : Field<uint64_t>(UI::statusp, row, col, "# tries", "", ""), dht22(dht22) {}
+  Tries(DHT22 &dht22, int row, int col) : Field<uint64_t>(UI::statusp, row, col, "Last # tries", "", ""), dht22(dht22) {}
   virtual ~Tries() {}
 
   virtual uint64_t Get() {
@@ -126,7 +126,7 @@ protected:
   DHT22 &dht22;
 
 public:
-  Reads(DHT22 &dht22, int row, int col) : Field<double>(UI::statusp, row, col, "bad reads", "0.0", "%"), dht22(dht22) {}
+  Reads(DHT22 &dht22, int row, int col) : Field<double>(UI::statusp, row, col, "Bad reads", "0.0", "%"), dht22(dht22) {}
   virtual ~Reads() {}
 
   virtual double Get() {

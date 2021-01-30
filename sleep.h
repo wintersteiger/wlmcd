@@ -4,41 +4,48 @@
 #ifndef _SLEEP_H_
 #define _SLEEP_H_
 
+#include <assert.h>
 #include <time.h>
+#include <errno.h>
+#include <stdint.h>
 
-#include <algorithm>
-
-inline void sleep_ms(unsigned ms)
+inline void sleep_ms(uint64_t ms)
 {
-  struct timespec duration = {0}, remaining = {0};
-  duration.tv_sec = 0;
-  duration.tv_nsec = ms * 1000000L;
+  struct timespec ts = {0};
+  ts.tv_sec = ms / 1000;
+  ts.tv_nsec = (ms % 1000) * 1000000;
+  assert(0 <= ts.tv_nsec && ts.tv_nsec <= 999999999);
 
-  struct timespec *pdur = &duration, *prem = &remaining;
-  while (nanosleep(pdur, prem) == -1)
-    std::swap(pdur, prem);
+  while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
+    ;
 }
 
-inline void sleep_us(unsigned us)
+inline void sleep_us(uint64_t us)
 {
-  struct timespec duration = {0}, remaining = {0};
-  duration.tv_sec = 0;
-  duration.tv_nsec = us * 1000L;
+  struct timespec ts = {0}, rs = {0};
+  ts.tv_sec = 0;
+  ts.tv_nsec = us * 1000;
+  assert(0 <= ts.tv_nsec && ts.tv_nsec <= 999999999);
 
-  struct timespec *pdur = &duration, *prem = &remaining;
-  while (nanosleep(pdur, prem) == -1)
-    std::swap(pdur, prem);
+  while (nanosleep(&ts, &rs) == -1) {
+    if (errno == EINTR) {
+      ts = rs;
+      continue;
+    }
+    else
+      return;
+  }
 }
 
-inline void sleep_ns(unsigned ns)
+inline void sleep_ns(uint64_t ns)
 {
-  struct timespec duration = {0}, remaining = {0};
-  duration.tv_sec = 0;
-  duration.tv_nsec = ns * 1000L;
+  struct timespec ts = {0};
+  ts.tv_sec = ns / 1000000000;
+  ts.tv_nsec = ns % 1000000000;
+  assert(0 <= ts.tv_nsec && ts.tv_nsec <= 999999999);
 
-  struct timespec *pdur = &duration, *prem = &remaining;
-  while (nanosleep(pdur, prem) == -1)
-    std::swap(pdur, prem);
+  while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
+    ;
 }
 
 #endif // _SLEEP_H_

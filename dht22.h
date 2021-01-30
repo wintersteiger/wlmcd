@@ -13,7 +13,7 @@ public:
   class RegisterTable;
   RegisterTable &RT;
 
-  DHT22(int pin = 7 /* WiringPi 7 == GPIO-4 */);
+  DHT22(const char *gpio_device = "/dev/gpiochip0", int gpio_offset = 4);
   virtual ~DHT22();
 
   virtual const char* Name() const { return "DHT22"; }
@@ -44,12 +44,18 @@ public:
 
 protected:
   std::mutex mtx;
-  int pin;
+  const char *gpio_device;
+  int gpio_offset;
+  static constexpr const char *gpio_consumer = "WLMCD-DHT22";
+  struct gpiod_chip *chip;
+  struct gpiod_line *line;
 
   bool checksum_ok;
   uint64_t read_time, tries, reads, bad_reads, blocked_until;
 
   bool block_2s;
+
+  void Release();
 };
 
 #endif // _DHT22_H_

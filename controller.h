@@ -24,9 +24,9 @@ public:
   double frequency;
 
   Controller(
-    double frequency = 1 /* Hz */,
-    size_t frequent_interval=17,
-    size_t infrequent_interval=71);
+    double frequency = 1.0 /* Hz */,
+    size_t frequent_interval = 17,
+    size_t infrequent_interval = 71);
   virtual ~Controller();
 
   void AddSystem(UI *ui, Decoder *decoder = NULL, Encoder* encoder = NULL);
@@ -53,6 +53,7 @@ protected:
 
   std::mutex threads_mtx;
   std::set<UpdateThread*> threads;
+  size_t thread_cap;
 
   void ThreadCleanup();
 };

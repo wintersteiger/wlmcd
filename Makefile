@@ -29,7 +29,8 @@ SRC = decoder.cpp basic.cpp logfile.cpp \
 	relay_device.cpp \
 	ina219.cpp \
 	ds18b20.cpp \
-	rfm69.cpp
+	rfm69.cpp \
+	dht22.cpp
 
 UI_SRC = field.cpp ui.cpp basic_ui.cpp controller.cpp \
 	cc1101_ui.cpp cc1101_ui_raw.cpp \
@@ -41,7 +42,8 @@ UI_SRC = field.cpp ui.cpp basic_ui.cpp controller.cpp \
 	rfm69_ui_raw.cpp \
 	relay_ui.cpp \
 	ina219_ui.cpp ina219_ui_raw.cpp \
-	rfm69_ui.cpp
+	rfm69_ui.cpp \
+	dht22_ui.cpp
 
 OBJ = $(subst .cpp,.o,$(SRC))
 UI_OBJ = $(subst .cpp,.o,$(UI_SRC))

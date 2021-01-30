@@ -1,0 +1,6 @@
+*.o
+*.d
+
+dht22-monitor
+dht22-test
+log.csv

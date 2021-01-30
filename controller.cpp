@@ -284,6 +284,10 @@ void Controller::Run()
   if (uis.size() == 0)
     throw std::runtime_error("No UI to run.");
 
+  thread_cap = 0;
+  for (auto const &ui : uis)
+    thread_cap += ui->Devices().size();
+
   SelectSystem(0);
   running = true;
   uis[ui_inx]->Reset();
@@ -344,12 +348,13 @@ void Controller::Run()
         ThreadCleanup();
         try {
           std::lock_guard<std::mutex> lock(threads_mtx);
-          for (DeviceBase *device : uis[ui_inx]->Devices()) {
-            UpdateThread *t = new UpdateThread(device);
-            if (t == NULL)
-              throw std::runtime_error("could not spawn thread");
-            threads.insert(t);
-          }
+          if (threads.size() < thread_cap)
+            for (DeviceBase *device : uis[ui_inx]->Devices()) {
+              UpdateThread *t = new UpdateThread(device);
+              if (t == NULL)
+                throw std::runtime_error("could not spawn thread");
+              threads.insert(t);
+            }
         }
         catch (std::exception &ex) {
           UI::Log("Exception during background thread creation: %s", ex.what());
