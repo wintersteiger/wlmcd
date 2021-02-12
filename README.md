@@ -4,7 +4,7 @@
 
 ## Requirements
 
-`sudo apt install build-essential libncurses-dev libssl-dev libgpiod-dev wiringpi libdbus-c++-dev`
+`sudo apt install build-essential libncurses-dev libssl-dev libgpiod-dev wiringpi libdbus-1-dev libdbus-cpp-dev`
 
 ## Build
 
