@@ -7,7 +7,7 @@ WLMCD_ROOT=../..
 # CXXFLAGS+=-O1 -g -fsanitize=address -fno-omit-frame-pointer
 # LDFLAGS+=-g -fsanitize=address
 
-CXXFLAGS+=-g -MMD -MP -I ${WLMCD_ROOT} -Wno-psabi
+CXXFLAGS+=-O5 -flto -MMD -MP -I ${WLMCD_ROOT} -Wno-psabi
 
 %.o: %.cpp
 	${CXX} ${CXXFLAGS} $< -c -o $@
@@ -19,7 +19,7 @@ dht22-monitor: dht22-monitor.o ${WLMCD_ROOT}/libwlmcd-dev.a ${WLMCD_ROOT}/libwlm
 	${CXX} -o $@ $< ${LDFLAGS_STATIC}
 
 dht22-test: dht22-test.o ${WLMCD_ROOT}/dht22.o
-	${CXX} -o $@ $^ -lgpiod
+	${CXX} -o $@ $^ -lgpiod -lwiringPi -lpthread
 
 clean:
 	rm -rf *.o dht22-monitor dht22-test

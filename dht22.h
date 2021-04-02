@@ -55,6 +55,8 @@ protected:
 
   bool block_2s;
 
+  struct sched_param sparam;
+
   void Release();
 };
 
