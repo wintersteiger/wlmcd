@@ -17,9 +17,8 @@ inline void sleep_ms(unsigned ms)
   ts.tv_sec = ms / 1000ul;
   ts.tv_nsec = (ms % 1000ul) * 1000000ul;
 
-  struct timespec *pdur = &duration, *prem = &remaining;
-  while (nanosleep(pdur, prem) == -1)
-    std::swap(pdur, prem);
+  while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
+    ;
 }
 
 inline void sleep_us(unsigned us)
@@ -51,9 +50,8 @@ inline void sleep_ns(unsigned ns)
   ts.tv_sec = ns / 1000000000ul;
   ts.tv_nsec = ns % 1000000000ul;
 
-  struct timespec *pdur = &duration, *prem = &remaining;
-  while (nanosleep(pdur, prem) == -1)
-    std::swap(pdur, prem);
+  while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
+    ;
 }
 
 #endif // _SLEEP_H_
