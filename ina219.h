@@ -47,6 +47,10 @@ public:
   double Current(void) const;
   double Power(void) const;
 
+  typedef enum { _16V, _32V } BusVoltageRange;
+  void SetBusVoltageRange(BusVoltageRange range = _32V);
+  typedef enum { _40mV, _80mV, _160mV, _320mV } PGARange;
+  void SetPGARange(PGARange range = _320mV);
   void SetBusADCResolution(uint8_t value);
   void SetShuntADCResolution(uint8_t value);
 

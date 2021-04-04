@@ -148,7 +148,7 @@ double INA219::ShuntVoltage(void) const
 {
   int16_t v_shunt = RT._rShuntVoltage(RT.Buffer());
   uint16_t pg = RT._vPG(RT._rConfiguration(RT.Buffer()));
-  double r = (v_shunt >> pg) * 0.000010;
+  double r = v_shunt * 0.000010;
   return r;
 }
 
@@ -167,17 +167,38 @@ double INA219::Power(void) const
   return power_reg * power_lsb;
 }
 
+void INA219::SetBusVoltageRange(BusVoltageRange range)
+{
+  uint16_t cfg_val = Read(RT._rConfiguration.Address()) & 0x1FFF;
+  if (range == _32V)
+    cfg_val |= 0x2000;
+  Write(RT._rConfiguration, cfg_val);
+}
+
+void INA219::SetPGARange(PGARange range)
+{
+  uint16_t cfg_val = Read(RT._rConfiguration.Address()) & 0x07FF;
+  switch (range) {
+    case _40mV: break;
+    case _80mV: cfg_val |= 0x0800; break;
+    case _160mV: cfg_val |= 0x1000; break;
+    case _320mV: cfg_val |= 0x1800; break;
+    default: throw std::runtime_error("invalid PGA range");
+  }
+  Write(RT._rConfiguration, cfg_val);
+}
+
 void INA219::SetBusADCResolution(uint8_t value)
 {
-  uint16_t cfg_val = Read(RT._rConfiguration.Address()) ;
-  cfg_val = (cfg_val & 0xF87F) | (value & 0x0F) << 7;
+  uint16_t cfg_val = Read(RT._rConfiguration.Address());
+  cfg_val = (cfg_val & 0x387F) | (value & 0x000F) << 7;
   Write(RT._rConfiguration, cfg_val);
 }
 
 void INA219::SetShuntADCResolution(uint8_t value)
 {
-  uint16_t cfg_val = Read(RT._rConfiguration.Address()) ;
-  cfg_val = (cfg_val & 0xFF87) | (value & 0x0F) << 3;
+  uint16_t cfg_val = Read(RT._rConfiguration.Address());
+  cfg_val = (cfg_val & 0x3F87) | (value & 0x000F) << 3;
   Write(RT._rConfiguration, cfg_val);
 }
 
