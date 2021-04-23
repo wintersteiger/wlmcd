@@ -42,9 +42,12 @@ void SI4463::RegisterTableSet::PropertyRT::Refresh(bool frequent)
   DeviceStateBuffer = device.RequestDeviceState();
 }
 
-void SI4463::RegisterTableSet::PropertyRT::WriteFile(const std::string &filename) {}
-void SI4463::RegisterTableSet::PropertyRT::ReadFile(const std::string &filename) {}
-void SI4463::RegisterTableSet::PropertyRT::Write(const Register<uint16_t, uint8_t> &reg, const uint8_t &value) {}
+void SI4463::RegisterTableSet::PropertyRT::Write(std::ostream &os) {}
+void SI4463::RegisterTableSet::PropertyRT::Read(std::istream &is) {}
+
+void SI4463::RegisterTableSet::PropertyRT::Write(const Register<uint16_t, uint8_t> &reg, const uint8_t &value) {
+  device.Write(reg, value);
+}
 
 void SI4463::RegisterTableSet::PartInfoRT::Refresh(bool frequent)
 {

@@ -72,5 +72,5 @@ void GPIOButton::Write(bool value)
 void GPIOButton::UpdateTimed() {}
 void GPIOButton::UpdateFrequent() {}
 void GPIOButton::UpdateInfrequent() { Read(); }
-void GPIOButton::WriteConfig(const std::string &filename) {}
-void GPIOButton::ReadConfig(const std::string &filename) {}
+void GPIOButton::Write(std::ostream &os) {}
+void GPIOButton::Read(std::istream &is) {}

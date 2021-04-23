@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <fstream>
 
 #include <curses.h>
 
@@ -178,10 +179,21 @@ Controller::Controller(
         ctrl->Stop();
       else if (verb == "w" || verb == "write") {
         try {
-          if (ui->Devices().size() > 1)
-            UI::Error("cannot write configurations of multiple devices");
-          for (auto device : ui->Devices())
-            device->WriteConfig(args);
+          std::ofstream f(args);
+          auto devs = ui->Devices();
+          if (devs.size() == 0)
+            UI::Error("No devices");
+          else if (devs.size() == 1)
+            (*devs.begin())->Write(f);
+          else {
+            f << "{\n  \"devices\": [\n";
+            for (auto device : devs) {
+              device->Write(f);
+              f << ",\n";
+            }
+            f << "  ]\n}\n";
+          }
+          f.close();
           UI::Log("Wrote configuration to %s", args.c_str());
         }
         catch (std::exception &ex) {
@@ -192,8 +204,10 @@ Controller::Controller(
         try {
           if (ui->Devices().size() > 1)
             UI::Error("cannot read configurations of multiple devices");
-          for (auto device : ui->Devices())
-            device->ReadConfig(args);
+          for (auto device : ui->Devices()) {
+            auto is = std::ifstream(args);
+            device->Read(is);
+          }
           UI::Log("Read configuration from %s", args.c_str());
         }
         catch (std::exception &ex) {
@@ -267,8 +281,8 @@ void Controller::ThreadCleanup()
       }
       for (UpdateThread *t : joined)
         threads.erase(t);
-      if (threads.empty())
-        uis[ui_inx]->Update(false);
+      if (threads.empty() && ui_inx < uis.size())
+          uis[ui_inx]->Update(false);
     }
   }
   catch (std::exception &ex) {

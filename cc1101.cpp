@@ -38,8 +38,10 @@ CC1101::CC1101(
   Strobe(CommandStrobe::SFTX, 100);
   Strobe(CommandStrobe::SFRX, 100);
 
-  if (!config_file.empty())
-    ReadConfig(config_file);
+  if (!config_file.empty()) {
+    auto is = std::ifstream(config_file);
+    Read(is);
+  }
 
   StrobeFor(SIDLE, State::IDLE, 10);
   StrobeFor(SRX, State::RX, 10);
@@ -437,14 +439,14 @@ void CC1101::UpdateInfrequent()
   RT->Refresh(false);
 }
 
-void CC1101::WriteConfig(const std::string &filename)
+void CC1101::Write(std::ostream &os)
 {
-  RT->WriteFile(filename);
+  RT->Write(os);
 }
 
-void CC1101::ReadConfig(const std::string &filename)
+void CC1101::Read(std::istream &is)
 {
-  RT->ReadFile(filename);
+  RT->Read(is);
 }
 
 void CC1101::RegisterTable::Refresh(bool frequent)
@@ -464,11 +466,11 @@ void CC1101::RegisterTable::Refresh(bool frequent)
     buffer[0xC0 | (0x30 + i)] = device.Read(0xC0 | (0x30 + i));
 }
 
-void CC1101::RegisterTable::WriteFile(const std::string &filename)
+void CC1101::RegisterTable::Write(std::ostream &os)
 {
   json j, dev, regs;
   char tmp[17];
-  dev["Name"] = device.Name();
+  dev["name"] = device.Name();
   j["Device"] = dev;
   for (const auto reg : registers) {
     if (reg->Address() == _rFIFO.Address())
@@ -484,17 +486,16 @@ void CC1101::RegisterTable::WriteFile(const std::string &filename)
       snprintf(tmp, sizeof(tmp), "%02x", (*reg)(buffer));
     regs[reg->Name()] = tmp;
   }
-  j["Registers"] = regs;
-  std::ofstream os(filename);
+  j["registers"] = regs;
   os << std::setw(2) << j << std::endl;
 }
 
-void CC1101::RegisterTable::ReadFile(const std::string &filename)
+void CC1101::RegisterTable::Read(std::istream &is)
 {
-  json j = json::parse(std::ifstream(filename));
+  json j = json::parse(is);
   if (j["Device"]["Name"] != device.Name())
     throw std::runtime_error("device mismatch");
-  for (const auto &e : j["Registers"].items()) {
+  for (const auto &e : j["registers"].items()) {
     if (!e.value().is_string())
       throw std::runtime_error(std::string("invalid value for '" + e.key() + "'"));
     std::string sval = e.value().get<std::string>();

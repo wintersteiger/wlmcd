@@ -61,8 +61,11 @@ public:
   void UpdateFrequent();
   void UpdateInfrequent();
 
-  virtual void WriteConfig(const std::string &filename);
-  virtual void ReadConfig(const std::string &filename);
+  using Device::Write;
+  using Device::Read;
+
+  virtual void Write(std::ostream &os);
+  virtual void Read(std::istream &is);
 
   virtual uint8_t Read(const uint16_t &addr);
   virtual std::vector<uint8_t> Read(const uint16_t &addr, size_t length);

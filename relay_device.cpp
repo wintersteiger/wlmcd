@@ -42,11 +42,11 @@ RelayDevice::~RelayDevice()
   free(bulk);
 }
 
-void RelayDevice::WriteConfig(const std::string &filename)
+void RelayDevice::Write(std::ostream &os)
 {
 }
 
-void RelayDevice::ReadConfig(const std::string &filename)
+void RelayDevice::Read(std::istream &is)
 {
 }
 

@@ -19,8 +19,11 @@ public:
   virtual void UpdateFrequent();
   virtual void UpdateInfrequent();
 
-  virtual void WriteConfig(const std::string &filename);
-  virtual void ReadConfig(const std::string &filename);
+  using DeviceBase::Read;
+  using DeviceBase::Write;
+
+  virtual void Write(std::ostream &os);
+  virtual void Read(std::istream &is);
 
   virtual void Reset();
 

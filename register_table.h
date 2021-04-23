@@ -4,7 +4,9 @@
 #ifndef _REGISTER_TABLE_H_
 #define _REGISTER_TABLE_H_
 
-#include <register.h>
+#include <iostream>
+
+#include "register.h"
 
 template <typename AT, typename VT, typename DEVICE>
 class RegisterTable
@@ -94,8 +96,8 @@ public:
     N(D &d) : ::RegisterTable<AT, VT, D>(d) {}                                 \
     virtual ~N() {}                                                            \
     virtual void Refresh(bool frequent);                                       \
-    virtual void ReadFile(const std::string &filename);                        \
-    virtual void WriteFile(const std::string &filename);                       \
+    virtual void Read(std::istream &is);                                       \
+    virtual void Write(std::ostream &os);                                      \
     virtual void Write(const Register<AT, VT> &reg, const VT &value);          \
     R;                                                                         \
   };
@@ -106,8 +108,8 @@ public:
     N##RT(D &d) : ::RegisterTable<AT, VT, D>(d) {}                             \
     virtual ~N##RT() {}                                                        \
     virtual void Refresh(bool frequent);                                       \
-    virtual void ReadFile(const std::string &filename);                        \
-    virtual void WriteFile(const std::string &filename);                       \
+    virtual void Read(std::istream &is);                                       \
+    virtual void Write(std::ostream &os);                                      \
     virtual void Write(const Register<AT, VT> &reg, const VT &value);          \
     R;                                                                         \
   };                                                                           \

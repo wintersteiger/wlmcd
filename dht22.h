@@ -20,8 +20,11 @@ public:
 
   virtual void Reset();
 
-  virtual void WriteConfig(const std::string &filename);
-  virtual void ReadConfig(const std::string &filename);
+  using Device::Read;
+  using Device::Write;
+
+  virtual void Write(std::ostream &os);
+  virtual void Read(std::istream &is);
 
   virtual uint64_t Read(const uint8_t &addr);
   virtual std::vector<uint64_t> Read(const uint8_t &addr, size_t length);

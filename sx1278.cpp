@@ -140,14 +140,14 @@ void SX1278::UpdateInfrequent()
   Normal.Refresh(false);
 }
 
-void SX1278::WriteConfig(const std::string &filename)
+void SX1278::Write(std::ostream &os)
 {
-  Normal.WriteFile(filename);
+  Normal.Write(os);
 }
 
-void SX1278::ReadConfig(const std::string &filename)
+void SX1278::Read(std::istream &is)
 {
-  Normal.ReadFile(filename);
+  Normal.Read(is);
 }
 
 void SX1278::ClearFlags()
@@ -227,10 +227,10 @@ void SX1278::NormalRegisterTable::Refresh(bool frequent)
       buffer[i] = device.Read(i);
 }
 
-void SX1278::NormalRegisterTable::WriteFile(const std::string &filename)
+void SX1278::NormalRegisterTable::Write(std::ostream &os)
 {
   json j, dev, regs;
-  dev["Name"] = device.Name();
+  dev["name"] = device.Name();
   j["Device"] = dev;
   for (const auto reg : registers)
     if (reg->Address() != 0x00) {
@@ -238,17 +238,16 @@ void SX1278::NormalRegisterTable::WriteFile(const std::string &filename)
       snprintf(tmp, 3, "%02x", (*reg)(buffer));
       regs[reg->Name()] = tmp;
     }
-  j["Registers"] = regs;
-  std::ofstream os(filename);
+  j["registers"] = regs;
   os << std::setw(2) << j << std::endl;
 }
 
-void SX1278::NormalRegisterTable::ReadFile(const std::string &filename)
+void SX1278::NormalRegisterTable::Read(std::istream &is)
 {
-  json j = json::parse(std::ifstream(filename));
+  json j = json::parse(is);
   if (j["Device"]["Name"] != device.Name())
     throw std::runtime_error("device mismatch");
-  for (const auto &e : j["Registers"].items()) {
+  for (const auto &e : j["registers"].items()) {
     if (!e.value().is_string())
       throw std::runtime_error(std::string("invalid value for '" + e.key() + "'"));
     std::string sval = e.value().get<std::string>();

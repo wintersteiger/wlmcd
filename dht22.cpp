@@ -50,10 +50,10 @@ DHT22::~DHT22()
 void DHT22::Reset()
 {}
 
-void DHT22::WriteConfig(const std::string &filename)
+void DHT22::Write(std::ostream &os)
 {}
 
-void DHT22::ReadConfig(const std::string &filename)
+void DHT22::Read(std::istream &is)
 {}
 
 uint64_t DHT22::Read(const uint8_t &addr)
@@ -209,15 +209,16 @@ void DHT22::RegisterTable::Refresh(bool frequent)
   buffer[0] = device.Read(0);
 }
 
-void DHT22::RegisterTable::WriteFile(const std::string &filename)
+void DHT22::RegisterTable::Write(std::ostream &os)
 {
 }
 
-void DHT22::RegisterTable::ReadFile(const std::string &filename)
+void DHT22::RegisterTable::Read(std::istream &is)
 {
 
 }
 
 void DHT22::RegisterTable::Write(const Register<uint8_t, uint64_t> &reg, const uint64_t &value)
 {
+  device.Write(reg, value);
 }

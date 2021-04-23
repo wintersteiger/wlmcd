@@ -17,8 +17,11 @@ public:
 
   virtual const char* Name() const { return "DS18B20"; }
 
-  virtual void WriteConfig(const std::string &filename);
-  virtual void ReadConfig(const std::string &filename);
+  using Device::Read;
+  using Device::Write;
+
+  virtual void Write(std::ostream &os);
+  virtual void Read(std::istream &is);
 
   virtual double Read(const int &addr);
   virtual std::vector<double> Read(const int &addr, size_t length);

@@ -19,12 +19,12 @@ DS18B20::~DS18B20()
 {
 }
 
-void DS18B20::WriteConfig(const std::string &filename)
+void DS18B20::Write(std::ostream &os)
 {
   throw std::runtime_error("not supported");
 }
 
-void DS18B20::ReadConfig(const std::string &filename)
+void DS18B20::Read(std::istream &is)
 {
   throw std::runtime_error("not supported");
 }

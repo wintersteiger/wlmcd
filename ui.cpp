@@ -21,8 +21,6 @@ UI::UI() :
 
 UI::~UI()
 {
-  // for (auto f: fields)
-  //  delete(f);
   for (size_t i=0; i < fields.size(); i++) {
     delete(fields[i]);
     fields[i] = NULL;
@@ -464,7 +462,7 @@ void UI::Describe()
   // prefresh(w, (y, x) in pad, (y1, x1, y2, x2) on screen);
   prefresh(descp, 0, 0, y1+1, x1+1, y2-2, x2-2);
 
-  char k = 0;
+  int k = 0;
   do {
     k = wgetch(dwin);
   }

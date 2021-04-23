@@ -61,6 +61,9 @@ public:
   void Receive(std::vector<uint8_t> &pkt);
   void Transmit(const std::vector<uint8_t> &pkt);
 
+  using Device::Read;
+  using Device::Write;
+
   virtual uint8_t Read(const uint8_t &addr);
   virtual std::vector<uint8_t> Read(const uint8_t &addr, size_t length);
 
@@ -78,8 +81,8 @@ public:
   virtual void UpdateFrequent();
   virtual void UpdateInfrequent();
 
-  virtual void WriteConfig(const std::string &filename);
-  virtual void ReadConfig(const std::string &filename);
+  virtual void Write(std::ostream &os);
+  virtual void Read(std::istream &is);
 
   virtual void Test(const std::vector<uint8_t> &data);
 };

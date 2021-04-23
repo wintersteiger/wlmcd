@@ -170,6 +170,10 @@ public:
   StatusByte StrobeFor(CommandStrobe cs, State st, size_t delay_ms = 0);
 
   virtual const char* Name() const { return "CC1101"; }
+
+  using Device::Read;
+  using Device::Write;
+
   virtual uint8_t Read(const uint8_t &addr);
   virtual std::vector<uint8_t> Read(const uint8_t &addr, size_t length);
   virtual uint8_t Read(const Register<uint8_t, uint8_t> &r) { return Device::Read(r); }
@@ -193,8 +197,8 @@ public:
   virtual void UpdateFrequent();
   virtual void UpdateInfrequent();
 
-  virtual void WriteConfig(const std::string &filename);
-  virtual void ReadConfig(const std::string &filename);
+  virtual void Write(std::ostream &os);
+  virtual void Read(std::istream &is);
 
   double F_XOSC() const { return f_xosc; }
 

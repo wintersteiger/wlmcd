@@ -22,8 +22,8 @@ public:
   virtual void UpdateFrequent() {}
   virtual void UpdateInfrequent() {}
 
-  virtual void WriteConfig(const std::string &filename) = 0;
-  virtual void ReadConfig(const std::string &filename) = 0;
+  virtual void Write(std::ostream &os) = 0;
+  virtual void Read(std::istream &os) = 0;
 
   virtual void Reset() {}
 
@@ -41,6 +41,9 @@ public:
   Device() {}
   Device(std::vector<Decoder*> &decoders) : decoders(decoders) {}
   virtual ~Device() {}
+
+  using DeviceBase::Read;
+  using DeviceBase::Write;
 
   virtual VT Read(const AT &addr) = 0;
   virtual std::vector<VT> Read(const AT &addr, size_t length) = 0;

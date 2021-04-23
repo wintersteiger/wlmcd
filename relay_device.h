@@ -17,8 +17,11 @@ public:
 
   virtual const char* Name() const { return "Relays"; }
 
-  virtual void WriteConfig(const std::string &filename);
-  virtual void ReadConfig(const std::string &filename);
+  using Device::Read;
+  using Device::Write;
+
+  virtual void Write(std::ostream &os);
+  virtual void Read(std::istream &is);
 
   const std::vector<unsigned>& Offsets() const { return offsets; }
 

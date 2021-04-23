@@ -19,11 +19,10 @@
 #include "json.hpp"
 #include "ina219.h"
 #include "ina219_rt.h"
-#include "ui.h"
 
 using json = nlohmann::json;
 
-void throw_errno(const char* msg) {
+static void throw_errno(const char* msg) {
   char exmsg[1024];
   snprintf(exmsg, sizeof(exmsg), "%s (%s (%d))", msg, strerror(errno), errno);
   throw std::runtime_error(exmsg);
@@ -48,6 +47,7 @@ INA219::~INA219()
 {
   if (fd >= 0)
     close(fd);
+  delete(&RT);
 }
 
 void INA219::Reset()
@@ -125,29 +125,28 @@ void INA219::Write(const uint8_t &addr, const std::vector<uint16_t> &values)
     Write(addr + i, values[i]);
 }
 
-void INA219::WriteConfig(const std::string &filename)
+void INA219::Write(std::ostream &os)
 {
-  RT.WriteFile(filename);
+  RT.Write(os);
 }
 
-void INA219::ReadConfig(const std::string &filename)
+void INA219::Read(std::istream &is)
 {
-  RT.ReadFile(filename);
+  RT.Read(is);
 }
 
 double INA219::BusVoltage(void) const
 {
-  uint16_t rv = RT._rBusVoltage(RT.Buffer());
-  bool overflow = RT._vOVF(rv) != 0;
-  uint16_t v_bus = RT._vBD_12_0(rv);
+  bool overflow = RT.OVF() != 0;
+  uint16_t v_bus = RT.BD_12_0();
   double v_bus_d = (double)v_bus;
   return overflow ? nan : (v_bus_d * 0.004);
 }
 
 double INA219::ShuntVoltage(void) const
 {
-  int16_t v_shunt = RT._rShuntVoltage(RT.Buffer());
-  uint16_t pg = RT._vPG(RT._rConfiguration(RT.Buffer()));
+  int16_t v_shunt = RT.ShuntVoltage();
+  uint16_t pg = RT.PG();
   double r = v_shunt * 0.000010;
   return r;
 }
@@ -217,38 +216,37 @@ void INA219::UpdateInfrequent()
 
 void INA219::RegisterTable::Refresh(bool frequent)
 {
-  if (buffer.size() != 6)
-    buffer.resize(6, 0);
+  if (buffer.size() != registers.size())
+    buffer.resize(registers.size(), 0);
   for (auto reg : registers)
     buffer[reg->Address()] = device.Read(reg->Address());
 }
 
-void INA219::RegisterTable::WriteFile(const std::string &filename)
+void INA219::RegisterTable::Write(std::ostream &os)
 {
   json j, dev, regs;
   char tmp[17];
-  dev["Name"] = device.Name();
+  dev["name"] = device.Name();
   dev["bus"] = device.bus;
   dev["address"] = device.device_address;
   dev["r_shunt"] = device.r_shunt;
   dev["max_expected_current"] = device.max_expected_current;
-  j["Device"] = dev;
+  j["device"] = dev;
   std::vector<Register<uint8_t, uint16_t>*> regobjs = { &device.RT._rConfiguration, &device.RT._rCalibration };
   for (const auto reg : regobjs) {
     snprintf(tmp, sizeof(tmp), "%04x", (*reg)(buffer));
     regs[reg->Name()] = tmp;
   }
-  j["Registers"] = regs;
-  std::ofstream os(filename);
+  j["registers"] = regs;
   os << std::setw(2) << j << std::endl;
 }
 
-void INA219::RegisterTable::ReadFile(const std::string &filename)
+void INA219::RegisterTable::Read(std::istream &is)
 {
-  json j = json::parse(std::ifstream(filename));
-  json dev = j["Device"];
+  json j = json::parse(is);
+  json dev = j["device"];
 
-  if (dev["Name"] != device.Name())
+  if (dev["name"] != device.Name())
     throw std::runtime_error("device mismatch");
 
   device.bus = dev["bus"];
@@ -258,7 +256,7 @@ void INA219::RegisterTable::ReadFile(const std::string &filename)
 
   device.Reset();
 
-  for (const auto &e : j["Registers"].items()) {
+  for (const auto &e : j["registers"].items()) {
     if (!e.value().is_string())
       throw std::runtime_error(std::string("invalid value for '" + e.key() + "'"));
     std::string sval = e.value().get<std::string>();
@@ -279,4 +277,5 @@ void INA219::RegisterTable::ReadFile(const std::string &filename)
 
 void INA219::RegisterTable::Write(const Register<uint8_t, uint16_t> &reg, const uint16_t &value)
 {
+  device.Write(reg, value);
 }

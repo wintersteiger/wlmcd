@@ -36,8 +36,10 @@ RFM69::RFM69(
 
   SetMode(Mode::STDBY);
 
-  if (!config_file.empty())
-    ReadConfig(config_file);
+  if (!config_file.empty()) {
+    auto is = std::ifstream(config_file);
+    Read(is);
+  }
 
   SetMode(Mode::RX);
   RT->Refresh(false);
@@ -130,14 +132,14 @@ void RFM69::UpdateInfrequent()
   RT->Refresh(false);
 }
 
-void RFM69::WriteConfig(const std::string &filename)
+void RFM69::Write(std::ostream &os)
 {
-  RT->WriteFile(filename);
+  RT->Write(os);
 }
 
-void RFM69::ReadConfig(const std::string &filename)
+void RFM69::Read(std::istream &is)
 {
-  RT->ReadFile(filename);
+  RT->Read(is);
 }
 
 void RFM69::ClearFlags()
@@ -250,10 +252,10 @@ void RFM69::RegisterTable::Refresh(bool frequent)
       buffer[i] = device.Read(i);
 }
 
-void RFM69::RegisterTable::WriteFile(const std::string &filename)
+void RFM69::RegisterTable::Write(std::ostream &os)
 {
   json j, dev, regs;
-  dev["Name"] = device.Name();
+  dev["name"] = device.Name();
   j["Device"] = dev;
   for (const auto reg : registers)
     if (reg->Address() != 0x00) {
@@ -261,8 +263,7 @@ void RFM69::RegisterTable::WriteFile(const std::string &filename)
       snprintf(tmp, 3, "%02x", (*reg)(buffer));
       regs[reg->Name()] = tmp;
     }
-  j["Registers"] = regs;
-  std::ofstream os(filename);
+  j["registers"] = regs;
   os << std::setw(2) << j << std::endl;
 }
 
@@ -283,15 +284,15 @@ void RFM69::RegisterTable::Set(const std::string &key, const std::string &value)
     throw std::runtime_error(std::string("invalid register '") + key + "'");
 }
 
-void RFM69::RegisterTable::ReadFile(const std::string &filename)
+void RFM69::RegisterTable::Read(std::istream &is)
 {
   device.SetMode(Mode::STDBY);
   device.ClearFlags();
 
-  json j = json::parse(std::ifstream(filename));
+  json j = json::parse(is);
   if (j["Device"]["Name"] != device.Name())
     throw std::runtime_error("device mismatch");
-  for (const auto &e : j["Registers"].items()) {
+  for (const auto &e : j["registers"].items()) {
     const std::string &name = e.key();
     if (name == "OpMode")
       continue;
@@ -299,8 +300,8 @@ void RFM69::RegisterTable::ReadFile(const std::string &filename)
       throw std::runtime_error(std::string("invalid value for '" + e.key() + "'"));
     Set(name, e.value().get<std::string>());
   }
-  if (j["Registers"].contains("OpMode"))
-    Set("OpMode", j["Registers"]["OpMode"]);
+  if (j["registers"].contains("OpMode"))
+    Set("OpMode", j["registers"]["OpMode"]);
 }
 
 void RFM69::RegisterTable::Write(const Register<uint8_t, uint8_t> &reg, const uint8_t &value)

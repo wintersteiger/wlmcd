@@ -316,7 +316,7 @@ void SI4463::RW(std::vector<uint8_t> &values, size_t n)
 
 void SI4463::Write(const uint16_t &addr, const uint8_t &value)
 {
-  Write(addr, {value});
+  Write(addr, std::vector<uint8_t>(1, value));
 }
 
 void SI4463::Write(const uint16_t &addr, const std::vector<uint8_t> &values)
@@ -344,5 +344,5 @@ void SI4463::UpdateInfrequent()
   RTS.Refresh(false);
 }
 
-void SI4463::WriteConfig(const std::string &filename) {}
-void SI4463::ReadConfig(const std::string &filename) {}
+void SI4463::Write(std::ostream &os) {}
+void SI4463::Read(std::istream &is) {}
