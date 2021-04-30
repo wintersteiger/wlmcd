@@ -187,9 +187,10 @@ Controller::Controller(
             (*devs.begin())->Write(f);
           else {
             f << "{\n  \"devices\": [\n";
-            for (auto device : devs) {
-              device->Write(f);
-              f << ",\n";
+            for (auto it = devs.begin(); it != devs.end(); it++) {
+              if (it != devs.begin())
+                f << ",\n";
+              (*it)->Write(f);
             }
             f << "  ]\n}\n";
           }

@@ -122,3 +122,14 @@ void SI4463::RegisterTableSet::ADCRT::Refresh(bool frequent)
     buffer.insert(buffer.begin(), 0);
   }
 }
+
+
+void SI4463::RegisterTableSet::Read(std::istream &is)
+{
+  device.RTS.Property.Read(is);
+}
+
+void SI4463::RegisterTableSet::Write(std::ostream &os)
+{
+  device.RTS.Property.Write(os);
+}

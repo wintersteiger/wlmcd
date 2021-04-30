@@ -124,6 +124,8 @@ public:
     virtual ~N();                                                              \
     T;                                                                         \
     void Refresh(bool frequent);                                               \
+    virtual void Read(std::istream &is);                                       \
+    virtual void Write(std::ostream &os);                                      \
   };
 
 #endif
