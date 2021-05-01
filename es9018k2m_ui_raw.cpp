@@ -96,9 +96,9 @@ public:
     if (v_str_len == 0 || v_str_len > 2 || sscanf(v_str, "%02hhx", &v) != 1)
       UI::Error("invalid value '%s'", v_str);
     else if (var != NULL)
-      rt.Device().Write(reg.Address(), var->Set(reg(rt.Buffer()), v));
+      rt.Device().Write(reg, var->Set(reg(rt.Buffer()), v));
     else
-      rt.Device().Write(reg.Address(), v);
+      rt.Device().Write(reg, v);
   }
 };
 
@@ -106,17 +106,17 @@ public:
 
 using namespace ES9018K2MUIRawFields;
 
-ES9018K2MUIRaw::ES9018K2MUIRaw(ES9018K2M &es9018k2m) : UI()
+ES9018K2MUIRaw::ES9018K2MUIRaw(std::shared_ptr<ES9018K2M> &es9018k2m) : UI()
 {
-  devices.insert(&es9018k2m);
+  devices.insert(es9018k2m.get());
 
   typedef RawField<uint8_t, uint8_t, ES9018K2M> RF;
 
   int row = 1, col = 1;
-  for (auto reg : es9018k2m.RTS.Main) {
-    fields.push_back(new RF(row++, reg, es9018k2m.RTS.Main));
+  for (auto reg : es9018k2m->RTS.Main) {
+    fields.push_back(new RF(row++, reg, es9018k2m->RTS.Main));
     for (auto var : *reg)
-      fields.push_back(new RF(row++, reg, var, es9018k2m.RTS.Main));
+      fields.push_back(new RF(row++, reg, var, es9018k2m->RTS.Main));
     fields.push_back(new Empty(row++, col));
   }
 }

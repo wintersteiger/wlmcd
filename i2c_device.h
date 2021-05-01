@@ -48,7 +48,7 @@ public:
 
   using I2CDeviceBase::Reset;
 
-  VT Read(const uint8_t &addr);
+  virtual VT Read(const uint8_t &addr) override;
 
   virtual std::vector<VT> Read(const uint8_t &addr, size_t length) override
   {
@@ -58,9 +58,9 @@ public:
     return r;
   }
 
-  void Write(const uint8_t &addr, const VT &value);
+  virtual void Write(const uint8_t &addr, const VT &value) override;
 
-  void Write(const uint8_t &addr, const std::vector<VT> &values)
+  virtual void Write(const uint8_t &addr, const std::vector<VT> &values) override
   {
     for (size_t i=0; i < values.size(); i++)
       Write(addr + i, values[i]);

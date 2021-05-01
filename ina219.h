@@ -23,15 +23,15 @@ public:
   std::string Bus() const { return bus; }
   uint8_t DeviceAddress() const { return device_address; }
 
-  virtual const char* Name() const { return "INA219"; }
+  virtual const char* Name() const override { return "INA219"; }
 
   virtual void Reset() override;
 
   using I2CDevice::Read;
   using I2CDevice::Write;
 
-  virtual void Write(std::ostream &os);
-  virtual void Read(std::istream &is);
+  virtual void Write(std::ostream &os) override;
+  virtual void Read(std::istream &is) override;
 
   virtual void UpdateTimed() override;
 

@@ -43,8 +43,6 @@ INA219::INA219(double r_shunt, double max_expected_current, const std::string &b
 
 INA219::~INA219()
 {
-  if (fd >= 0)
-    close(fd);
   delete(&RT);
 }
 

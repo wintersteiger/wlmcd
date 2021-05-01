@@ -16,17 +16,17 @@ public:
   DHT22(int pin = 7 /* WiringPi 7 == GPIO-4 */);
   virtual ~DHT22();
 
-  virtual const char* Name() const { return "DHT22"; }
+  virtual const char* Name() const override { return "DHT22"; }
 
   using Device::Read;
   using Device::Write;
 
-  virtual void Write(std::ostream &os);
-  virtual void Read(std::istream &is);
+  virtual void Write(std::ostream &os) override;
+  virtual void Read(std::istream &is) override;
 
   virtual uint64_t Read(const uint8_t &addr) override;
 
-  virtual void UpdateTimed();
+  virtual void UpdateTimed() override;
 
   float Temperature() const;
   float Humidity() const;

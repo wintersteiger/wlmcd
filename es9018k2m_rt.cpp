@@ -30,8 +30,7 @@ void ES9018K2M::RegisterTableSet::MainRT::Write(const Register<uint8_t, uint8_t>
 
 void ES9018K2M::RegisterTableSet::MainRT::Refresh(bool frequent)
 {
-  if (buffer.size() != registers.size())
-    buffer.resize(registers.size(), 0);
+  buffer.resize(registers.size(), 0);
   for (auto reg : registers)
     buffer[reg->Address()] = device.I2CDevice::Read(reg->Address());
 }
@@ -89,16 +88,14 @@ void ES9018K2M::RegisterTableSet::MainRT::Read(std::istream &is)
 
 void ES9018K2M::RegisterTableSet::ConsumerRT::Refresh(bool frequent)
 {
-  if (buffer.size() != registers.size())
-    buffer.resize(registers.size(), 0);
+  buffer.resize(0x5D+1, 0);
   for (auto reg : registers)
     buffer[reg->Address()] = device.I2CDevice::Read(reg->Address());
 }
 
 void ES9018K2M::RegisterTableSet::ProfessionalRT::Refresh(bool frequent)
 {
-  if (buffer.size() != registers.size())
-    buffer.resize(registers.size(), 0);
+  buffer.resize(0x5D+1, 0);
   for (auto reg : registers)
     buffer[reg->Address()] = device.I2CDevice::Read(reg->Address());
 }

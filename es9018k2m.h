@@ -20,12 +20,12 @@ public:
   std::string Bus() const { return bus; }
   uint8_t DeviceAddress() const { return device_address; }
 
-  virtual const char* Name() const { return "ES9018K2M"; }
+  virtual const char* Name() const override { return "ES9018K2M"; }
 
   virtual void Reset() override;
 
-  virtual void Write(std::ostream &os);
-  virtual void Read(std::istream &is);
+  virtual void Write(std::ostream &os) override;
+  virtual void Read(std::istream &is) override;
 
   using Device::Read;
   using Device::Write;

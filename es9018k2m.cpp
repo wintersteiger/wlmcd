@@ -49,4 +49,6 @@ void ES9018K2M::Read(std::istream &is)
 void ES9018K2M::UpdateTimed()
 {
   RTS.Main.Refresh(false);
+  RTS.Consumer.Refresh(false);
+  // RTS.Professional.Refresh(false);
 }

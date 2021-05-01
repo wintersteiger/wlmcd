@@ -63,7 +63,7 @@ void Field<bool>::Update(bool full) {
 template<>
 void Field<uint8_t>::Update(bool full) {
   uint8_t val = Get();
-  snprintf(tmp, sizeof(tmp), "%7u", val);
+  snprintf(tmp, sizeof(tmp), "%7" PRIu8, val);
   this->value = tmp;
   FieldBase::Update(full);
 };
@@ -71,7 +71,7 @@ void Field<uint8_t>::Update(bool full) {
 template<>
 void Field<int8_t>::Update(bool full) {
   int8_t val = Get();
-  snprintf(tmp, sizeof(tmp), "%7u", val);
+  snprintf(tmp, sizeof(tmp), "%7" PRIi8, val);
   this->value = tmp;
   FieldBase::Update(full);
 };
@@ -79,7 +79,7 @@ void Field<int8_t>::Update(bool full) {
 template<>
 void Field<uint16_t>::Update(bool full) {
   uint16_t val = Get();
-  snprintf(tmp, sizeof(tmp), "%7u", val);
+  snprintf(tmp, sizeof(tmp), "%7" PRIu16, val);
   this->value = tmp;
   FieldBase::Update(full);
 };
@@ -87,7 +87,7 @@ void Field<uint16_t>::Update(bool full) {
 template<>
 void Field<int16_t>::Update(bool full) {
   int16_t val = Get();
-  snprintf(tmp, sizeof(tmp), "%7d", val);
+  snprintf(tmp, sizeof(tmp), "%7" PRIi16, val);
   this->value = tmp;
   FieldBase::Update(full);
 };
@@ -96,6 +96,14 @@ template<>
 void Field<uint32_t>::Update(bool full) {
   uint32_t val = Get();
   snprintf(tmp, sizeof(tmp), "%" PRIu32, val);
+  this->value = tmp;
+  FieldBase::Update(full);
+};
+
+template<>
+void Field<int32_t>::Update(bool full) {
+  int32_t val = Get();
+  snprintf(tmp, sizeof(tmp), "%" PRIi32, val);
   this->value = tmp;
   FieldBase::Update(full);
 };

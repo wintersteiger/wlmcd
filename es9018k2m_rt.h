@@ -82,7 +82,7 @@ REGISTER_TABLE_SET_TABLE_W(ES9018K2M, Main, uint8_t, uint8_t,
   REG(MasterTrim_15_8, "MASTER_TRIM[15:8]", 0x12, RW,                     "Master Trim 1",);
   REG(MasterTrim_23_16, "MASTER_TRIM[23:16]", 0x13, RW,                   "Master Trim 2",);
   REG(MasterTrim_31_24, "MASTER_TRIM[31:24]", 0x14, RW,                   "Master Trim 3 (MSB)",);
-  uint32_t MasterTrim() const { return (MasterTrim_31_24() << 24) | (MasterTrim_23_16()) << 16 | (MasterTrim_15_8() << 8) | MasterTrim_7_0(); }
+  int32_t MasterTrim() const { return (MasterTrim_31_24() << 24) | (MasterTrim_23_16()) << 16 | (MasterTrim_15_8() << 8) | MasterTrim_7_0(); }
 
   REG(GPIOInputSelection, "GPIO_INPUT_SELECTION", 0x15, RW,               "GPIO Input Selection & OSF Bypass",
     VAR(GPIOInputSelection, GPIO_INPUT_SEL2, "GPIO_INPUT_SEL2", 0xC0, RW, "");

@@ -19,10 +19,10 @@ public:
   std::string Bus() const { return bus; }
   uint8_t DeviceAddress() const { return device_address; }
 
-  virtual const char* Name() const { return "MCP9808"; }
+  virtual const char* Name() const override { return "MCP9808"; }
 
-  virtual void Write(std::ostream &os);
-  virtual void Read(std::istream &is);
+  virtual void Write(std::ostream &os) override;
+  virtual void Read(std::istream &is) override;
 
   using I2CDevice::Reset;
   using I2CDevice::Read;

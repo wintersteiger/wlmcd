@@ -249,6 +249,10 @@ Controller::Controller(
 
 Controller::~Controller()
 {
+  Stop();
+  while (Running())
+    sleep_ms(10);
+  sleep_ms(100);
 }
 
 void Controller::AddSystem(UI *ui, Decoder *decoder, Encoder* encoder)
