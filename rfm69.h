@@ -81,6 +81,7 @@ public:
 
   double rRSSI() const;
   uint64_t rSyncWord() const;
+  double rBitrate() const;
 
 protected:
   // inline size_t recv_buf_held() const {

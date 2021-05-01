@@ -40,7 +40,7 @@ public:
 
 protected:
   std::mutex mtx;
-  static constexpr const char *gpio_consumer = "relays";
+  static constexpr const char *gpio_consumer = "WLMCD-Relays";
   struct gpiod_chip *chip;
   struct gpiod_line_bulk *bulk;
   std::vector<unsigned> offsets;

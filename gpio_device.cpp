@@ -133,7 +133,7 @@ void GPIODevice::UpdateInfrequent()
           continue;
 
         struct gpiod_line_request_config config = {
-          .consumer = "monitor",
+          .consumer = "WLMCD-GPIO",
           .request_type = GPIOD_LINE_REQUEST_DIRECTION_AS_IS,
           .flags = 0
         };

@@ -41,6 +41,9 @@ void cleanup(int signal = 0)
 {
   mtx.lock();
 
+  if (exit_code != 0)
+    return;
+
   for (auto w : gpio_watchers)
     delete(w);
   gpio_watchers.clear();
@@ -73,8 +76,6 @@ void cleanup(int signal = 0)
     logfile = NULL;
   }
 
-  mtx.unlock();
-
   if (UI::End() != OK)
     std::cout << "UI cleanup error" << std::endl;
 
@@ -82,6 +83,8 @@ void cleanup(int signal = 0)
     std::cout << "Signal " << signal << " (" << strsignal(signal) << "); bailing out." << std::endl;
     exit_code = 2;
   }
+
+  mtx.unlock();
 }
 
 int rxlog(double rssi, double lqi, const std::vector<uint8_t> &raw_packet, const std::string &msg, const std::string &err)
@@ -194,6 +197,7 @@ int main()
     controller->AddSystem(radbot_ui, radbot_decoder, radbot_encoder);
 
     controller->Run();
+    cleanup(0);
   }
   catch (std::exception &ex) {
     cleanup();
@@ -205,9 +209,6 @@ int main()
     std::cout << "Caught unknown exception." << std::endl;
     exit_code = 1;
   }
-
-  if (exit_code == 0)
-    cleanup();
 
   return exit_code;
 }

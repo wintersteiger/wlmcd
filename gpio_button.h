@@ -34,7 +34,7 @@ public:
 protected:
   std::mutex mtx;
   char name[256];
-  static constexpr const char *gpio_consumer = "relays";
+  static constexpr const char *gpio_consumer = "WLMCD-GPIOButton";
   struct gpiod_chip *chip;
   struct gpiod_line *line;
   const char *chip_path;

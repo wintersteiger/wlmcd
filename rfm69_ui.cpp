@@ -130,7 +130,7 @@ SIND(Timeout, "T/O", { return rt.Timeout(); });
 SIND(AutoMode, "AUM", { return rt.AutoMode(); });
 SIND(SyncAddressMatch, "SYN", { return rt.SyncAddressMatch(); });
 SIND(FifoFull, "FUL", { return rt.FifoFull(); });
-SIND(FifoEmpty, "EMP", { return rt.FifoEmpty(); });
+SIND(FifoEmpty, "EMP", { return !rt.FifoNotEmpty(); });
 SIND(FifoLevel, "LVL", { return rt.FifoLevel(); });
 SIND(FifoOverrun, "OVR", { return rt.FifoOverrun(); });
 SIND(PacketSent, "SNT", { return rt.PacketSent(); });
@@ -190,8 +190,7 @@ TCF(Deviation,  "Deviation",   "kHz",  double,  {
 });
 
 TCF(Bitrate,  "Bitrate",   "kBd",  double,  {
-  uint64_t br = (rt.BitrateMsb() << 8) | rt.BitrateLsb();
-  return rfm69.F_XOSC() / (double)br / 1e3;
+  return rfm69.rBitrate();
 });
 
 static double dcc_freq_map[] = {16, 8, 4, 2, 1, 0.5, 0.25, 0.125};

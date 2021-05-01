@@ -71,8 +71,7 @@ uint8_t RFM69::Read(const uint8_t &addr)
 std::vector<uint8_t> RFM69::Read(const uint8_t &addr, size_t length)
 {
   mtx.lock();
-  std::vector<uint8_t> res;
-  res.resize(length + 1);
+  std::vector<uint8_t> res(length + 1);
   res[0] = addr & 0x7F;
   SPIDev::Transfer(res);
   res.erase(res.begin());
@@ -152,12 +151,35 @@ void RFM69::ClearFlags()
 
 void RFM69::Receive(std::vector<uint8_t> &packet)
 {
-  uint8_t length = Read(RT->_rPayloadLength);
-  // packet = Read(0x00, length);
-  packet.reserve(length);
+  const uint8_t format = RT->_vPacketFormat(Read(RT->_rPacketConfig1));
+  const uint8_t length = Read(RT->_rPayloadLength);
+  const uint8_t threshold = RT->_vFifoThreshold(Read(RT->_rFifoThresh));
+  size_t max_wait = 5;
+
   packet.resize(0);
-  for (; length > 0; length--)
-    packet.push_back(Read(RT->_rFifo));
+
+  if (format == 0 && length == 0)
+    throw std::runtime_error("unlimited packet length not implemented yet");
+  else {
+    packet.reserve(length);
+    while (packet.size() < length && max_wait > 0) {
+      uint8_t irqflags2 = Read(RT->_rIrqFlags2);
+      if (RT->_vFifoNotEmpty(irqflags2)) {
+        if (RT->_vFifoLevel(irqflags2)) {
+          // auto p = Read(RT->_rFifo.Address(), threshold);
+          // packet.insert(packet.end(), p.begin(), p.end());
+          for (size_t i = 0; i < threshold; i++)
+            packet.push_back(Read(RT->_rFifo));
+        }
+        else
+          packet.push_back(Read(RT->_rFifo));
+      }
+      else {
+        sleep_us(8 * (1e6 / rBitrate()));
+        max_wait--;
+      }
+    }
+  }
 
 
   // uint8_t crc;
@@ -226,6 +248,11 @@ uint64_t RFM69::rSyncWord() const {
   r = (r << 8) | RT->SyncValue7();
   r = (r << 8) | RT->SyncValue8();
   return r;
+}
+
+double RFM69::rBitrate() const {
+  uint64_t br = (RT->BitrateMsb() << 8) | RT->BitrateLsb();
+  return F_XOSC() / (double)br / 1e3;
 }
 
 void RFM69::RegisterTable::Refresh(bool frequent)

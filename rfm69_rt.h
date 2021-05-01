@@ -158,7 +158,7 @@ REGISTER_TABLE_W(RFM69, RegisterTable, uint8_t, uint8_t,
   );
   REG(IrqFlags2, "", 0x28, RW,                                                  "Status register: FIFO handling flags...",
     VAR(IrqFlags2, FifoFull, "FifoFull", 0x80, RW,                              "");
-    VAR(IrqFlags2, FifoEmpty, "FifoEmpty", 0x40, RW,                            "");
+    VAR(IrqFlags2, FifoNotEmpty, "FifoNotEmpty", 0x40, RW,                            "");
     VAR(IrqFlags2, FifoLevel, "FifoLevel", 0x20, RW,                            "");
     VAR(IrqFlags2, FifoOverrun, "FifoOverrun", 0x10, RW,                        "");
     VAR(IrqFlags2, PacketSent, "PacketSent", 0x08, RW,                          "");
