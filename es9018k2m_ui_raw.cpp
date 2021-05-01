@@ -8,29 +8,30 @@
 #include "es9018k2m_rt.h"
 #include "es9018k2m_ui_raw.h"
 
-namespace ES9018K2MUIFields {
+namespace ES9018K2MUIRawFields {
 
-class RawField : public Field<uint8_t> {
+template <typename AT, typename VT, typename D>
+class RawField : public FieldBase {
 protected:
   const Register<uint8_t, uint8_t> &reg;
   const Variable<uint8_t> *var;
-  ES9018K2M::RegisterTableSet &rts;
+  RegisterTable<AT, VT, D> &rt;
 
 public:
-  RawField(int row, const Register<uint8_t, uint8_t> *reg, ES9018K2M::RegisterTableSet &rts) :
-    Field<uint8_t>(UI::statusp, row, 1, reg->NiceName(), "", ""), reg(*reg), var(NULL), rts(rts) {
+  RawField(int row, const Register<AT, VT> *reg, RegisterTable<AT, VT, D> &rt) :
+    FieldBase(UI::statusp, row, 1, reg->NiceName(), "", ""), reg(*reg), var(NULL), rt(rt) {
       value_width = 2;
       units_width = 0;
       attributes = A_BOLD;
   }
-  RawField(int row, const Register<uint8_t, uint8_t> *reg, const Variable<uint8_t> *var, ES9018K2M::RegisterTableSet &rts) :
-    Field<uint8_t>(UI::statusp, row, 1, var->NiceName(), "", ""), reg(*reg), var(var), rts(rts) {
+  RawField(int row, const Register<AT, VT> *reg, const Variable<VT> *var, RegisterTable<AT, VT, D> &rt) :
+    FieldBase(UI::statusp, row, 1, var->NiceName(), "", ""), reg(*reg), var(var), rt(rt) {
       value_width = 2;
       units_width = 0;
   }
   virtual size_t Width() { return key.size() + 4; }
-  virtual uint8_t Get() {
-    uint8_t r = reg(rts.Main.Buffer());
+  virtual VT Get() {
+    VT r = reg(rt.Buffer());
     return var ? (*var)(r) : r;
   }
   virtual void Update(bool full=false) {
@@ -90,31 +91,32 @@ public:
   virtual bool Activateable() const { return true; }
   virtual bool ReadOnly() { return !(var ? var->Writeable() : reg.Writeable()); }
   virtual void Set(const char *v_str) {
-    uint8_t v = 0;
+    VT v = 0;
     size_t v_str_len = strlen(v_str);
     if (v_str_len == 0 || v_str_len > 2 || sscanf(v_str, "%02hhx", &v) != 1)
       UI::Error("invalid value '%s'", v_str);
     else if (var != NULL)
-      rts.Main.Write(reg, var->Set(reg(rts.Main.Buffer()), v));
+      rt.Device().Write(reg.Address(), var->Set(reg(rt.Buffer()), v));
     else
-      rts.Main.Write(reg, v);
+      rt.Device().Write(reg.Address(), v);
   }
 };
 
-} // ES9018K2MUIFields
+} // ES9018K2MUIRawFields
 
-using namespace ES9018K2MUIFields;
+using namespace ES9018K2MUIRawFields;
 
 ES9018K2MUIRaw::ES9018K2MUIRaw(ES9018K2M &es9018k2m) : UI()
 {
   devices.insert(&es9018k2m);
 
+  typedef RawField<uint8_t, uint8_t, ES9018K2M> RF;
+
   int row = 1, col = 1;
-  bool first = true;
   for (auto reg : es9018k2m.RTS.Main) {
-    fields.push_back(new RawField(row++, reg, es9018k2m.RTS));
+    fields.push_back(new RF(row++, reg, es9018k2m.RTS.Main));
     for (auto var : *reg)
-      fields.push_back(new RawField(row++, reg, var, es9018k2m.RTS));
+      fields.push_back(new RF(row++, reg, var, es9018k2m.RTS.Main));
     fields.push_back(new Empty(row++, col));
   }
 }

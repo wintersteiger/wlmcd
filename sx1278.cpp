@@ -268,7 +268,3 @@ void SX1278::NormalRegisterTable::Read(std::istream &is)
   }
 }
 
-void SX1278::NormalRegisterTable::Write(const Register<uint8_t, uint8_t> &reg, const uint8_t &value)
-{
-  device.Write(reg.Address(), value);
-}

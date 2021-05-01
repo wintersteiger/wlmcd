@@ -18,24 +18,15 @@ public:
 
   virtual const char* Name() const { return "DHT22"; }
 
-  virtual void Reset();
-
   using Device::Read;
   using Device::Write;
 
   virtual void Write(std::ostream &os);
   virtual void Read(std::istream &is);
 
-  virtual uint64_t Read(const uint8_t &addr);
-  virtual std::vector<uint64_t> Read(const uint8_t &addr, size_t length);
-
-  virtual void Write(const uint8_t &addr, const uint64_t &value) {}
-  virtual void Write(const Register<uint8_t, uint64_t> &reg, const uint64_t &value) {}
-  virtual void Write(const uint8_t &addr, const std::vector<uint64_t> &values) {}
+  virtual uint64_t Read(const uint8_t &addr) override;
 
   virtual void UpdateTimed();
-  virtual void UpdateFrequent();
-  virtual void UpdateInfrequent();
 
   float Temperature() const;
   float Humidity() const;

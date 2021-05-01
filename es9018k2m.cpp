@@ -22,7 +22,7 @@ ES9018K2M::ES9018K2M(const std::string &bus, uint8_t device_address) :
   uint8_t cid = RTS.Main.CHIP_ID();
   uint8_t rev = RTS.Main.REVISION();
   if (cid != 0x04)
-    throw std::runtime_error("Unexpected ES9018K2M chip ID " + std::to_string(cid) + "." + std::to_string(rev));
+    throw std::runtime_error("Unexpected ES9018K2M chip ID: " + std::to_string(cid) + "." + std::to_string(rev));
 }
 
 ES9018K2M::~ES9018K2M()
@@ -34,16 +34,6 @@ void ES9018K2M::Reset()
 {
   I2CDevice::Reset();
   // Write(RTS.Main._rSystemSettings, 0x01);
-}
-
-uint8_t ES9018K2M::Read(const Register<uint8_t, uint8_t> &reg)
-{
-  return I2CDevice::Read(reg.Address());
-}
-
-void ES9018K2M::Write(const Register<uint8_t, uint8_t> &reg, const uint8_t &value)
-{
-  I2CDevice::Write(reg.Address(), value);
 }
 
 void ES9018K2M::Write(std::ostream &os)
@@ -59,12 +49,4 @@ void ES9018K2M::Read(std::istream &is)
 void ES9018K2M::UpdateTimed()
 {
   RTS.Main.Refresh(false);
-}
-
-void ES9018K2M::UpdateFrequent()
-{
-}
-
-void ES9018K2M::UpdateInfrequent()
-{
 }

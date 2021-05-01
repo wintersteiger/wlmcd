@@ -21,21 +21,7 @@ static void throw_errno(const char* msg)
   throw std::runtime_error(exmsg);
 }
 
-template <>
-I2CDevice<uint8_t, uint8_t>::I2CDevice(const std::string &bus, uint8_t device_address) :
-  bus(bus),
-  device_address(device_address)
-{}
-
-template<>
-I2CDevice<uint8_t, uint8_t>::~I2CDevice()
-{
-  if (fd >= 0)
-    close(fd);
-}
-
-template<>
-void I2CDevice<uint8_t, uint8_t>::Reset()
+void I2CDeviceBase::Reset()
 {
   std::lock_guard<std::mutex> lock(mtx);
 
@@ -52,13 +38,13 @@ void I2CDevice<uint8_t, uint8_t>::Reset()
 template<>
 uint8_t I2CDevice<uint8_t, uint8_t>::Read(const uint8_t &addr)
 {
-  uint8_t buf[2] = { addr, 0 };
+  uint8_t buf = addr;
   std::lock_guard<std::mutex> lock(mtx);
-  if (write(fd, buf, 1) != 1)
+  if (write(fd, &buf, 1) != 1)
     throw_errno("failed to write to the I2C bus");
-  if (read(fd, buf, 2) != 2)
+  if (read(fd, &buf, 1) != 1)
     throw_errno("failed to read from the I2C bus");
-  return buf[0];
+  return buf;
 }
 
 template<>
@@ -67,5 +53,29 @@ void I2CDevice<uint8_t, uint8_t>::Write(const uint8_t &addr, const uint8_t &valu
   uint8_t buf[2] = { addr, value };
   std::lock_guard<std::mutex> lock(mtx);
   if (write(fd, buf, 2) != 2)
+    throw_errno("failed to write to the I2C bus");
+}
+
+template<>
+uint16_t I2CDevice<uint8_t, uint16_t>::Read(const uint8_t &addr)
+{
+  uint8_t buf[2] = { addr };
+  std::lock_guard<std::mutex> lock(mtx);
+  if (write(fd, buf, 1) != 1)
+    throw_errno("failed to write to the I2C bus");
+  if (read(fd, buf, 2) != 2)
+    throw_errno("failed to read from the I2C bus");
+  return buf[0] << 8 | buf[1];
+}
+
+template <>
+void I2CDevice<uint8_t, uint16_t>::Write(const uint8_t &addr, const uint16_t &value)
+{
+  uint8_t buf[3];
+  buf[0] = addr;
+  buf[1] = value >> 8;
+  buf[2] = value & 0xFF;
+  std::lock_guard<std::mutex> lock(mtx);
+  if (write(fd, buf, 3) != 3)
     throw_errno("failed to write to the I2C bus");
 }

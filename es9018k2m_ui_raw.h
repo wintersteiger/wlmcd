@@ -4,11 +4,9 @@
 #ifndef _ES9018K2M_UI_RAW_H_
 #define _ES9018K2M_UI_RAW_H_
 
-#include <cstdint>
-#include <vector>
-
 #include "ui.h"
-#include "field.h"
+
+class ES9018K2M;
 
 class ES9018K2MUIRaw: public UI {
 public:

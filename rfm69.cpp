@@ -304,7 +304,3 @@ void RFM69::RegisterTable::Read(std::istream &is)
     Set("OpMode", j["registers"]["OpMode"]);
 }
 
-void RFM69::RegisterTable::Write(const Register<uint8_t, uint8_t> &reg, const uint8_t &value)
-{
-  device.Write(reg.Address(), value);
-}

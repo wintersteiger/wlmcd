@@ -98,7 +98,9 @@ public:
     virtual void Refresh(bool frequent);                                       \
     virtual void Read(std::istream &is);                                       \
     virtual void Write(std::ostream &os);                                      \
-    virtual void Write(const Register<AT, VT> &reg, const VT &value);          \
+    virtual void Write(const Register<AT, VT> &reg, const VT &value) {         \
+      return device.Write(reg.Address(), value); \
+    } \
     R;                                                                         \
   };
 

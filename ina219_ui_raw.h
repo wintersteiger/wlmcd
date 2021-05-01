@@ -4,11 +4,7 @@
 #ifndef _INA219_UI_RAW_H_
 #define _INA219_UI_RAW_H_
 
-#include <cstdint>
-#include <vector>
-
 #include "ui.h"
-#include "field.h"
 
 class INA219;
 

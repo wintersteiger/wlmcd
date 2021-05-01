@@ -4,6 +4,8 @@
 #ifndef _I2C_DEVICE_H_
 #define _I2C_DEVICE_H_
 
+#include <unistd.h>
+
 #include <mutex>
 #include <cstddef>
 #include <vector>
@@ -11,23 +13,46 @@
 
 #include "device.h"
 
-template <typename AT, typename VT>
-class I2CDevice : public Device<AT, VT>{
+class I2CDeviceBase {
 public:
-  I2CDevice(const std::string &bus, uint8_t device_address);
+  I2CDeviceBase(const std::string &bus, uint8_t device_address) :
+    bus(bus),
+    device_address(device_address)
+  {}
 
-  virtual ~I2CDevice();
+  virtual ~I2CDeviceBase() {
+    if (fd >= 0)
+      close(fd);
+  }
+
+  virtual void Reset();
+
+protected:
+  std::mutex mtx;
+  int fd;
+  std::string bus;
+  uint8_t device_address;
+};
+
+template <typename AT, typename VT>
+class I2CDevice : public Device<AT, VT>, I2CDeviceBase {
+public:
+  I2CDevice(const std::string &bus, uint8_t device_address) :
+    I2CDeviceBase(bus, device_address)
+  {}
+
+  virtual ~I2CDevice() = default;
 
   std::string Bus() const { return bus; }
   uint8_t DeviceAddress() const { return device_address; }
 
-  void Reset();
+  using I2CDeviceBase::Reset;
 
   VT Read(const uint8_t &addr);
 
-  std::vector<VT> Read(const uint8_t &addr, size_t length)
+  virtual std::vector<VT> Read(const uint8_t &addr, size_t length) override
   {
-    std::vector<uint8_t> r(length);
+    std::vector<VT> r(length);
     for (size_t i=0; i < length; i++)
       r[i] = Read(addr + i);
     return r;
@@ -42,10 +67,10 @@ public:
   }
 
 protected:
-  std::mutex mtx;
-  int fd;
-  std::string bus;
-  uint8_t device_address;
+  using I2CDeviceBase::mtx;
+  using I2CDeviceBase::fd;
+  using I2CDeviceBase::bus;
+  using I2CDeviceBase::device_address;
 };
 
 #endif // _I2C_DEVICE_H_

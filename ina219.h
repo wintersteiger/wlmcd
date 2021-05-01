@@ -6,9 +6,9 @@
 
 #include <mutex>
 
-#include "device.h"
+#include "i2c_device.h"
 
-class INA219 : public Device<uint8_t, uint16_t> {
+class INA219 : public I2CDevice<uint8_t, uint16_t> {
 public:
   class RegisterTable;
   RegisterTable &RT;
@@ -25,25 +25,15 @@ public:
 
   virtual const char* Name() const { return "INA219"; }
 
-  virtual void Reset();
+  virtual void Reset() override;
 
-  using Device::Read;
-  using Device::Write;
+  using I2CDevice::Read;
+  using I2CDevice::Write;
 
   virtual void Write(std::ostream &os);
   virtual void Read(std::istream &is);
 
-  virtual uint16_t Read(const uint8_t &addr);
-  uint16_t Read(const Register<uint8_t, uint16_t> &reg);
-  virtual std::vector<uint16_t> Read(const uint8_t &addr, size_t length);
-
-  virtual void Write(const uint8_t &addr, const uint16_t &value);
-  virtual void Write(const Register<uint8_t, uint16_t> &reg, const uint16_t &value);
-  virtual void Write(const uint8_t &addr, const std::vector<uint16_t> &values);
-
-  virtual void UpdateTimed();
-  virtual void UpdateFrequent();
-  virtual void UpdateInfrequent();
+  virtual void UpdateTimed() override;
 
   double BusVoltage(void) const;
   double ShuntVoltage(void) const;
@@ -58,10 +48,6 @@ public:
   void SetShuntADCResolution(uint8_t value);
 
 protected:
-  std::mutex mtx;
-  int fd;
-  std::string bus;
-  uint8_t device_address;
   double r_shunt, max_expected_current, current_lsb, power_lsb;
 };
 

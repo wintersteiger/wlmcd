@@ -38,12 +38,13 @@ REGISTER_TABLE_W(MCP9808, RegisterTable, uint8_t, uint16_t,
     VAR(T_A, T_A_GT_T_LOWER, "T_A > T_LOWER", 0x2000, RO,       "");
     VAR(T_A, Temperature, "Temperature", 0x1FFF, RO,            "");
   );
+
   REG(ManufacturerID, "Manufacturer ID", 0x06, RO,              "Manufacturer ID", );
   REG(DeviceIDRev, "Device ID/Revision", 0x07, RO,              "Device ID/Revision",
     VAR(DeviceIDRev, DeviceID, "Device ID", 0xFF00, RO,         "");
     VAR(DeviceIDRev, DeviceRev, "Device Revision", 0x00FF, RO,  "");
   );
-  REG(Resolution_, "Resolution_", 0x08, RW,                      "Resolution",
+  REG(Resolution_, "Resolution_", 0x08, RW,                     "Resolution",
     VAR(Resolution_, Resolution, "Resolution", 0x0300, RW,      "");
   );
 

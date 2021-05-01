@@ -29,10 +29,8 @@ static void throw_errno(const char* msg) {
 }
 
 INA219::INA219(double r_shunt, double max_expected_current, const std::string &bus, uint8_t device_address) :
+  I2CDevice<uint8_t, uint16_t>(bus, device_address),
   RT(*(new RegisterTable(*this))),
-  fd(-1),
-  bus(bus),
-  device_address(device_address),
   r_shunt(r_shunt),
   max_expected_current(max_expected_current),
   current_lsb(0),
@@ -52,21 +50,10 @@ INA219::~INA219()
 
 void INA219::Reset()
 {
-  {
-    std::lock_guard<std::mutex> lock(mtx);
+  I2CDevice<uint8_t, uint16_t>::Reset();
 
-    if (fd >= 0)
-      close(fd);
-
-    if ((fd = open(bus.c_str(), O_RDWR)) < 0)
-      throw_errno("failed to open the I2C bus");
-
-    if (ioctl(fd, I2C_SLAVE, device_address) < 0)
-      throw_errno("failed to acquire bus access and/or talk to slave");
-  }
-
-  Write(RT._rConfiguration, 0xFFFF);
-  Write(RT._rConfiguration, 0x399F);
+  RT.Write(RT._rConfiguration, 0xFFFF);
+  RT.Write(RT._rConfiguration, 0x399F);
 
   if (!std::isnan(r_shunt) && !std::isnan(max_expected_current))
   {
@@ -77,52 +64,6 @@ void INA219::Reset()
   }
   else
     Write(RT._rCalibration.Address(), 0);
-}
-
-uint16_t INA219::Read(const uint8_t &addr)
-{
-  uint8_t buf[2] = { addr };
-  std::lock_guard<std::mutex> lock(mtx);
-  if (write(fd, buf, 1) != 1)
-    throw_errno("failed to write to the I2C bus");
-  if (read(fd, buf, 2) != 2)
-    throw_errno("failed to read from the I2C bus");
-  return buf[0] << 8 | buf[1];
-}
-
-uint16_t INA219::Read(const Register<uint8_t, uint16_t> &reg)
-{
-  return Read(reg.Address());
-}
-
-std::vector<uint16_t> INA219::Read(const uint8_t &addr, size_t length)
-{
-  std::vector<uint16_t> r(length);
-  for (size_t i=0; i < length; i++)
-    r[i] = Read(addr + i);
-  return r;
-}
-
-void INA219::Write(const uint8_t &addr, const uint16_t &value)
-{
-  uint8_t buf[3];
-  buf[0] = addr | 0x80;
-  buf[1] = value >> 8;
-  buf[2] = value & 0xFF;
-  std::lock_guard<std::mutex> lock(mtx);
-  if (write(fd, buf, 3) != 3)
-    throw_errno("failed to write to the I2C bus");
-}
-
-void INA219::Write(const Register<uint8_t, uint16_t> &reg, const uint16_t &value)
-{
-  Write(reg.Address(), value);
-}
-
-void INA219::Write(const uint8_t &addr, const std::vector<uint16_t> &values)
-{
-  for (size_t i=0; i < values.size(); i++)
-    Write(addr + i, values[i]);
 }
 
 void INA219::Write(std::ostream &os)
@@ -171,7 +112,7 @@ void INA219::SetBusVoltageRange(BusVoltageRange range)
   uint16_t cfg_val = Read(RT._rConfiguration.Address()) & 0x1FFF;
   if (range == _32V)
     cfg_val |= 0x2000;
-  Write(RT._rConfiguration, cfg_val);
+  RT.Write(RT._rConfiguration, cfg_val);
 }
 
 void INA219::SetPGARange(PGARange range)
@@ -184,34 +125,26 @@ void INA219::SetPGARange(PGARange range)
     case _320mV: cfg_val |= 0x1800; break;
     default: throw std::runtime_error("invalid PGA range");
   }
-  Write(RT._rConfiguration, cfg_val);
+  RT.Write(RT._rConfiguration, cfg_val);
 }
 
 void INA219::SetBusADCResolution(uint8_t value)
 {
   uint16_t cfg_val = Read(RT._rConfiguration.Address());
   cfg_val = (cfg_val & 0x387F) | (value & 0x000F) << 7;
-  Write(RT._rConfiguration, cfg_val);
+  RT.Write(RT._rConfiguration, cfg_val);
 }
 
 void INA219::SetShuntADCResolution(uint8_t value)
 {
   uint16_t cfg_val = Read(RT._rConfiguration.Address());
   cfg_val = (cfg_val & 0x3F87) | (value & 0x000F) << 3;
-  Write(RT._rConfiguration, cfg_val);
+  RT.Write(RT._rConfiguration, cfg_val);
 }
 
 void INA219::UpdateTimed()
 {
   RT.Refresh(false);
-}
-
-void INA219::UpdateFrequent()
-{
-}
-
-void INA219::UpdateInfrequent()
-{
 }
 
 void INA219::RegisterTable::Refresh(bool frequent)
@@ -273,9 +206,4 @@ void INA219::RegisterTable::Read(std::istream &is)
     if (!found)
       throw std::runtime_error(std::string("invalid register '") + e.key() + "'");
   }
-}
-
-void INA219::RegisterTable::Write(const Register<uint8_t, uint16_t> &reg, const uint16_t &value)
-{
-  device.Write(reg, value);
 }

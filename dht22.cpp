@@ -47,9 +47,6 @@ DHT22::~DHT22()
 {
 }
 
-void DHT22::Reset()
-{}
-
 void DHT22::Write(std::ostream &os)
 {}
 
@@ -159,25 +156,9 @@ uint64_t DHT22::Read(const uint8_t &addr)
   return data;
 }
 
-std::vector<uint64_t> DHT22::Read(const uint8_t &addr, size_t length)
-{
-  std::vector<uint64_t> res(length, 0);
-  for (size_t i=0; i < length; i++)
-    res[i] = Read(addr);
-  return res;
-}
-
 void DHT22::UpdateTimed()
 {
   RT.Refresh(false);
-}
-
-void DHT22::UpdateFrequent()
-{
-}
-
-void DHT22::UpdateInfrequent()
-{
 }
 
 float DHT22::Temperature() const {
@@ -216,9 +197,4 @@ void DHT22::RegisterTable::Write(std::ostream &os)
 void DHT22::RegisterTable::Read(std::istream &is)
 {
 
-}
-
-void DHT22::RegisterTable::Write(const Register<uint8_t, uint64_t> &reg, const uint64_t &value)
-{
-  device.Write(reg, value);
 }

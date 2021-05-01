@@ -48,7 +48,7 @@ UI_SRC = field.cpp ui.cpp basic_ui.cpp controller.cpp \
 	rfm69_ui.cpp \
 	dht22_ui.cpp \
 	mcp9808_ui_raw.cpp \
-	es9018k2m_ui_raw.cpp
+	es9018k2m_ui.cpp es9018k2m_ui_raw.cpp
 
 OBJ = $(subst .cpp,.o,$(SRC))
 UI_OBJ = $(subst .cpp,.o,$(UI_SRC))
