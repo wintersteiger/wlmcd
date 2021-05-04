@@ -16,6 +16,7 @@
 class I2CDeviceBase {
 public:
   I2CDeviceBase(const std::string &bus, uint8_t device_address) :
+    fd(-1),
     bus(bus),
     device_address(device_address)
   {}
@@ -47,6 +48,8 @@ public:
   uint8_t DeviceAddress() const { return device_address; }
 
   using I2CDeviceBase::Reset;
+  using Device<AT, VT>::Read;
+  using Device<AT, VT>::Write;
 
   virtual VT Read(const uint8_t &addr) override;
 

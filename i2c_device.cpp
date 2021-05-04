@@ -23,7 +23,7 @@ static void throw_errno(const char* msg)
 
 void I2CDeviceBase::Reset()
 {
-  std::lock_guard<std::mutex> lock(mtx);
+  const std::lock_guard<std::mutex> lock(mtx);
 
   if (fd >= 0)
     close(fd);
@@ -39,7 +39,7 @@ template<>
 uint8_t I2CDevice<uint8_t, uint8_t>::Read(const uint8_t &addr)
 {
   uint8_t buf = addr;
-  std::lock_guard<std::mutex> lock(mtx);
+  const std::lock_guard<std::mutex> lock(mtx);
   if (write(fd, &buf, 1) != 1)
     throw_errno("failed to write to the I2C bus");
   if (read(fd, &buf, 1) != 1)
@@ -51,7 +51,7 @@ template<>
 void I2CDevice<uint8_t, uint8_t>::Write(const uint8_t &addr, const uint8_t &value)
 {
   uint8_t buf[2] = { addr, value };
-  std::lock_guard<std::mutex> lock(mtx);
+  const std::lock_guard<std::mutex> lock(mtx);
   if (write(fd, buf, 2) != 2)
     throw_errno("failed to write to the I2C bus");
 }
@@ -60,7 +60,7 @@ template<>
 uint16_t I2CDevice<uint8_t, uint16_t>::Read(const uint8_t &addr)
 {
   uint8_t buf[2] = { addr };
-  std::lock_guard<std::mutex> lock(mtx);
+  const std::lock_guard<std::mutex> lock(mtx);
   if (write(fd, buf, 1) != 1)
     throw_errno("failed to write to the I2C bus");
   if (read(fd, buf, 2) != 2)

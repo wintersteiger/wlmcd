@@ -27,8 +27,8 @@ public:
 
   virtual void Reset() override;
 
-  using I2CDevice::Read;
-  using I2CDevice::Write;
+  using I2CDevice<uint8_t, uint16_t>::Read;
+  using I2CDevice<uint8_t, uint16_t>::Write;
 
   virtual void Write(std::ostream &os) override;
   virtual void Read(std::istream &is) override;

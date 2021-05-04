@@ -90,18 +90,23 @@ public:
   };                                                                           \
   N##RT N;
 
-#define REGISTER_TABLE_W(D, N, AT, VT, R)                                      \
-  class D::N : public ::RegisterTable<AT, VT, D> {                             \
-  public:                                                                      \
-    N(D &d) : ::RegisterTable<AT, VT, D>(d) {}                                 \
-    virtual ~N() {}                                                            \
-    virtual void Refresh(bool frequent);                                       \
-    virtual void Read(std::istream &is);                                       \
-    virtual void Write(std::ostream &os);                                      \
-    virtual void Write(const Register<AT, VT> &reg, const VT &value) {         \
-      return device.Write(reg.Address(), value); \
-    } \
-    R;                                                                         \
+#define REGISTER_TABLE_W(D, N, AT, VT, R)                                    \
+  class D::N : public ::RegisterTable<AT, VT, D>                             \
+  {                                                                          \
+  public:                                                                    \
+    N(D &d) : ::RegisterTable<AT, VT, D>(d) {}                               \
+    virtual ~N() {}                                                          \
+    virtual void Refresh(bool frequent);                                     \
+    virtual void Read(std::istream &is);                                     \
+    virtual void Write(std::ostream &os);                                    \
+    virtual void Write(const Register<AT, VT> &reg, const VT &value) {       \
+      device.Write(reg, value);                                              \
+    }                                                                        \
+    virtual void Write(const Register<AT, VT> &reg, const Variable<VT> &var, \
+                       const VT &value) {                                    \
+      device.Write(reg, var.Set(reg(buffer), value));                        \
+    }                                                                        \
+    R;                                                                       \
   };
 
 #define REGISTER_TABLE_SET_TABLE_W(D, N, AT, VT, R)                            \
@@ -112,7 +117,13 @@ public:
     virtual void Refresh(bool frequent);                                       \
     virtual void Read(std::istream &is);                                       \
     virtual void Write(std::ostream &os);                                      \
-    virtual void Write(const Register<AT, VT> &reg, const VT &value);          \
+    virtual void Write(const Register<AT, VT> &reg, const VT &value) {         \
+      device.Write(reg, value);                                                \
+    }                                                                          \
+    virtual void Write(const Register<AT, VT> &reg, const Variable<VT> &var,   \
+                       const VT &value) {                                      \
+      device.Write(reg, var.Set(reg(buffer), value));                          \
+    }                                                                          \
     R;                                                                         \
   };                                                                           \
   N##RT N;

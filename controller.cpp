@@ -250,12 +250,12 @@ Controller::Controller(
 Controller::~Controller()
 {
   Stop();
-  while (Running())
-    sleep_ms(10);
-  sleep_ms(100);
 }
 
-void Controller::AddSystem(UI *ui, Decoder *decoder, Encoder* encoder)
+void Controller::AddSystem(
+  std::shared_ptr<UI> ui,
+  std::shared_ptr<Decoder> decoder,
+  std::shared_ptr<Encoder> encoder)
 {
   uis.push_back(ui);
   decoders.push_back(decoder);
@@ -273,7 +273,7 @@ bool Controller::SelectSystem(size_t inx)
 
 void Controller::ThreadCleanup()
 {
-  std::lock_guard<std::mutex> lock(threads_mtx);
+  const std::lock_guard<std::mutex> lock(threads_mtx);
   try {
     if (!threads.empty()) {
       std::set<UpdateThread*> joined;
@@ -362,7 +362,7 @@ void Controller::Run()
         timed_out = false;
         ThreadCleanup();
         try {
-          std::lock_guard<std::mutex> lock(threads_mtx);
+          const std::lock_guard<std::mutex> lock(threads_mtx);
           for (DeviceBase *device : uis[ui_inx]->Devices()) {
             UpdateThread *t = new UpdateThread(device);
             if (t == NULL)

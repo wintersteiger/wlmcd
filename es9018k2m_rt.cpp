@@ -23,11 +23,6 @@ ES9018K2M::RegisterTableSet::~RegisterTableSet()
 {
 }
 
-void ES9018K2M::RegisterTableSet::MainRT::Write(const Register<uint8_t, uint8_t> &reg, const uint8_t &value)
-{
-  device.I2CDevice::Write(reg.Address(), value);
-}
-
 void ES9018K2M::RegisterTableSet::MainRT::Refresh(bool frequent)
 {
   buffer.resize(registers.size(), 0);
@@ -102,16 +97,17 @@ void ES9018K2M::RegisterTableSet::ProfessionalRT::Refresh(bool frequent)
 
 void ES9018K2M::RegisterTableSet::Refresh(bool frequent)
 {
-  device.RTS.Main.Refresh(frequent);
-  device.RTS.Professional.Refresh(frequent); // Consumer RT overlaps completely.
+  device.RTS->Main.Refresh(frequent);
+  device.RTS->Consumer.Refresh(frequent);
+  device.RTS->Professional.Refresh(frequent);
 }
 
 void ES9018K2M::RegisterTableSet::Read(std::istream &is)
 {
-  device.RTS.Main.Read(is);
+  device.RTS->Main.Read(is);
 }
 
 void ES9018K2M::RegisterTableSet::Write(std::ostream &os)
 {
-  device.RTS.Main.Write(os);
+  device.RTS->Main.Write(os);
 }

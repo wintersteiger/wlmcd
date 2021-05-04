@@ -29,7 +29,9 @@ public:
     size_t infrequent_interval=71);
   virtual ~Controller();
 
-  void AddSystem(UI *ui, Decoder *decoder = NULL, Encoder* encoder = NULL);
+  void AddSystem(std::shared_ptr<UI> ui,
+                 std::shared_ptr<Decoder> decoder = nullptr,
+                 std::shared_ptr<Encoder> encoder = nullptr);
   bool SelectSystem(size_t inx);
   void Run();
   void Stop();
@@ -41,11 +43,14 @@ protected:
   size_t cur_frequent_interval, cur_infrequent_interval;
   double cur_frequency;
   size_t ui_inx, decoder_inx, encoder_inx;
-  std::vector<UI*> uis;
-  std::vector<Decoder*> decoders;
-  std::vector<Encoder*> encoders;
+  std::vector<std::shared_ptr<UI>> uis;
+  std::vector<std::shared_ptr<Decoder>> decoders;
+  std::vector<std::shared_ptr<Encoder>> encoders;
 
-  typedef std::function<void(Controller*, UI*, Decoder*, Encoder*)> key_fun_t;
+  typedef std::function<void(Controller*,
+                             std::shared_ptr<UI>,
+                             std::shared_ptr<Decoder>,
+                             std::shared_ptr<Encoder>)> key_fun_t;
   std::map<int, key_fun_t> key_bindings;
 
   void PauseTimer();

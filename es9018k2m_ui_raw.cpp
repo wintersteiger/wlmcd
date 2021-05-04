@@ -113,10 +113,10 @@ ES9018K2MUIRaw::ES9018K2MUIRaw(std::shared_ptr<ES9018K2M> &es9018k2m) : UI()
   typedef RawField<uint8_t, uint8_t, ES9018K2M> RF;
 
   int row = 1, col = 1;
-  for (auto reg : es9018k2m->RTS.Main) {
-    fields.push_back(new RF(row++, reg, es9018k2m->RTS.Main));
+  for (auto reg : es9018k2m->RTS->Main) {
+    fields.push_back(new RF(row++, reg, es9018k2m->RTS->Main));
     for (auto var : *reg)
-      fields.push_back(new RF(row++, reg, var, es9018k2m->RTS.Main));
+      fields.push_back(new RF(row++, reg, var, es9018k2m->RTS->Main));
     fields.push_back(new Empty(row++, col));
   }
 }

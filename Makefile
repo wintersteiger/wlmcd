@@ -8,7 +8,7 @@ CXXFLAGS+=-I .
 CXXFLAGS+=-Wno-psabi
 CXXFLAGS+=$(shell pkg-config dbus-1 --cflags)
 
-LDFLAGS=-g -lrt -lcrypto -lwiringPi -lgpiod -lpthread -lgpiod
+LDFLAGS=-lrt -lcrypto -lwiringPi -lgpiod -lpthread -lgpiod
 
 # CXX=clang++-8
 # CXXFLAGS+=-O1 -g -fsanitize=address -fno-omit-frame-pointer

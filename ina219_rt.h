@@ -35,4 +35,7 @@ REGISTER_TABLE_W(INA219, RegisterTable, uint8_t, uint16_t,
   );
 );
 
+#undef REG
+#undef VAR
+
 #endif // _INA219_RT_H_

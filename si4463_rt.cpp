@@ -45,10 +45,6 @@ void SI4463::RegisterTableSet::PropertyRT::Refresh(bool frequent)
 void SI4463::RegisterTableSet::PropertyRT::Write(std::ostream &os) {}
 void SI4463::RegisterTableSet::PropertyRT::Read(std::istream &is) {}
 
-void SI4463::RegisterTableSet::PropertyRT::Write(const Register<uint16_t, uint8_t> &reg, const uint8_t &value) {
-  device.Write(reg, value);
-}
-
 void SI4463::RegisterTableSet::PartInfoRT::Refresh(bool frequent)
 {
   buffer = device.PartInfo();

@@ -33,12 +33,6 @@ public:
   virtual void UpdateTimed() override;
 
   double Temperature();
-
-protected:
-  std::mutex mtx;
-  int fd;
-  std::string bus;
-  uint8_t device_address;
 };
 
 #endif // _MCP9808_H_

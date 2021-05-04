@@ -22,12 +22,6 @@
 
 using json = nlohmann::json;
 
-static void throw_errno(const char* msg) {
-  char exmsg[1024];
-  snprintf(exmsg, sizeof(exmsg), "%s (%s (%d))", msg, strerror(errno), errno);
-  throw std::runtime_error(exmsg);
-}
-
 INA219::INA219(double r_shunt, double max_expected_current, const std::string &bus, uint8_t device_address) :
   I2CDevice<uint8_t, uint16_t>(bus, device_address),
   RT(*(new RegisterTable(*this))),
@@ -37,7 +31,6 @@ INA219::INA219(double r_shunt, double max_expected_current, const std::string &b
   power_lsb(0)
 {
   Reset();
-
   RT.Refresh(false);
 }
 
@@ -58,10 +51,10 @@ void INA219::Reset()
     current_lsb = max_expected_current / 32768.0 /* 2**15 */ ;
     power_lsb = 20.0 * current_lsb;
     uint16_t cal = (uint16_t) trunc(0.04096 / (current_lsb * r_shunt));
-    Write(RT._rCalibration.Address(), cal);
+    Write(RT._rCalibration, cal);
   }
   else
-    Write(RT._rCalibration.Address(), 0);
+    Write(RT._rCalibration, 0);
 }
 
 void INA219::Write(std::ostream &os)
@@ -107,7 +100,7 @@ double INA219::Power(void) const
 
 void INA219::SetBusVoltageRange(BusVoltageRange range)
 {
-  uint16_t cfg_val = Read(RT._rConfiguration.Address()) & 0x1FFF;
+  uint16_t cfg_val = Read(RT._rConfiguration) & 0x1FFF;
   if (range == _32V)
     cfg_val |= 0x2000;
   RT.Write(RT._rConfiguration, cfg_val);
@@ -115,7 +108,7 @@ void INA219::SetBusVoltageRange(BusVoltageRange range)
 
 void INA219::SetPGARange(PGARange range)
 {
-  uint16_t cfg_val = Read(RT._rConfiguration.Address()) & 0x07FF;
+  uint16_t cfg_val = Read(RT._rConfiguration) & 0x07FF;
   switch (range) {
     case _40mV: break;
     case _80mV: cfg_val |= 0x0800; break;
@@ -128,14 +121,14 @@ void INA219::SetPGARange(PGARange range)
 
 void INA219::SetBusADCResolution(uint8_t value)
 {
-  uint16_t cfg_val = Read(RT._rConfiguration.Address());
+  uint16_t cfg_val = Read(RT._rConfiguration);
   cfg_val = (cfg_val & 0x387F) | (value & 0x000F) << 7;
   RT.Write(RT._rConfiguration, cfg_val);
 }
 
 void INA219::SetShuntADCResolution(uint8_t value)
 {
-  uint16_t cfg_val = Read(RT._rConfiguration.Address());
+  uint16_t cfg_val = Read(RT._rConfiguration);
   cfg_val = (cfg_val & 0x3F87) | (value & 0x000F) << 3;
   RT.Write(RT._rConfiguration, cfg_val);
 }
@@ -150,7 +143,7 @@ void INA219::RegisterTable::Refresh(bool frequent)
   if (buffer.size() != registers.size())
     buffer.resize(registers.size(), 0);
   for (auto reg : registers)
-    buffer[reg->Address()] = device.Read(reg->Address());
+    buffer[reg->Address()] = device.Read(*reg);
 }
 
 void INA219::RegisterTable::Write(std::ostream &os)
@@ -197,7 +190,7 @@ void INA219::RegisterTable::Read(std::istream &is)
       if (reg->Name() == e.key()) {
         uint8_t val;
         sscanf(sval.c_str(), "%02hhx", &val);
-        device.Write(reg->Address(), val);
+        device.Write(*reg, val);
         found = true;
         break;
       }

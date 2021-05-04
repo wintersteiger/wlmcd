@@ -18,6 +18,8 @@ inline void sleep_ms(uint64_t ms)
 
   while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
     ;
+
+  errno = 0;
 }
 
 inline void sleep_us(uint64_t us)
@@ -29,6 +31,8 @@ inline void sleep_us(uint64_t us)
 
   while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
     ;
+
+  errno = 0;
 }
 
 inline void sleep_ns(uint64_t ns)
@@ -40,6 +44,8 @@ inline void sleep_ns(uint64_t ns)
 
   while (nanosleep(&ts, &ts) == -1 && errno == EINTR)
     ;
+
+  errno = 0;
 }
 
 #endif // _SLEEP_H_

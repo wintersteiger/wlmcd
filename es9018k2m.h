@@ -12,7 +12,7 @@
 class ES9018K2M : public I2CDevice<uint8_t, uint8_t> {
 public:
   class RegisterTableSet;
-  RegisterTableSet &RTS;
+  RegisterTableSet *RTS;
 
   ES9018K2M(const std::string &bus = "/dev/i2c-1", uint8_t device_address = 0x48);
   virtual ~ES9018K2M();
@@ -33,6 +33,11 @@ public:
   using I2CDevice::Write;
 
   virtual void UpdateTimed() override;
+
+  double SampleRate() const;
+
+protected:
+  static constexpr double F_MCLK = 80*1e6;
 };
 
 #endif // _ES9018K2M_H_
