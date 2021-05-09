@@ -5,15 +5,15 @@ all: libwlmcd-dev.a libwlmcd-ui.a libwlmcd-dev.so libwlmcd-ui.so tests
 
 CXXFLAGS+=-g -MMD -MP -Wall -Wno-unused-variable -Wno-unused-function
 CXXFLAGS+=-I .
-# CXXFLAGS+=-Wno-psabi
+CXXFLAGS+=-Wno-psabi
 CXXFLAGS+=$(shell pkg-config dbus-1 --cflags)
 
 LDFLAGS=-lrt -lcrypto -lwiringPi -lgpiod -lpthread -lgpiod
 
-CXX=clang++-8
-CXXFLAGS+=-g -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG
-CXXFLAGS+=-O1
-LDFLAGS+=-g -fsanitize=address
+# CXX=clang++-8
+# CXXFLAGS+=-g -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG
+# CXXFLAGS+=-O1
+# LDFLAGS+=-g -fsanitize=address
 
 %.o: %.cpp
 	${CXX} ${CXXFLAGS} $< -c -o $@
