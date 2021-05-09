@@ -242,6 +242,9 @@ Controller::Controller(
         ui->Update(false);
       }
     }
+    else
+      for (auto device : ui->Devices())
+        device->Test({});
   };
 
   key_bindings[' '] = KEY_FUN { ui->Bump(); };

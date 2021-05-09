@@ -20,10 +20,10 @@ public:
   INA219UI(INA219 &ina219);
   virtual ~INA219UI();
 
-  virtual std::string Name() const { return "INA219"; }
-  virtual void Layout();
+  virtual std::string Name() const override { return "INA219"; }
+  virtual void Layout() override;
 };
 
-std::shared_ptr<UI> make_ina219_raw_ui(std::shared_ptr<INA219> &device, RegisterTable<uint8_t, uint16_t, INA219> &rt);
+std::shared_ptr<UI> make_ina219_raw_ui(std::shared_ptr<INA219> &device);
 
 #endif // _INA219_UI_RAW_H_

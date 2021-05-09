@@ -14,8 +14,8 @@ public:
   BME680(const std::string &bus = "/dev/i2c-1", uint8_t device_address = 0x77);
   virtual ~BME680();
 
-  std::string Bus() const { return bus; }
-  uint8_t DeviceAddress() const { return device_address; }
+  using I2CDevice::Bus;
+  using I2CDevice::DeviceAddress;
 
   virtual const char* Name() const override { return "BME680"; }
 
@@ -30,6 +30,16 @@ public:
 
   virtual void Write(std::ostream &os) override;
   virtual void Read(std::istream &is) override;
+
+  virtual void Test(const std::vector<uint8_t> &data) override;
+
+protected:
+  int32_t t_fine = 0;
+  std::vector<uint8_t> GetCalibData();
+  int8_t ComputeHeaterTemp(uint16_t target_temp, int32_t ambient_temp);
+  int16_t ComputeTemperature(uint32_t t);
+  uint32_t ComputePressure(uint32_t p);
+  void Measure();
 };
 
 #endif // _BME680_H_

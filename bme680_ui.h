@@ -11,6 +11,14 @@
 
 class BME680;
 
+class BME680UI : public UI {
+public:
+  BME680UI(std::shared_ptr<BME680> bme680);
+  virtual ~BME680UI() = default;
+
+  virtual std::string Name() const override { return "BME680"; }
+};
+
 std::shared_ptr<UI> make_bme680_raw_ui(std::shared_ptr<BME680> &device);
 
 #endif

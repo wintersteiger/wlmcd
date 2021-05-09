@@ -46,7 +46,7 @@ void INA219UI::Layout() {
   UI::Layout();
 }
 
-std::shared_ptr<UI> make_ina219_raw_ui(std::shared_ptr<INA219> &device, RegisterTable<uint8_t, uint16_t, INA219> &rt)
+std::shared_ptr<UI> make_ina219_raw_ui(std::shared_ptr<INA219> &device)
 {
-  return make_raw_ui<INA219, uint8_t, uint16_t>(device, rt);
+  return make_raw_ui<INA219, uint8_t, uint16_t>(device, device->RT);
 }

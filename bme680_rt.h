@@ -89,7 +89,7 @@ REGISTER_TABLE_W(BME680, RegisterTable, uint8_t, uint8_t,
     VAR(temp_msb, temp_msb_7_0, "temp_msb[7:0]", 0xFF, RO,        "");
   );
 
-  uint32_t Temperature() { return (temp_msb_7_0() << 12) | (temp_lsb_7_0() << 4) | temp_xlsb_7_4(); }
+  uint32_t Temperature() { return device.ComputeTemperature((temp_msb_7_0() << 12) | (temp_lsb_7_0() << 4) | temp_xlsb_7_4()); }
 
   REG(press_xlsb, "press_xlsb", 0x21, RO,                         "press_xlsb",
     VAR(press_xlsb, press_xlsb_7_4, "press_xlsb[7:4]", 0xF0, RO,  "");
@@ -101,7 +101,7 @@ REGISTER_TABLE_W(BME680, RegisterTable, uint8_t, uint8_t,
     VAR(press_msb, press_msb_7_0, "press_msb[7:0]", 0xFF, RO,     "");
   );
 
-  uint32_t Pressure() { return (press_msb_7_0() << 12) | (press_lsb_7_0() << 4) | press_xlsb_7_4(); }
+  uint32_t Pressure() { return device.ComputePressure((press_msb_7_0() << 12) | (press_lsb_7_0() << 4) | press_xlsb_7_4()); }
 
   REG(eas_status_0, "eas_status_0", 0x1D, RO,                     "eas_status_0",
     VAR(eas_status_0, new_data_0, "new_data_0", 0x80, RO,         "");
@@ -109,6 +109,44 @@ REGISTER_TABLE_W(BME680, RegisterTable, uint8_t, uint8_t,
     VAR(eas_status_0, measuring, "measuring", 0x20, RO,           "");
     VAR(eas_status_0, gas_meas_index_0_3_0, "gas_meas_index_0[3:0]", 0x0F, RO, "");
   );
+
+  // Temperature calibration coefficients
+  REG(par_t1_lsb, "par_t1_lsb", 0xE9, RO, "par_t1_lsb", );
+  REG(par_t1_msb, "par_t1_msb", 0xEA, RO, "par_t1_msb", );
+  uint16_t par_t1() const { return par_t1_msb() << 8 | par_t1_lsb(); }
+  REG(par_t2_lsb, "par_t2_lsb", 0x8A, RO, "par_t2_lsb", );
+  REG(par_t2_msb, "par_t2_msb", 0x8B, RO, "par_t2_msb", );
+  int16_t par_t2() const { return par_t2_msb() << 8 | par_t2_lsb(); }
+  REG(par_t3_, "par_t3", 0x8C, RO, "par_t3", );
+  int8_t par_t3() const { return par_t3_(); }
+
+  // Pressure calibration coefficients
+  REG(par_p1_lsb, "par_p1_lsb", 0x8E, RO, "par_p1_lsb", );
+  REG(par_p1_msb, "par_p1_msb", 0x8F, RO, "par_p1_msb", );
+  uint16_t par_p1() const { return par_p1_msb() << 8 | par_p1_lsb(); }
+  REG(par_p2_lsb, "par_p2_lsb", 0x90, RO, "par_p2_lsb", );
+  REG(par_p2_msb, "par_p2_msb", 0x91, RO, "par_p2_msb", );
+  int16_t par_p2() const { return par_p2_msb() << 8 | par_p2_lsb(); }
+  REG(par_p3_, "par_p3_", 0x92, RO, "par_p3_", );
+  int8_t par_p3() const { return par_p3_(); }
+  REG(par_p4_lsb, "par_p4_lsb", 0x94, RO, "par_p4_lsb", );
+  REG(par_p4_msb, "par_p4_msb", 0x95, RO, "par_p4_msb", );
+  int16_t par_p4() const { return par_p4_msb() << 8 | par_p4_lsb(); }
+  REG(par_p5_lsb, "par_p5_lsb", 0x94, RO, "par_p5_lsb", );
+  REG(par_p5_msb, "par_p5_msb", 0x95, RO, "par_p5_msb", );
+  int16_t par_p5() const { return par_p5_msb() << 8 | par_p5_lsb(); }
+  REG(par_p6_, "par_p6_", 0x99, RO, "par_p6_", );
+  int8_t par_p6() const { return par_p6_(); }
+  REG(par_p7_, "par_p7_", 0x98, RO, "par_p7_", );
+  int8_t par_p7() const { return par_p7_(); }
+  REG(par_p8_lsb, "par_p8_lsb", 0x9C, RO, "par_p8_lsb", );
+  REG(par_p8_msb, "par_p8_msb", 0x9D, RO, "par_p8_msb", );
+  int16_t par_p8() const { return par_p8_msb() << 8 | par_p8_lsb(); }
+  REG(par_p9_lsb, "par_p9_lsb", 0x9E, RO, "par_p9_lsb", );
+  REG(par_p9_msb, "par_p9_msb", 0x9F, RO, "par_p9_msb", );
+  int16_t par_p9() const { return par_p9_msb() << 8 | par_p9_lsb(); }
+  REG(par_p10_, "par_p10_", 0xA0, RO, "par_p10_", );
+  uint8_t par_p10() const { return par_p10_(); }
 );
 
 #undef REG
