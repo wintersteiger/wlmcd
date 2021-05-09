@@ -9,6 +9,7 @@
 #include "ina219_rt.h"
 #include "ina219_ui.h"
 #include "ina219_fields.h"
+#include "raw_ui.h"
 
 using namespace INA219UIFields;
 
@@ -43,4 +44,9 @@ INA219UI::~INA219UI() {}
 
 void INA219UI::Layout() {
   UI::Layout();
+}
+
+std::shared_ptr<UI> make_ina219_raw_ui(std::shared_ptr<INA219> &device, RegisterTable<uint8_t, uint16_t, INA219> &rt)
+{
+  return make_raw_ui<INA219, uint8_t, uint16_t>(device, rt);
 }

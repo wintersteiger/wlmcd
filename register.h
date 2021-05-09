@@ -56,7 +56,7 @@ public:
   };
 
   const std::string &Name() const { return name; }
-  const std::string &NiceName() const { return name; }
+  const std::string &NiceName() const { return nice_name; }
   const std::string &Description() const { return description; }
 
   virtual bool Readable() const { return RW.readable; }

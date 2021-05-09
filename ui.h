@@ -54,6 +54,7 @@ public:
   void Reset();
   virtual void Update(bool full);
   void Add(FieldBase *field);
+  void Add(DeviceBase *device);
 
   void Edit();
   static std::string GetCommand();

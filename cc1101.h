@@ -160,7 +160,7 @@ public:
   CC1101(unsigned spi_bus, unsigned spi_channel, const std::string &config_file = "", double f_xosc = 26.0*1e6);
   virtual ~CC1101();
 
-  void Reset();
+  void Reset() override;
 
   State GetState();
 
@@ -169,19 +169,16 @@ public:
   StatusByte Strobe(CommandStrobe cs, size_t delay_ms = 0);
   StatusByte StrobeFor(CommandStrobe cs, State st, size_t delay_ms = 0);
 
-  virtual const char* Name() const { return "CC1101"; }
+  virtual const char* Name() const override { return "CC1101"; }
 
   using Device::Read;
   using Device::Write;
 
-  virtual uint8_t Read(const uint8_t &addr);
-  virtual std::vector<uint8_t> Read(const uint8_t &addr, size_t length);
-  virtual uint8_t Read(const Register<uint8_t, uint8_t> &r) { return Device::Read(r); }
-  virtual std::vector<uint8_t> Read(const Register<uint8_t, uint8_t> &r, size_t length) { return Device::Read(r, length); }
+  virtual uint8_t Read(const uint8_t &addr) override;
+  virtual std::vector<uint8_t> Read(const uint8_t &addr, size_t length) override;
 
-  virtual void Write(const uint8_t &addr, const uint8_t &value) { WriteS(addr, value); }
-  virtual void Write(const uint8_t &addr, const std::vector<uint8_t> &values) { WriteS(addr, values); }
-  virtual void Write(const Register<uint8_t, uint8_t> &r, const uint8_t &v) { Device::Write(r, v); }
+  virtual void Write(const uint8_t &addr, const uint8_t &value) override { WriteS(addr, value); }
+  virtual void Write(const uint8_t &addr, const std::vector<uint8_t> &values) override { WriteS(addr, values); }
 
   StatusByte WriteS(const uint8_t &addr, const uint8_t &value);
   StatusByte WriteS(const uint8_t &addr, const std::vector<uint8_t> &values);
@@ -192,13 +189,13 @@ public:
 
   void Receive(std::vector<uint8_t> &pkt);
   void Transmit(const std::vector<uint8_t> &pkt);
-  virtual void Test(const std::vector<uint8_t> &data);
+  virtual void Test(const std::vector<uint8_t> &data) override;
 
-  virtual void UpdateFrequent();
-  virtual void UpdateInfrequent();
+  virtual void UpdateFrequent() override;
+  virtual void UpdateInfrequent() override;
 
-  virtual void Write(std::ostream &os);
-  virtual void Read(std::istream &is);
+  virtual void Write(std::ostream &os) override;
+  virtual void Read(std::istream &is) override;
 
   double F_XOSC() const { return f_xosc; }
 
@@ -215,12 +212,6 @@ public:
   double rChannelSpacing() const;
   double rEvent0() const;
   double rRXTimeout() const;
-
-  // int rGDO(int i) const {
-  //   if (i < 0 || i > 2)
-  //     throw std::runtime_error("invalid index");
-  //   return GDO[i];
-  // }
 };
 
 #endif

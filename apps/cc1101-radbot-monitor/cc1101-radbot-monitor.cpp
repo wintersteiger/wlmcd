@@ -1,91 +1,24 @@
 // Copyright (c) Christoph M. Wintersteiger
 // Licensed under the MIT License.
 
-#include <csignal>
-#include <cstring>
 #include <cinttypes>
-#include <iostream>
-#include <sstream>
-#include <fstream>
 #include <vector>
-#include <algorithm>
-
-#include <curses.h>
+#include <iostream>
+#include <fstream>
+#include <mutex>
 
 #include <json.hpp>
 
-#include <controller.h>
-#include <ui.h>
+#include <shell.h>
 #include <cc1101.h>
 #include <cc1101_ui.h>
 #include <cc1101_ui_raw.h>
 #include <radbot.h>
 #include <radbot_ui.h>
-#include <sleep.h>
 
 static volatile int rx_cnt = 0;
 static FILE *logfile = NULL;
-static Controller *controller = NULL;
-static int exit_code = 0;
-static CC1101 *cc1101 = NULL;
-static CC1101UI *cc1101_ui = NULL;
-static CC1101UIRaw *cc1101_ui_raw = NULL;
-static RadbotUI *radbot_ui = NULL;
-static Radbot::Decoder *radbot_decoder = NULL;
-static Radbot::Encoder *radbot_encoder = NULL;
-static std::vector<GPIOWatcher<CC1101>*> gpio_watchers;
-
 static std::mutex mtx;
-
-void cleanup(int signal = 0)
-{
-  mtx.lock();
-
-  if (exit_code != 0)
-    return;
-
-  for (auto w : gpio_watchers)
-    delete(w);
-  gpio_watchers.clear();
-
-  if (controller) {
-    controller->Stop();
-    int cleanup_it = 20;
-    while (controller->Running() && --cleanup_it != 0)
-      sleep_ms(50);
-  }
-
-  delete(controller);
-  controller = NULL;
-  delete(radbot_ui);
-  radbot_ui = NULL;
-  delete(cc1101_ui);
-  cc1101_ui = NULL;
-  delete(cc1101_ui_raw);
-  cc1101_ui_raw = NULL;
-
-  delete(radbot_decoder);
-  radbot_decoder = NULL;
-  delete(radbot_encoder);
-  radbot_encoder = NULL;
-  delete(cc1101);
-  cc1101 = NULL;
-
-  if (logfile) {
-    fclose(logfile);
-    logfile = NULL;
-  }
-
-  if (UI::End() != OK)
-    std::cout << "UI cleanup error" << std::endl;
-
-  if (signal != 0) {
-    std::cout << "Signal " << signal << " (" << strsignal(signal) << "); bailing out." << std::endl;
-    exit_code = 2;
-  }
-
-  mtx.unlock();
-}
 
 int rxlog(double rssi, double lqi, const std::vector<uint8_t> &raw_packet, const std::string &msg, const std::string &err)
 {
@@ -114,14 +47,14 @@ int rxlog(double rssi, double lqi, const std::vector<uint8_t> &raw_packet, const
   return r;
 }
 
-static bool CC1101_fRX(CC1101 *cc1101, Radbot::Decoder *decoder)
+static bool CC1101_fRX(std::shared_ptr<CC1101> cc1101, std::shared_ptr<Radbot::Decoder> decoder)
 {
   if (!decoder) {
     UI::Log("CC1101_fRX: no decoder");
     return true;
   }
 
-  mtx.lock();
+  const std::lock_guard<std::mutex> lock(mtx);
 
   std::vector<uint8_t> packet;
   cc1101->Receive(packet);
@@ -159,56 +92,46 @@ static bool CC1101_fRX(CC1101 *cc1101, Radbot::Decoder *decoder)
   UI::Log(lbuf);
   rx_cnt++;
 
-  mtx.unlock();
-
   return true;
 }
 
 int main()
 {
   try {
-    UI::Start();
+    auto shell = get_shell(0);
     logfile = fopen("log.csv", "a");
 
     auto radbot_cfg = nlohmann::json::parse(std::ifstream("radbot.cfg"));
     std::string radbot_id = radbot_cfg["radbot"]["id"];
     std::string radbot_key = radbot_cfg["radbot"]["key"];
-    radbot_decoder = new Radbot::Decoder(radbot_id, radbot_key);
-    radbot_encoder = new Radbot::Encoder(radbot_id, radbot_key);
+    auto radbot_decoder = std::make_shared<Radbot::Decoder>(radbot_id, radbot_key);
+    auto radbot_encoder = std::make_shared<Radbot::Encoder>(radbot_id, radbot_key);
 
-    cc1101 = new CC1101(0, 0, "cc1101-radbot.cfg");
+    auto cc1101 = std::make_shared<CC1101>(0, 0, "cc1101-radbot.cfg");
 
-    radbot_ui = new RadbotUI(radbot_decoder->state, { cc1101 });
-    cc1101_ui = new CC1101UI(*cc1101);
-    cc1101_ui_raw = new CC1101UIRaw(*cc1101);
+    std::vector<std::shared_ptr<DeviceBase>> devs = {cc1101};
+    auto radbot_ui = std::make_shared<RadbotUI>(radbot_decoder->state, devs);
+    auto cc1101_ui = std::make_shared<CC1101UI>(*cc1101);
+    auto cc1101_ui_raw = std::make_shared<CC1101UIRaw>(*cc1101);
 
+    std::vector<GPIOWatcher<CC1101>*> gpio_watchers;
     gpio_watchers.push_back(new GPIOWatcher<CC1101>("/dev/gpiochip0", 25, "WLMCD-CC1101", cc1101,
-      [](int, unsigned, const timespec*, CC1101 *cc1101) {
+      [&radbot_decoder](int, unsigned, const timespec*, std::shared_ptr<CC1101> cc1101) {
         return CC1101_fRX(cc1101, radbot_decoder);
       }));
 
-    controller = new Controller(0);
-
-    std::signal(SIGINT, cleanup);
-    std::signal(SIGABRT, cleanup);
-
-    controller->AddSystem(cc1101_ui);
-    controller->AddSystem(cc1101_ui_raw);
-    controller->AddSystem(radbot_ui, radbot_decoder, radbot_encoder);
-
-    controller->Run();
-    cleanup(0);
+    shell->controller->AddSystem(cc1101_ui);
+    shell->controller->AddSystem(cc1101_ui_raw);
+    shell->controller->AddSystem(radbot_ui, radbot_decoder, radbot_encoder);
+    shell->controller->Run();
+    return shell->exit_code;
   }
   catch (std::exception &ex) {
-    cleanup();
     std::cout << "Exception: " << ex.what() << std::endl;
-    exit_code = 1;
+    return 1;
   }
   catch (...) {
-    cleanup();
     std::cout << "Caught unknown exception." << std::endl;
-    exit_code = 1;
+    return 1;
   }
-
-  return exit_code;
 }

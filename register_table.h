@@ -8,8 +8,15 @@
 
 #include "register.h"
 
+class RegisterTableBase
+{
+public:
+  RegisterTableBase() = default;
+  virtual ~RegisterTableBase() = default;
+};
+
 template <typename AT, typename VT, typename DEVICE>
-class RegisterTable
+class RegisterTable : public RegisterTableBase
 {
 public:
   typedef std::vector<Register<AT, VT>*> Registers;
@@ -22,7 +29,7 @@ protected:
   std::vector<VT> buffer;
 
 public:
-  RegisterTable(DEVICE &device) : device(device) {}
+  RegisterTable(DEVICE &device) : RegisterTableBase(), device(device) {}
   virtual ~RegisterTable() {}
   const std::vector<VT> &Buffer() const { return buffer; }
   const_iterator begin() const { return registers.begin(); }

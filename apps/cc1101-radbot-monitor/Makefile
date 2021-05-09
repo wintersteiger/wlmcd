@@ -4,7 +4,7 @@
 WLMCD_ROOT=../..
 
 # CXX=clang++-8
-# CXXFLAGS+=-O1 -g -fsanitize=address -fno-omit-frame-pointer
+# CXXFLAGS+=-O1 -g -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG
 # LDFLAGS+=-g -fsanitize=address
 
 CXXFLAGS+=-g -I ${WLMCD_ROOT} -Wno-psabi

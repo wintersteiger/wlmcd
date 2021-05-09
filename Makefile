@@ -3,7 +3,7 @@
 
 all: libwlmcd-dev.a libwlmcd-ui.a libwlmcd-dev.so libwlmcd-ui.so tests
 
-CXXFLAGS+=-g -MMD -MP -Wall -Wno-unused-variable -Wno-unused-function
+CXXFLAGS+=-O2 -MMD -MP -Wall -Wno-unused-variable -Wno-unused-function
 CXXFLAGS+=-I .
 CXXFLAGS+=-Wno-psabi
 CXXFLAGS+=$(shell pkg-config dbus-1 --cflags)
@@ -11,7 +11,8 @@ CXXFLAGS+=$(shell pkg-config dbus-1 --cflags)
 LDFLAGS=-lrt -lcrypto -lwiringPi -lgpiod -lpthread -lgpiod
 
 # CXX=clang++-8
-# CXXFLAGS+=-O1 -g -fsanitize=address -fno-omit-frame-pointer
+# CXXFLAGS+=-g -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG
+# CXXFLAGS+=-O1
 # LDFLAGS+=-g -fsanitize=address
 
 %.o: %.cpp
@@ -33,9 +34,10 @@ SRC = decoder.cpp basic.cpp logfile.cpp \
 	rfm69.cpp \
 	dht22.cpp \
 	mcp9808.cpp \
-	es9018k2m.cpp es9018k2m_rt.cpp
+	es9018k2m.cpp es9018k2m_rt.cpp \
+	bme680.cpp
 
-UI_SRC = field.cpp ui.cpp basic_ui.cpp controller.cpp \
+UI_SRC = field.cpp ui.cpp basic_ui.cpp raw_ui.cpp controller.cpp shell.cpp \
 	cc1101_ui.cpp cc1101_ui_raw.cpp \
 	radbot_ui.cpp evohome_ui.cpp \
 	sx1278_ui_raw.cpp sx1278_ui.cpp \
@@ -44,11 +46,12 @@ UI_SRC = field.cpp ui.cpp basic_ui.cpp controller.cpp \
 	si4463_ui_raw.cpp \
 	rfm69_ui_raw.cpp \
 	relay_ui.cpp \
-	ina219_ui.cpp ina219_ui_raw.cpp \
+	ina219_ui.cpp \
 	rfm69_ui.cpp \
 	dht22_ui.cpp \
-	mcp9808_ui_raw.cpp \
-	es9018k2m_ui.cpp es9018k2m_ui_raw.cpp
+	mcp9808_ui.cpp \
+	es9018k2m_ui.cpp \
+	bme680_ui.cpp
 
 OBJ = $(subst .cpp,.o,$(SRC))
 UI_OBJ = $(subst .cpp,.o,$(UI_SRC))

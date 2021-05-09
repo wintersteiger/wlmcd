@@ -30,6 +30,7 @@ INA219::INA219(double r_shunt, double max_expected_current, const std::string &b
   current_lsb(0),
   power_lsb(0)
 {
+  RT.Initialize();
   Reset();
   RT.Refresh(false);
 }

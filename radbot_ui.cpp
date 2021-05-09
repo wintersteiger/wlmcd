@@ -2,8 +2,11 @@
 // Licensed under the MIT License.
 
 #include <ctime>
+#include <memory>
 
-#include <radbot_ui.h>
+#include "device.h"
+
+#include "radbot_ui.h"
 
 template <typename T>
 class RadbotField : public Field<T> {
@@ -42,13 +45,13 @@ RBW(Battery, "Battery", state.low_battery);
 RBW(Tamper, "Tamper", state.tamper_protect);
 RBW(Frost, "Frost", state.frost_risk);
 
-RadbotUI::RadbotUI(const Radbot::State &state_, std::vector<DeviceBase*> devices) :
+RadbotUI::RadbotUI(const Radbot::State &state, std::vector<std::shared_ptr<DeviceBase>> devices) :
   UI(),
   last_update(time(NULL)),
-  state(state_)
+  state(state)
 {
   for (auto d: devices)
-    this->devices.insert(d);
+    this->devices.insert(d.get());
 
   size_t row = 1, col = 1;
 

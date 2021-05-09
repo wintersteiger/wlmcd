@@ -1,21 +1,30 @@
 // Copyright (c) Christoph M. Wintersteiger
 // Licensed under the MIT License.
 
+#ifndef _RAW_UI_H_
+#define _RAW_UI_H_
+
+#include <memory>
 #include <cstring>
 
-#include "field_types.h"
-#include "es9018k2m.h"
-#include "es9018k2m_rt.h"
-#include "es9018k2m_ui_raw.h"
+#include "field.h"
+#include "register.h"
+#include "register_table.h"
+#include "ui.h"
 
-namespace ES9018K2MUIRawFields {
+template <typename VT>
+struct ValueParser {
+  virtual bool Parse(const char *v_str, VT &value);
+};
 
 template <typename AT, typename VT, typename D>
-class RawField : public FieldBase {
+class RawField : public FieldBase, ValueParser<VT> {
 protected:
-  const Register<uint8_t, uint8_t> &reg;
-  const Variable<uint8_t> *var;
+  const Register<AT, VT> &reg;
+  const Variable<VT> *var;
   RegisterTable<AT, VT, D> &rt;
+
+  using ValueParser<VT>::Parse;
 
 public:
   RawField(int row, const Register<AT, VT> *reg, RegisterTable<AT, VT, D> &rt) :
@@ -29,12 +38,12 @@ public:
       value_width = 2;
       units_width = 0;
   }
-  virtual size_t Width() { return key.size() + 4; }
+  virtual size_t Width() override { return key.size() + 4; }
   virtual VT Get() {
     VT r = reg(rt.Buffer());
     return var ? (*var)(r) : r;
   }
-  virtual void Update(bool full=false) {
+  virtual void Update(bool full=false) override {
     if (wndw) {
       key_width = key.size();
       value_width = 2;
@@ -44,7 +53,7 @@ public:
       FieldBase::Update(full);
     }
   }
-  virtual void Active(bool active) {
+  virtual void Active(bool active) override {
     this->active = active;
     if (active) {
       const char* name = var ? var->NiceName().c_str() : reg.NiceName().c_str();
@@ -58,23 +67,25 @@ public:
       UI::Info(fmt, name, desc);
     }
   }
-  virtual std::string Describe() const {
+  virtual std::string Describe() const override {
     std::string description;
     if (var) {
-      std::string name = var->Name();
-      std::string nice_name = var->NiceName();
-      description += nice_name;
+      const std::string& name = var->Name();
+      const std::string& nice_name = var->NiceName();
       if (name != nice_name)
-        description += std::string(" (") + name + ")";
+        description += nice_name + " (" + name + ")";
+      else
+        description += name;
       description += std::string(":\n\n");
       description += var->Description();
     }
     else {
-      std::string name = reg.Name();
-      std::string nice_name = reg.NiceName();
-      description += nice_name;
+      const std::string& name = reg.Name();
+      const std::string& nice_name = reg.NiceName();
       if (name != nice_name)
-        description += std::string(" (") + name + ")";
+        description += nice_name + " (" + name + ")";
+      else
+        description += name;
       description += std::string(":\n\n");
       description += reg.Description();
 
@@ -82,18 +93,24 @@ public:
         description += "\n\nVariables:";
         for (auto var : reg) {
           description += std::string("\n");
-          description += var->Name();
+          const std::string& v_name = var->Name();
+          const std::string& v_nice_name = var->NiceName();
+          if (v_name != v_nice_name)
+            description += v_nice_name + " (" + v_name + ")";
+          else
+            description += v_name;
         }
       }
     }
     return description;
   }
-  virtual bool Activateable() const { return true; }
-  virtual bool ReadOnly() { return !(var ? var->Writeable() : reg.Writeable()); }
-  virtual void Set(const char *v_str) {
+  virtual bool Activateable() const override { return true; }
+  virtual bool ReadOnly() override { return !(var ? var->Writeable() : reg.Writeable()); }
+  virtual void Set(const char *v_str) override
+  {
     VT v = 0;
     size_t v_str_len = strlen(v_str);
-    if (v_str_len == 0 || v_str_len > 2 || sscanf(v_str, "%02hhx", &v) != 1)
+    if (v_str_len == 0 || v_str_len > 2 || !Parse(v_str, v))
       UI::Error("invalid value '%s'", v_str);
     else if (var != NULL)
       rt.Device().Write(reg, var->Set(reg(rt.Buffer()), v));
@@ -102,23 +119,24 @@ public:
   }
 };
 
-} // ES9018K2MUIRawFields
-
-using namespace ES9018K2MUIRawFields;
-
-ES9018K2MUIRaw::ES9018K2MUIRaw(std::shared_ptr<ES9018K2M> &es9018k2m) : UI()
+template <typename D, typename AT, typename VT>
+std::shared_ptr<UI> make_raw_ui(std::shared_ptr<D> &device, RegisterTable<AT, VT, D> &rt)
 {
-  devices.insert(es9018k2m.get());
+  auto ui = std::make_shared<UI>();
 
-  typedef RawField<uint8_t, uint8_t, ES9018K2M> RF;
+  ui->Add(device.get());
+
+  typedef RawField<AT, VT, D> RF;
 
   int row = 1, col = 1;
-  for (auto reg : es9018k2m->RTS->Main) {
-    fields.push_back(new RF(row++, reg, es9018k2m->RTS->Main));
+  for (auto reg : rt) {
+    ui->Add(new RF(row++, reg, rt));
     for (auto var : *reg)
-      fields.push_back(new RF(row++, reg, var, es9018k2m->RTS->Main));
-    fields.push_back(new Empty(row++, col));
+      ui->Add(new RF(row++, reg, var, rt));
+    ui->Add(new Empty(row++, col));
   }
+
+  return ui;
 }
 
-ES9018K2MUIRaw::~ES9018K2MUIRaw() {}
+#endif // _RAW_UI_H_

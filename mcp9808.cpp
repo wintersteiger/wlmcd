@@ -20,6 +20,7 @@ MCP9808::MCP9808(const std::string &bus, uint8_t device_address) :
   I2CDevice<uint8_t, uint16_t>(bus, device_address),
   RT(*(new RegisterTable(*this)))
 {
+  RT.Initialize();
   Reset();
 
   RT.Refresh(false);
@@ -63,8 +64,6 @@ double MCP9808::Temperature()
 
 void MCP9808::RegisterTable::Refresh(bool frequent)
 {
-  if (buffer.size() != registers.size())
-    buffer.resize(registers.size(), 0);
   for (auto reg : registers)
     buffer[reg->Address()] = device.Read(reg->Address());
 }

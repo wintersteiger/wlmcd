@@ -54,8 +54,11 @@ CC1101::~CC1101()
   Reset();
   StrobeFor(CC1101::CommandStrobe::SIDLE, CC1101::State::IDLE, 10);
 
-  delete[](recv_buf);
-  delete(RT);
+  {
+    const std::lock_guard<std::mutex> lock(mtx);
+    delete[](recv_buf);
+    delete(RT);
+  }
 }
 
 CC1101::State CC1101::GetState() {
@@ -208,13 +211,12 @@ double CC1101::rRXTimeout() const {
 
 CC1101::StatusByte CC1101::Strobe(CommandStrobe cs, size_t delay_us)
 {
-  mtx.lock();
+  const std::lock_guard<std::mutex> lock(mtx);
   std::vector<uint8_t> buf;
   buf.push_back(cs & 0xFF);
   SPIDev::Transfer(buf);
   if (delay_us)
     sleep_us(delay_us);
-  mtx.unlock();
   return StatusByte(buf[0]);
 }
 
@@ -257,46 +259,42 @@ void CC1101::Reset()
 
 uint8_t CC1101::Read(const uint8_t &addr)
 {
-  mtx.lock();
+  const std::lock_guard<std::mutex> lock(mtx);
   std::vector<uint8_t> res(2);
   res[0] = 0x80 | (addr & 0x7F);
   SPIDev::Transfer(res);
-  mtx.unlock();
   return res[1];
 }
 
 std::vector<uint8_t> CC1101::Read(const uint8_t &addr, size_t length)
 {
-  mtx.lock();
+  const std::lock_guard<std::mutex> lock(mtx);
   std::vector<uint8_t> res;
   res.resize(length + 1);
   res[0] = addr | (length == 1 ? 0x80 : 0xC0);
   SPIDev::Transfer(res);
   res.erase(res.begin());
-  mtx.unlock();
   return res;
 }
 
 CC1101::StatusByte CC1101::WriteS(const uint8_t &addr, const uint8_t &value)
 {
-  mtx.lock();
+  const std::lock_guard<std::mutex> lock(mtx);
   std::vector<uint8_t> b(2);
   b[0] = addr;
   b[1] = value;
   SPIDev::Transfer(b);
-  mtx.unlock();
   return b[0];
 }
 
 CC1101::StatusByte CC1101::WriteS(const uint8_t &addr, const std::vector<uint8_t> &values)
 {
-  mtx.lock();
+  const std::lock_guard<std::mutex> lock(mtx);
   size_t n = values.size();
   std::vector<uint8_t> b(n+1);
   b[0] = addr | (n == 1 ? 0x00 : 0x40);
   memcpy(&b[1], values.data(), n);
   SPIDev::Transfer(b);
-  mtx.unlock();
   return b[0];
 }
 
@@ -471,7 +469,7 @@ void CC1101::RegisterTable::Write(std::ostream &os)
   json j, dev, regs;
   char tmp[17];
   dev["name"] = device.Name();
-  j["Device"] = dev;
+  j["device"] = dev;
   for (const auto reg : registers) {
     if (reg->Address() == _rFIFO.Address())
       continue;
@@ -493,7 +491,7 @@ void CC1101::RegisterTable::Write(std::ostream &os)
 void CC1101::RegisterTable::Read(std::istream &is)
 {
   json j = json::parse(is);
-  if (j["Device"]["Name"] != device.Name())
+  if (j["device"]["name"] != device.Name())
     throw std::runtime_error("device mismatch");
   for (const auto &e : j["registers"].items()) {
     if (!e.value().is_string())

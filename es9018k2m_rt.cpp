@@ -17,6 +17,9 @@ ES9018K2M::RegisterTableSet::RegisterTableSet(ES9018K2M &device) :
   Consumer(device),
   Professional(device)
 {
+  Main.Initialize();
+  Consumer.Initialize();
+  Professional.Initialize();
 }
 
 ES9018K2M::RegisterTableSet::~RegisterTableSet()
@@ -25,7 +28,6 @@ ES9018K2M::RegisterTableSet::~RegisterTableSet()
 
 void ES9018K2M::RegisterTableSet::MainRT::Refresh(bool frequent)
 {
-  buffer.resize(registers.size(), 0);
   for (auto reg : registers)
     buffer[reg->Address()] = device.I2CDevice::Read(reg->Address());
 }
@@ -83,14 +85,12 @@ void ES9018K2M::RegisterTableSet::MainRT::Read(std::istream &is)
 
 void ES9018K2M::RegisterTableSet::ConsumerRT::Refresh(bool frequent)
 {
-  buffer.resize(0x5D+1, 0);
   for (auto reg : registers)
     buffer[reg->Address()] = device.I2CDevice::Read(reg->Address());
 }
 
 void ES9018K2M::RegisterTableSet::ProfessionalRT::Refresh(bool frequent)
 {
-  buffer.resize(0x5D+1, 0);
   for (auto reg : registers)
     buffer[reg->Address()] = device.I2CDevice::Read(reg->Address());
 }

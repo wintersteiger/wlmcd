@@ -6,11 +6,14 @@
 
 #include <cstdint>
 #include <vector>
+#include <memory>
 
 #include "ui.h"
-#include "field.h"
 
 class INA219;
+
+template <typename D, typename AT, typename VT>
+class RegisterTable;
 
 class INA219UI : public UI {
 public:
@@ -20,5 +23,7 @@ public:
   virtual std::string Name() const { return "INA219"; }
   virtual void Layout();
 };
+
+std::shared_ptr<UI> make_ina219_raw_ui(std::shared_ptr<INA219> &device, RegisterTable<uint8_t, uint16_t, INA219> &rt);
 
 #endif // _INA219_UI_RAW_H_

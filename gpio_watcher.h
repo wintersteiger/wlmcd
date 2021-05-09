@@ -10,7 +10,7 @@ template <typename T>
 class GPIOWatcher {
 public:
   GPIOWatcher(const char *chip, int offset, const char *consumer,
-              T *data, std::function<bool(int, unsigned, const struct timespec*, T*)> f) :
+              std::shared_ptr<T> data, std::function<bool(int, unsigned, const struct timespec*, std::shared_ptr<T>&)> f) :
     data(data),
     f(f),
     running(true),
@@ -22,7 +22,7 @@ public:
       if (gpiod_ctxless_event_monitor(chip, GPIOD_CTXLESS_EVENT_RISING_EDGE,
                                       offset, false, consumer, &timeout,
                                       NULL /* poll callback */,
-                                        EventCallback,
+                                      EventCallback,
                                       this) != 0)
         throw("could not start GPIO event monitor thread");
       keep_running = running = false;
@@ -43,8 +43,8 @@ public:
   bool IsRunning() const { return running; }
 
 protected:
-  T *data;
-  std::function<bool(int, unsigned, const struct timespec*, T*)> f;
+  std::shared_ptr<T> data;
+  std::function<bool(int, unsigned, const struct timespec*, std::shared_ptr<T>&)> f;
   volatile bool running, keep_running;
   std::thread *thread;
 

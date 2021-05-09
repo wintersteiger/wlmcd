@@ -231,7 +231,7 @@ void SX1278::NormalRegisterTable::Write(std::ostream &os)
 {
   json j, dev, regs;
   dev["name"] = device.Name();
-  j["Device"] = dev;
+  j["device"] = dev;
   for (const auto reg : registers)
     if (reg->Address() != 0x00) {
       char tmp[3];
@@ -245,7 +245,7 @@ void SX1278::NormalRegisterTable::Write(std::ostream &os)
 void SX1278::NormalRegisterTable::Read(std::istream &is)
 {
   json j = json::parse(is);
-  if (j["Device"]["Name"] != device.Name())
+  if (j["device"]["name"] != device.Name())
     throw std::runtime_error("device mismatch");
   for (const auto &e : j["registers"].items()) {
     if (!e.value().is_string())

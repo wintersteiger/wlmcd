@@ -283,7 +283,7 @@ void RFM69::RegisterTable::Write(std::ostream &os)
 {
   json j, dev, regs;
   dev["name"] = device.Name();
-  j["Device"] = dev;
+  j["device"] = dev;
   for (const auto reg : registers)
     if (reg->Address() != 0x00) {
       char tmp[3];
@@ -317,7 +317,7 @@ void RFM69::RegisterTable::Read(std::istream &is)
   device.ClearFlags();
 
   json j = json::parse(is);
-  if (j["Device"]["Name"] != device.Name())
+  if (j["device"]["name"] != device.Name())
     throw std::runtime_error("device mismatch");
   for (const auto &e : j["registers"].items()) {
     const std::string &name = e.key();

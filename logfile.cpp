@@ -21,11 +21,12 @@ LogFile::~LogFile()
     fclose(file);
 }
 
-void LogFile::WriteConfig(const std::string &filename) {}
-void LogFile::ReadConfig(const std::string &filename) {}
+void LogFile::Write(std::ostream &os) {}
+void LogFile::Read(std::istream &is) {}
 
 void LogFile::Reset()
 {
+  DeviceBase::Reset();
   if (file)
     fclose(file);
   file = fopen(filename, "ab");

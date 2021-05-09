@@ -4,9 +4,6 @@
 #ifndef _ES9018K2M_H_
 #define _ES9018K2M_H_
 
-#include <mutex>
-
-#include "device.h"
 #include "i2c_device.h"
 
 class ES9018K2M : public I2CDevice<uint8_t, uint8_t> {

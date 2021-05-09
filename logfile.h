@@ -17,16 +17,16 @@ public:
   LogFile(const char *filename, std::function<std::vector<std::string>()> fun);
   virtual ~LogFile();
 
-  virtual const char* Name() const { return "LogFile"; }
+  virtual const char* Name() const override { return "LogFile"; }
 
-  virtual void WriteConfig(const std::string &filename);
-  virtual void ReadConfig(const std::string &filename);
+  virtual void Write(std::ostream &os) override;
+  virtual void Read(std::istream &is) override;
 
-  virtual void Reset();
+  virtual void Reset() override;
 
-  void UpdateTimed();
-  void UpdateFrequent();
-  void UpdateInfrequent();
+  virtual void UpdateTimed() override;
+  virtual void UpdateFrequent() override;
+  virtual void UpdateInfrequent() override;
 
 protected:
   std::mutex mtx;

@@ -47,6 +47,11 @@ public:
   const std::string& Units() const { return units; }
 
   void Move(int row, int col);
+  void Resize(size_t key_width, size_t value_width, size_t units_width) {
+    this->key_width = key_width;
+    this->value_width = value_width;
+    this->units_width = units_width;
+  }
   int Row() const { return row; }
   int Col() const { return col; }
 

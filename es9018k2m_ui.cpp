@@ -4,6 +4,7 @@
 #include <cstring>
 
 #include "field_types.h"
+#include "raw_ui.h"
 #include "es9018k2m.h"
 #include "es9018k2m_rt.h"
 #include "es9018k2m_ui.h"
@@ -50,3 +51,8 @@ ES9018K2MUI::ES9018K2MUI(std::shared_ptr<ES9018K2M> &es9018k2m) : UI()
 }
 
 ES9018K2MUI::~ES9018K2MUI() {}
+
+std::shared_ptr<UI> make_es9018k2m_raw_ui(std::shared_ptr<ES9018K2M> &es9018k2m)
+{
+  return make_raw_ui<ES9018K2M, uint8_t, uint8_t>(es9018k2m, es9018k2m->RTS->Main);
+}

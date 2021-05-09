@@ -4,8 +4,10 @@
 #ifndef _RADBOT_UI_H_
 #define _RADBOT_UI_H_
 
-#include <ui.h>
-#include <radbot.h>
+#include <memory>
+
+#include "ui.h"
+#include "radbot.h"
 
 class DeviceBase;
 
@@ -15,7 +17,7 @@ protected:
   const Radbot::State &state;
 
 public:
-  RadbotUI(const Radbot::State &state, std::vector<DeviceBase*> devices = {});
+  RadbotUI(const Radbot::State &state, std::vector<std::shared_ptr<DeviceBase>> devices);
   virtual ~RadbotUI();
 
   void Update(bool full) { UI::Update(full); }

@@ -229,6 +229,11 @@ void UI::Add(FieldBase *field)
   fields.push_back(field);
 }
 
+void UI::Add(DeviceBase *device)
+{
+  devices.insert(device);
+}
+
 int UI::GetKey()
 {
   return wgetch(cmdw);
