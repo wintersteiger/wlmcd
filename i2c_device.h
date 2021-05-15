@@ -21,6 +21,8 @@ public:
     device_address(device_address)
   {}
 
+  I2CDeviceBase() : fd(-1), bus(""), device_address(0x00) {}
+
   virtual ~I2CDeviceBase() {
     if (fd >= 0)
       close(fd);
@@ -41,6 +43,8 @@ public:
   I2CDevice(const std::string &bus, uint8_t device_address) :
     I2CDeviceBase(bus, device_address)
   {}
+
+  I2CDevice() : I2CDeviceBase() {}
 
   virtual ~I2CDevice() = default;
 

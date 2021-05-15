@@ -9,6 +9,11 @@
 #define REG(N, P, A, RW, H, V) REGDECL(uint8_t, uint8_t, N, P, A, RW, H, V)
 #define VAR(R, N, P, M, RW, D) VARDECL(uint8_t, uint8_t, R, N, P, M, RW, D)
 
+static const float lookup_k1_range[16] = {  0.0, 0.0,  0.0,  0.0, 0.0, -1.0, 0.0, -0.8,
+                                            0.0, 0.0, -0.2, -0.5, 0.0, -1.0, 0.0,  0.0 };
+static const float lookup_k2_range[16] = {  0.0, 0.0,  0.0,  0.0, 0.1,  0.7, 0.0, -0.8,
+                                           -0.1, 0.0,  0.0,  0.0, 0.0,  0.0, 0.0,  0.0 };
+
 REGISTER_TABLE_W(BME680, RegisterTable, uint8_t, uint8_t,
   REG(Status, "Status", 0x73, RW,                                 "Status",
     VAR(Status, spi_mem_page, "spi_mem_page", 0x10, RO,           "");
@@ -40,7 +45,7 @@ REGISTER_TABLE_W(BME680, RegisterTable, uint8_t, uint8_t,
     VAR(Ctrl_gas_0, heat_off, "heat_off", 0x08, RW,               "");
   );
 
-  #define TEN(X) X(9) X(8) X(7) X(6) X(5) X(4) X(3) X(2) X(1) X(0)
+  #define TEN(X) X(0) X(1) X(2) X(3) X(4) X(5) X(6) X(7) X(8) X(9)
 
   #define GAS_WAIT(X) \
     REG(Gas_wait_##X, "Gas_wait_"#X, 0x64 + (X), RW, "Gas_wait_"#X, \
@@ -68,46 +73,38 @@ REGISTER_TABLE_W(BME680, RegisterTable, uint8_t, uint8_t,
     VAR(gas_r_msb, gas_r_9_2, "gas_r_[9:2]", 0xFF, RO,            "");
   );
 
-  uint32_t GasResistance() { return gas_r_9_2() << 2 | gas_r_1_0(); }
-
   REG(hum_lsb, "hum_lsb", 0x26, RO,                               "hum_lsb",
-    VAR(hum_lsb, hum_lsb_7_0, "hum_lsb[7:0]", 0xFF, RO,           "");
+    VAR(hum_lsb, hum_7_0, "hum[7:0]", 0xFF, RO,                   "");
   );
   REG(hum_msb, "hum_msb", 0x25, RO,                               "hum_msb",
-    VAR(hum_msb, hum_msb_7_0, "hum_msb[7:0]", 0xFF, RO,           "");
+    VAR(hum_msb, hum_15_8, "hum[15:8]", 0xFF, RO,                 "");
   );
-
-  uint32_t Humidity() { return hum_msb() << 8 | hum_lsb(); }
 
   REG(temp_xlsb, "temp_xlsb", 0x24, RO,                           "temp_xlsb",
-    VAR(temp_xlsb, temp_xlsb_7_4, "temp_xlsb[7:4]", 0xF0, RO,       "");
+    VAR(temp_xlsb, temp_3_0, "temp[3:0]", 0xF0, RO,               "");
   );
   REG(temp_lsb, "temp_lsb", 0x23, RO,                             "temp_lsb",
-    VAR(temp_lsb, temp_lsb_7_0, "temp_lsb[7:0]", 0xFF, RO,        "");
+    VAR(temp_lsb, temp_11_4, "temp[11:4]", 0xFF, RO,              "");
   );
   REG(temp_msb, "temp_msb", 0x22, RO,                             "temp_msb",
-    VAR(temp_msb, temp_msb_7_0, "temp_msb[7:0]", 0xFF, RO,        "");
+    VAR(temp_msb, temp_19_12, "temp[19:12]", 0xFF, RO,            "");
   );
-
-  uint32_t Temperature() { return device.ComputeTemperature((temp_msb_7_0() << 12) | (temp_lsb_7_0() << 4) | temp_xlsb_7_4()); }
 
   REG(press_xlsb, "press_xlsb", 0x21, RO,                         "press_xlsb",
-    VAR(press_xlsb, press_xlsb_7_4, "press_xlsb[7:4]", 0xF0, RO,  "");
+    VAR(press_xlsb, press_3_0, "press[3:0]", 0xF0, RO,  "");
   );
   REG(press_lsb, "press_lsb", 0x20, RO,                           "press_lsb",
-    VAR(press_lsb, press_lsb_7_0, "press_lsb[7:0]", 0xFF, RO,     "");
+    VAR(press_lsb, press_11_4, "press[11:4]", 0xFF, RO,     "");
   );
   REG(press_msb, "press_msb", 0x1F, RO,                           "press_msb",
-    VAR(press_msb, press_msb_7_0, "press_msb[7:0]", 0xFF, RO,     "");
+    VAR(press_msb, press_19_12, "press[19:12]", 0xFF, RO,     "");
   );
 
-  uint32_t Pressure() { return device.ComputePressure((press_msb_7_0() << 12) | (press_lsb_7_0() << 4) | press_xlsb_7_4()); }
-
-  REG(eas_status_0, "eas_status_0", 0x1D, RO,                     "eas_status_0",
-    VAR(eas_status_0, new_data_0, "new_data_0", 0x80, RO,         "");
-    VAR(eas_status_0, gas_measuring, "gas_measuring", 0x40, RO,   "");
-    VAR(eas_status_0, measuring, "measuring", 0x20, RO,           "");
-    VAR(eas_status_0, gas_meas_index_0_3_0, "gas_meas_index_0[3:0]", 0x0F, RO, "");
+  REG(meas_status_0, "meas_status_0", 0x1D, RO,                   "meas_status_0",
+    VAR(meas_status_0, new_data_0, "new_data_0", 0x80, RO,        "");
+    VAR(meas_status_0, gas_measuring, "gas_measuring", 0x40, RO,  "");
+    VAR(meas_status_0, measuring, "measuring", 0x20, RO,          "");
+    VAR(meas_status_0, gas_meas_index_0_3_0, "gas_meas_index_0[3:0]", 0x0F, RO, "");
   );
 
   // Temperature calibration coefficients
@@ -147,6 +144,135 @@ REGISTER_TABLE_W(BME680, RegisterTable, uint8_t, uint8_t,
   int16_t par_p9() const { return par_p9_msb() << 8 | par_p9_lsb(); }
   REG(par_p10_, "par_p10_", 0xA0, RO, "par_p10_", );
   uint8_t par_p10() const { return par_p10_(); }
+
+  // Humidity calibration coefficients
+  REG(par_h1_2, "par_h1_2", 0xE2, RO, "par_h1_2",
+    VAR(par_h1_2, par_h1_3_0, "par_h1[3:0]", 0x0F, RO, "");
+    VAR(par_h1_2, par_h2_3_0, "par_h2[3:0]", 0xF0, RO, "");
+  );
+  REG(par_h1_, "par_h1", 0xE3, RO, "par_h1",
+    VAR(par_h1_, par_h1_11_4, "par_h1[11:4]", 0xFF, RO, "");
+  );
+  uint16_t par_h1() { return (par_h1_11_4() << 4) | par_h1_3_0(); }
+  REG(par_h2_, "par_h2", 0xE1, RO, "par_h2",
+    VAR(par_h2_, par_h2_11_4, "par_h2[11:4]", 0xFF, RO, "");
+  );
+  uint16_t par_h2() { return (par_h2_11_4() << 4) | par_h2_3_0(); }
+  REG(par_h3, "par_h3", 0xE4, RO, "par_h3",);
+  REG(par_h4, "par_h4", 0xE5, RO, "par_h4",);
+  REG(par_h5, "par_h5", 0xE6, RO, "par_h5",);
+  REG(par_h6, "par_h6", 0xE7, RO, "par_h6",);
+  REG(par_h7, "par_h7", 0xE8, RO, "par_h7",);
+
+  // Gas pressure calibration coefficients
+  REG(par_g1, "par_g1", 0xED, RO, "par_g1", );
+  REG(par_g2_lsb, "par_g2_lsb", 0xEB, RO, "par_g2_lsb", );
+  REG(par_g2_msb, "par_g2_msb", 0xEC, RO, "par_g2_msb", );
+  int16_t par_g2() { return (par_g2_msb() << 8) | par_g2_lsb(); }
+  REG(par_g3, "par_g3", 0xEE, RO, "par_g3", );
+  REG(res_heat_range_, "res_heat_range_", 0x02, RO, "",
+    VAR(res_heat_range_, res_heat_range, "res_heat_range", 0x30, RO, "");
+  );
+  REG(res_heat_val, "res_heat_val", 0x00, RO, "res_heat_val", );
+  REG(range_switching_error, "range_switching_error", 0x04, RO, "range_switching_error", );
+
+
+  int32_t t_fine = 0;
+
+  float Temperature()
+  {
+    uint32_t temp_adc = temp_19_12() << 12 | temp_11_4() << 4 | temp_3_0();
+    float var1 = ((temp_adc / 16384.0f) - (par_t1() / 1024.0f)) * par_t2();
+    float var2 = (temp_adc / 131072.0f - par_t1() / 8192.0f) *
+                 (temp_adc / 131072.0f - par_t1() / 8192.0f) * par_t3() * 16.0f;
+    t_fine = var1 + var2;
+    float calc_temp = t_fine / 5120.0f;
+    return calc_temp;
+  }
+
+  float Pressure()
+  {
+    uint32_t press_adc = (press_19_12() << 12) | (press_11_4() << 4) | press_3_0();
+
+    float var1 = (t_fine / 2.0f) - 64000.0f;
+    float var2 = var1 * var1 * (par_p6() / 131072.0f);
+    var2 = var2 + (var1 * par_p5() * 2.0f);
+    var2 = (var2 / 4.0f) + (par_p4() * 65536.0f);
+    var1 = (((par_p3() * var1 * var1) / 16384.0f) + (par_p2() * var1)) / 524288.0f;
+    var1 = (1.0f + (var1 / 32768.0f)) * par_p1();
+    float calc_pres = 1048576.0f - (float)press_adc;
+
+    if (var1 == 0.0)
+      return 0.0;
+
+    calc_pres = (((calc_pres - (var2 / 4096.0f)) * 6250.0f) / var1);
+    var1 = ((float)par_p9() * calc_pres * calc_pres) / 2147483648.0f;
+    var2 = calc_pres * (par_p8() / 32768.0f);
+    float var3 = (calc_pres / 256.0f) * (calc_pres / 256.0f) * (calc_pres / 256.0f) * (par_p10() / 131072.0f);
+    calc_pres = (calc_pres + (var1 + var2 + var3 + (par_p7() * 128.0f)) / 16.0f);
+
+    return calc_pres;
+  }
+
+  float Humidity()
+  {
+    uint16_t hum_adc = (hum_15_8() << 8) | hum_7_0();
+
+    float temp_comp = t_fine / 5120.0f;
+    float var1 = hum_adc - (par_h1() * 16.0f + (par_h3() / 2.0f * temp_comp));
+    float var2 = var1 * (par_h2() / 262144.0f * (1.0f + (par_h4() / 16384.0f * temp_comp) + (par_h5() / 1048576.0f * temp_comp * temp_comp)));
+    float var3 = par_h6() / 16384.0f;
+    float var4 = par_h7() / 2097152.0f;
+    float calc_hum = var2 + (var3 + (var4 * temp_comp)) * var2 * var2;
+    if (calc_hum > 100.0f)
+      return 100.0f;
+    else if (calc_hum < 0.0f)
+      return 0.0f;
+    else
+      return calc_hum;
+  }
+
+  uint8_t HeaterSetPoint(uint16_t target_temp, float ambient_temp)
+  {
+    if (target_temp > 400)
+      target_temp = 400;
+
+    float rng_adj = 4 / (4 + (float)res_heat_range());
+    float val_adj = 1 / (1 + ((float)res_heat_val() * 0.002f));
+    float var1 = (par_g1() / (16.0f)) + 49.0f;
+    float var2 = ((par_g2() / 32768.0f) * 0.0005f) + 0.00235f;
+    float var3 = par_g3() / 1024.0f;
+    float var4 = var1 * (1.0f + (var2 * (float)target_temp));
+    float var5 = var4 + (var3 * ambient_temp);
+    return 3.4f * ((var5 * rng_adj * val_adj) - 25);
+  }
+
+  float HeaterSetPointTemperature(uint8_t heatr_res, float ambient_temp)
+  {
+    float rng_adj = 4 / (4 + (float)res_heat_range());
+    float val_adj = 1 / (1 + ((float)res_heat_val() * 0.002f));
+    float var5 = ((heatr_res / 3.4f) + 25) / (rng_adj * val_adj);
+    float var3 = par_g3() / 1024.0f;
+    float var4 = var5 - (var3 * ambient_temp);
+    float var2 = ((par_g2() / 32768.0f) * 0.0005f) + 0.00235f;
+    float var1 = (par_g1() / (16.0f)) + 49.0f;
+    return ((var4 / var1) - 1.0f) / var2;
+  }
+
+  float GasResistance()
+  {
+    uint16_t gas_res_adc = (gas_r_9_2() << 2) | gas_r_1_0();
+    uint8_t gas_range = gas_range_r();
+
+    float var1 = (1340.0f + (5.0f * range_switching_error()));
+    float var2 = (var1) * (1.0f + lookup_k1_range[gas_range]/100.0f);
+    float var3 = 1.0f + (lookup_k2_range[gas_range]/100.0f);
+
+    float calc_gas_res = 1.0f / (float)(var3 * (0.000000125f) * (float)(1 << gas_range) * (((((float)gas_res_adc)
+      - 512.0f)/var2) + 1.0f));
+
+    return calc_gas_res;
+  }
 );
 
 #undef REG

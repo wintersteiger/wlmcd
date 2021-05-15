@@ -182,28 +182,28 @@ public:
 template <typename T>
 class LField : public Field<T> {
 protected:
-  std::function<T(void)> update = nullptr;
+  std::function<T(void)> get = nullptr;
   std::function<void(const char*)> set = nullptr;
 
 public:
   LField(WINDOW *wndw, int row, int col, int value_width,
             const std::string &key,
             const std::string &units,
-            std::function<T(void)> &&update,
+            std::function<T(void)> &&get,
             std::function<void(const char*)> &&set = nullptr) :
     Field<T>(wndw, row, col, key, "", units),
-    update(update),
+    get(get),
     set(set)
   {
     FieldBase::value_width = value_width;
   }
-  virtual T Get() override { return update(); };
+  virtual ~LField() = default;
+  virtual T Get() override { return get(); };
   virtual void Set(const char* value) override {
     if (set)
       set(value);
   };
   virtual bool ReadOnly() override { return set == nullptr; }
-  virtual ~LField() = default;
 };
 
 #endif

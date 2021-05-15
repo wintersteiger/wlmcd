@@ -12,6 +12,7 @@ public:
   RegisterTable *RT;
 
   BME680(const std::string &bus = "/dev/i2c-1", uint8_t device_address = 0x77);
+  BME680(const char *config_filename);
   virtual ~BME680();
 
   using I2CDevice::Bus;
@@ -34,11 +35,8 @@ public:
   virtual void Test(const std::vector<uint8_t> &data) override;
 
 protected:
-  int32_t t_fine = 0;
   std::vector<uint8_t> GetCalibData();
   int8_t ComputeHeaterTemp(uint16_t target_temp, int32_t ambient_temp);
-  int16_t ComputeTemperature(uint32_t t);
-  uint32_t ComputePressure(uint32_t p);
   void Measure();
 };
 
