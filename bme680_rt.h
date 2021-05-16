@@ -25,7 +25,7 @@ REGISTER_TABLE_W(BME680, RegisterTable, uint8_t, uint8_t,
     VAR(Id, chip_id_7_0, "chip_id[7:0]", 0xFF, RO,                "");
   );
   REG(Config, "Config", 0x75, RW,                                 "Config",
-    VAR(Config, filter_2_0, "filter[2:0]", 0x3C, RW,              "");
+    VAR(Config, filter_2_0, "filter[2:0]", 0x1C, RW,              "");
     VAR(Config, spi_3w_en, "spi_3w_en", 0x01, RW,                 "");
   );
   REG(Ctrl_meas, "Ctrl_meas", 0x74, RW,                           "Ctrl_meas",
@@ -192,26 +192,25 @@ REGISTER_TABLE_W(BME680, RegisterTable, uint8_t, uint8_t,
 
   float Pressure()
   {
-    uint32_t press_adc = (press_19_12() << 12) | (press_11_4() << 4) | press_3_0();
-
     float var1 = (t_fine / 2.0f) - 64000.0f;
     float var2 = var1 * var1 * (par_p6() / 131072.0f);
     var2 = var2 + (var1 * par_p5() * 2.0f);
     var2 = (var2 / 4.0f) + (par_p4() * 65536.0f);
     var1 = (((par_p3() * var1 * var1) / 16384.0f) + (par_p2() * var1)) / 524288.0f;
     var1 = (1.0f + (var1 / 32768.0f)) * par_p1();
-    float calc_pres = 1048576.0f - (float)press_adc;
 
-    if (var1 == 0.0)
-      return 0.0;
-
-    calc_pres = (((calc_pres - (var2 / 4096.0f)) * 6250.0f) / var1);
-    var1 = ((float)par_p9() * calc_pres * calc_pres) / 2147483648.0f;
-    var2 = calc_pres * (par_p8() / 32768.0f);
-    float var3 = (calc_pres / 256.0f) * (calc_pres / 256.0f) * (calc_pres / 256.0f) * (par_p10() / 131072.0f);
-    calc_pres = (calc_pres + (var1 + var2 + var3 + (par_p7() * 128.0f)) / 16.0f);
-
-    return calc_pres;
+    if (var1 == 0.0f)
+      return 0.0f;
+    else {
+      uint32_t press_adc = (press_19_12() << 12) | (press_11_4() << 4) | press_3_0();
+      float calc_pres = 1048576.0f - (float)press_adc;
+      calc_pres = (((calc_pres - (var2 / 4096.0f)) * 6250.0f) / var1);
+      var1 = ((float)par_p9() * calc_pres * calc_pres) / 2147483648.0f;
+      var2 = calc_pres * (par_p8() / 32768.0f);
+      float var3 = (calc_pres / 256.0f) * (calc_pres / 256.0f) * (calc_pres / 256.0f) * (par_p10() / 131072.0f);
+      calc_pres += (var1 + var2 + var3 + (par_p7() * 128.0f)) / 16.0f;
+      return calc_pres;
+    }
   }
 
   float Humidity()
