@@ -15,6 +15,7 @@ class LogFile : public DeviceBase
 {
 public:
   LogFile(const char *filename, std::function<std::vector<std::string>()> fun);
+  LogFile(const std::string &filename, std::function<std::vector<std::string>()> fun);
   virtual ~LogFile();
 
   virtual const char* Name() const override { return "LogFile"; }
@@ -30,7 +31,7 @@ public:
 
 protected:
   std::mutex mtx;
-  const char *filename;
+  std::string filename;
   FILE *file;
   std::function<std::vector<std::string>()> fun;
 };

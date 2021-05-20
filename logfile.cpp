@@ -15,6 +15,14 @@ LogFile::LogFile(const char *filename, std::function<std::vector<std::string>()>
   Reset();
 }
 
+LogFile::LogFile(const std::string &filename, std::function<std::vector<std::string>()> fun) :
+  filename(filename),
+  file(NULL),
+  fun(fun)
+{
+  Reset();
+}
+
 LogFile::~LogFile()
 {
   if (file)
@@ -29,7 +37,7 @@ void LogFile::Reset()
   DeviceBase::Reset();
   if (file)
     fclose(file);
-  file = fopen(filename, "ab");
+  file = fopen(filename.c_str(), "ab");
 }
 
 void LogFile::UpdateTimed()

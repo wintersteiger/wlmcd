@@ -336,7 +336,9 @@ void Controller::Run()
       if (i % cur_frequent_interval == 0)
       {
         try {
-          for (DeviceBase *device : uis[ui_inx]->Devices())
+          for (auto &device : uis[ui_inx]->Devices())
+            device->UpdateFrequent();
+          for (auto &device : background_devices)
             device->UpdateFrequent();
           uis[ui_inx]->Update(false);
         }
@@ -349,7 +351,9 @@ void Controller::Run()
       else if (i % cur_infrequent_interval == 0)
       {
         try {
-          for (DeviceBase *device : uis[ui_inx]->Devices())
+          for (auto &device : uis[ui_inx]->Devices())
+            device->UpdateInfrequent();
+          for (auto &device : background_devices)
             device->UpdateInfrequent();
           uis[ui_inx]->Update(false);
         }
@@ -366,8 +370,14 @@ void Controller::Run()
         ThreadCleanup();
         try {
           const std::lock_guard<std::mutex> lock(threads_mtx);
-          for (DeviceBase *device : uis[ui_inx]->Devices()) {
+          for (auto &device : uis[ui_inx]->Devices()) {
             UpdateThread *t = new UpdateThread(device);
+            if (t == NULL)
+              throw std::runtime_error("could not spawn thread");
+            threads.insert(t);
+          }
+          for (auto &device : background_devices) {
+            UpdateThread *t = new UpdateThread(device.get());
             if (t == NULL)
               throw std::runtime_error("could not spawn thread");
             threads.insert(t);
@@ -418,6 +428,11 @@ void Controller::Stop()
     }
   }
   running = false;
+}
+
+void Controller::AddBackgroundDevice(std::shared_ptr<DeviceBase> &device)
+{
+  background_devices.insert(device);
 }
 
 void Controller::PauseTimer()

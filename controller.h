@@ -38,6 +38,8 @@ public:
 
   bool Running() const { return running; }
 
+  void AddBackgroundDevice(std::shared_ptr<DeviceBase> &device);
+
 protected:
   bool running;
   size_t cur_frequent_interval, cur_infrequent_interval;
@@ -46,6 +48,7 @@ protected:
   std::vector<std::shared_ptr<UI>> uis;
   std::vector<std::shared_ptr<Decoder>> decoders;
   std::vector<std::shared_ptr<Encoder>> encoders;
+  std::set<std::shared_ptr<DeviceBase>> background_devices;
 
   typedef std::function<void(Controller*,
                              std::shared_ptr<UI>,

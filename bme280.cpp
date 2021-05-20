@@ -74,6 +74,21 @@ void BME280::Test(const std::vector<uint8_t>&)
   RT->Refresh(false);
 }
 
+float BME280::Temperature()
+{
+  return RT->Temperature();
+}
+
+float BME280::Pressure()
+{
+  return RT->Pressure();
+}
+
+float BME280::Humidity()
+{
+  return RT->Humidity();
+}
+
 void BME280::RegisterTable::Refresh(bool frequent)
 {
   buffer.resize(0xFF, 0);

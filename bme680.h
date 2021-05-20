@@ -35,8 +35,6 @@ public:
   virtual void Test(const std::vector<uint8_t> &data) override;
 
 protected:
-  std::vector<uint8_t> GetCalibData();
-  int8_t ComputeHeaterTemp(uint16_t target_temp, int32_t ambient_temp);
   void Measure();
 };
 
