@@ -1,6 +1,8 @@
 // Copyright (c) Christoph M. Wintersteiger
 // Licensed under the MIT License.
 
+#include <fstream>
+
 #include <sys/time.h>
 
 #include <chrono>
@@ -21,6 +23,22 @@ LogFile::LogFile(const std::string &filename, std::function<std::vector<std::str
   fun(fun)
 {
   Reset();
+}
+
+LogFile::LogFile(const std::string &filename, std::vector<std::string> header, std::function<std::vector<std::string>()> fun) :
+  filename(filename),
+  file(NULL),
+  fun(fun)
+{
+  bool file_exists = std::ifstream(filename).good();
+
+  Reset();
+
+  if (file && !file_exists) {
+    for (auto h : header)
+      fprintf(file, "\"%s\",", h.c_str());
+    fprintf(file, "\n");
+  }
 }
 
 LogFile::~LogFile()

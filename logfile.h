@@ -16,6 +16,7 @@ class LogFile : public DeviceBase
 public:
   LogFile(const char *filename, std::function<std::vector<std::string>()> fun);
   LogFile(const std::string &filename, std::function<std::vector<std::string>()> fun);
+  LogFile(const std::string &filename, std::vector<std::string> header, std::function<std::vector<std::string>()> fun);
   virtual ~LogFile();
 
   virtual const char* Name() const override { return "LogFile"; }

@@ -32,6 +32,7 @@ BME280::BME280(const char *config_filename) :
   RT->Read(is);
   if (RT->id() != 0x60)
     throw std::runtime_error("Invalid chip ID, unresponsive BME280, or wrong config file");
+  RT->Refresh(false);
 }
 
 BME280::~BME280()
