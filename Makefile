@@ -18,7 +18,8 @@ LDFLAGS=-lrt -lcrypto -lwiringPi -lgpiod -lpthread -lgpiod
 %.o: %.cpp
 	${CXX} ${CXXFLAGS} $< -c -o $@
 
-SRC = decoder.cpp basic.cpp logfile.cpp \
+SRC = errors.cpp \
+	decoder.cpp basic.cpp logfile.cpp \
 	spidev.cpp i2c_device.cpp\
 	evohome.cpp radbot.cpp \
 	cc1101.cpp \
@@ -35,7 +36,8 @@ SRC = decoder.cpp basic.cpp logfile.cpp \
 	dht22.cpp \
 	mcp9808.cpp \
 	es9018k2m.cpp es9018k2m_rt.cpp \
-	bme280.cpp bme680.cpp
+	bme280.cpp bme680.cpp \
+	mcp3423.cpp
 
 UI_SRC = field.cpp ui.cpp basic_ui.cpp raw_ui.cpp controller.cpp shell.cpp \
 	cc1101_ui.cpp cc1101_ui_raw.cpp \
@@ -51,7 +53,8 @@ UI_SRC = field.cpp ui.cpp basic_ui.cpp raw_ui.cpp controller.cpp shell.cpp \
 	dht22_ui.cpp \
 	mcp9808_ui.cpp \
 	es9018k2m_ui.cpp \
-	bme280_ui.cpp bme680_ui.cpp
+	bme280_ui.cpp bme680_ui.cpp \
+	mcp3423_ui.cpp
 
 OBJ = $(subst .cpp,.o,$(SRC))
 UI_OBJ = $(subst .cpp,.o,$(UI_SRC))
