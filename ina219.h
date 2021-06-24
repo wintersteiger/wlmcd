@@ -47,6 +47,8 @@ public:
   void SetBusADCResolution(uint8_t value);
   void SetShuntADCResolution(uint8_t value);
 
+  uint16_t Calibration(void) const;
+
 protected:
   double r_shunt, max_expected_current, current_lsb, power_lsb;
 };

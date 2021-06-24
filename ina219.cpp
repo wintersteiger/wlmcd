@@ -52,10 +52,8 @@ void INA219::Reset()
     current_lsb = max_expected_current / 32768.0 /* 2**15 */ ;
     power_lsb = 20.0 * current_lsb;
     uint16_t cal = (uint16_t) trunc(0.04096 / (current_lsb * r_shunt));
-    Write(RT._rCalibration, cal);
+    RT.Write(RT._rCalibration, cal);
   }
-  else
-    Write(RT._rCalibration, 0);
 }
 
 void INA219::Write(std::ostream &os)
@@ -97,6 +95,11 @@ double INA219::Power(void) const
   // EXPECTED Power = (Current Register * Bus Voltage Register) / 5000
   int16_t power_reg = RT._rPower(RT.Buffer());
   return power_reg * power_lsb;
+}
+
+uint16_t INA219::Calibration(void) const
+{
+  return RT.Calibration();
 }
 
 void INA219::SetBusVoltageRange(BusVoltageRange range)
@@ -189,8 +192,8 @@ void INA219::RegisterTable::Read(std::istream &is)
 
     for (const auto reg : registers)
       if (reg->Name() == e.key()) {
-        uint8_t val;
-        sscanf(sval.c_str(), "%02hhx", &val);
+        uint16_t val;
+        sscanf(sval.c_str(), "%04hx", &val);
         device.Write(*reg, val);
         found = true;
         break;

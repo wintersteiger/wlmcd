@@ -15,11 +15,7 @@
 
 class I2CDeviceBase {
 public:
-  I2CDeviceBase(const std::string &bus, uint8_t device_address) :
-    fd(-1),
-    bus(bus),
-    device_address(device_address)
-  {}
+  I2CDeviceBase(const std::string &bus, uint8_t device_address);
 
   I2CDeviceBase() : fd(-1), bus(""), device_address(0x00) {}
 
@@ -29,6 +25,8 @@ public:
   }
 
   virtual void Reset();
+
+  virtual void GeneralCall(uint8_t);
 
 protected:
   std::mutex mtx;
@@ -52,6 +50,7 @@ public:
   uint8_t DeviceAddress() const { return device_address; }
 
   using I2CDeviceBase::Reset;
+  using I2CDeviceBase::GeneralCall;
   using Device<AT, VT>::Read;
   using Device<AT, VT>::Write;
 
