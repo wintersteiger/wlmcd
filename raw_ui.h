@@ -47,8 +47,9 @@ public:
     if (wndw) {
       key_width = key.size();
       value_width = 2;
-      const char *fmt = var ? "%x" : "%02x";
-      snprintf(tmp, sizeof(tmp), fmt, Get());
+      static std::string reg_fmt = std::string("%0") + std::to_string(2 * sizeof(VT)) + "x";
+      std::string fmt = var ? "%x" : reg_fmt;
+      snprintf(tmp, sizeof(tmp), fmt.c_str(), Get());
       value = tmp;
       FieldBase::Update(full);
     }
