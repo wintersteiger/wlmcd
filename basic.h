@@ -11,7 +11,6 @@
 #include "decoder.h"
 #include "encoder.h"
 #include "state.h"
-#include "ui.h"
 
 class Basic {
 public:

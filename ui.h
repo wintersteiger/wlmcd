@@ -8,6 +8,7 @@
 #include <mutex>
 #include <vector>
 #include <set>
+#include <string>
 
 #include "field.h"
 
@@ -51,13 +52,16 @@ public:
   void Next();
   void Last();
 
+  void FindNext(const std::string& s);
+  void FindPrev(const std::string& s);
+
   void Reset();
   virtual void Update(bool full);
   void Add(FieldBase *field);
   void Add(DeviceBase *device);
 
   void Edit();
-  static std::string GetCommand();
+  static std::string GetCommand(const char *prompt = ":");
   void Bump();
 
   virtual void Layout();

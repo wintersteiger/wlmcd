@@ -248,6 +248,28 @@ Controller::Controller(
   };
 
   key_bindings[' '] = KEY_FUN { ui->Bump(); };
+
+  key_bindings['/'] = KEY_FUN {
+    ctrl->PauseTimer();
+    ctrl->last_search = ui->GetCommand("/");
+    ctrl->ResumeTimer();
+    ui->FindNext(ctrl->last_search);
+  };
+
+  key_bindings['?'] = KEY_FUN {
+    ctrl->PauseTimer();
+    ctrl->last_search = ui->GetCommand("?");
+    ctrl->ResumeTimer();
+    ui->FindPrev(ctrl->last_search);
+  };
+
+  key_bindings['n'] = KEY_FUN {
+    ui->FindNext(ctrl->last_search);
+  };
+
+  key_bindings['p'] = KEY_FUN {
+    ui->FindPrev(ctrl->last_search);
+  };
 }
 
 Controller::~Controller()

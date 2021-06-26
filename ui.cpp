@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <cstring>
+#include <regex>
 
 #include "ui.h"
 
@@ -384,6 +385,82 @@ void UI::Last()
   Update(false);
 }
 
+void UI::FindNext(const std::string &s)
+{
+  std::regex re(s, std::regex_constants::icase);
+
+  size_t before = active_field_index;
+  size_t start = (active_field_index == (size_t)-1) ? 0 : (active_field_index+1) % fields.size();
+
+  size_t next = start;
+  do {
+    if (fields[next]->Activateable() &&
+        (std::regex_search(fields[next]->Key(), re) ||
+          std::regex_search(fields[next]->Value(), re) ||
+          std::regex_search(fields[next]->Units(), re))) {
+      active_field_index = next;
+      break;
+    }
+    next = (next+1) % fields.size();
+  }
+  while (next != start);
+
+  if (active_field_index != before)
+  {
+    if (before < fields.size()) {
+      FieldBase *f = fields[before];
+      f->Active(false);
+      f->Update(true);
+    }
+
+    if (active_field_index < fields.size()) {
+      FieldBase *f = fields[active_field_index];
+      f->Active(true);
+      f->Update(true);
+    }
+  }
+  else
+    Error("Pattern not found");
+}
+
+void UI::FindPrev(const std::string &s)
+{
+  std::regex re(s, std::regex_constants::icase);
+
+  size_t before = active_field_index;
+  size_t start = active_field_index > 0 && active_field_index < fields.size() ? active_field_index-1 : fields.size()-1;
+
+  size_t prev = start;
+  do {
+    if (fields[prev]->Activateable() &&
+        (std::regex_search(fields[prev]->Key(), re) ||
+          std::regex_search(fields[prev]->Value(), re) ||
+          std::regex_search(fields[prev]->Units(), re))) {
+      active_field_index = prev;
+      break;
+    }
+    prev = prev == 0 ? fields.size()-1 : prev-1;
+  }
+  while(prev != start);
+
+  if (active_field_index != before)
+  {
+    if (before < fields.size()) {
+      FieldBase *f = fields[before];
+      f->Active(false);
+      f->Update(true);
+    }
+
+    if (active_field_index < fields.size()) {
+      FieldBase *f = fields[active_field_index];
+      f->Active(true);
+      f->Update(true);
+    }
+  }
+  else
+    Error("Pattern not found");
+}
+
 void UI::Edit()
 {
   char tmp[256];
@@ -422,7 +499,7 @@ void UI::Edit()
   ResetCmd();
 }
 
-std::string UI::GetCommand()
+std::string UI::GetCommand(const char *prompt)
 {
   char tmp[256];
 
@@ -431,7 +508,7 @@ std::string UI::GetCommand()
   mtx.lock();
   echo();
   curs_set(2);
-  mvwprintw(cmdw, 0, 0, ":");
+  mvwprintw(cmdw, 0, 0, prompt);
   nodelay(cmdw, FALSE);
   wgetnstr(cmdw, tmp, sizeof(tmp));
   nodelay(cmdw, TRUE);

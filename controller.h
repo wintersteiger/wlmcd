@@ -49,6 +49,7 @@ protected:
   std::vector<std::shared_ptr<Decoder>> decoders;
   std::vector<std::shared_ptr<Encoder>> encoders;
   std::set<std::shared_ptr<DeviceBase>> background_devices;
+  std::string last_search;
 
   typedef std::function<void(Controller*,
                              std::shared_ptr<UI>,

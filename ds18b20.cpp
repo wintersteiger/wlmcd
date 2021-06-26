@@ -4,7 +4,6 @@
 #include <stdio.h>
 
 #include "ds18b20.h"
-#include "ui.h"
 
 DS18B20::DS18B20(const char *path, const char *id) :
   path(path),

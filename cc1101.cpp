@@ -20,8 +20,6 @@
 #include "cc1101.h"
 #include "cc1101_rt.h"
 
-#include "ui.h"
-
 using json = nlohmann::json;
 
 CC1101::CC1101(
