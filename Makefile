@@ -36,6 +36,7 @@ SRC = errors.cpp \
 	dht22.cpp \
 	mcp9808.cpp \
 	es9018k2m.cpp es9018k2m_rt.cpp \
+	es9028pro.cpp es9028pro_rt.cpp \
 	bme280.cpp bme680.cpp \
 	mcp3423.cpp
 
@@ -53,6 +54,7 @@ UI_SRC = field.cpp ui.cpp basic_ui.cpp raw_ui.cpp controller.cpp shell.cpp \
 	dht22_ui.cpp \
 	mcp9808_ui.cpp \
 	es9018k2m_ui.cpp \
+	es9028pro_ui.cpp \
 	bme280_ui.cpp bme680_ui.cpp \
 	mcp3423_ui.cpp
 

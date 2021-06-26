@@ -28,9 +28,9 @@ I2CDeviceBase::I2CDeviceBase(const std::string &bus, uint8_t device_address) :
 void I2CDeviceBase::Reset()
 {
   if (busses.find(bus) == busses.end()) {
-    // The first time we see a particular bus, we issue a general command 0x06 (reset)
+    // The first time we see a particular bus, we could issue a general command 0x06 (reset)?
     busses.insert(bus);
-    GeneralCall(0x06);
+    // GeneralCall(0x06);
   }
 
   const std::lock_guard<std::mutex> lock(mtx);
