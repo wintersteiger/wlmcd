@@ -156,7 +156,8 @@ Controller::Controller(
     ctrl->ResumeTimer();
   };
 
-  key_bindings['?'] = KEY_FUN { ui->Describe(); };
+  key_bindings['d'] = KEY_FUN { ui->Describe(); };
+  key_bindings['h'] = KEY_FUN { ui->Describe(); };
 
   key_bindings[':'] = KEY_FUN {
     // Disable timer; because wgetnstr apparently gets
