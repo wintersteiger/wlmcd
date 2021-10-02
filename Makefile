@@ -38,7 +38,8 @@ SRC = errors.cpp \
 	es9018k2m.cpp es9018k2m_rt.cpp \
 	es9028pro.cpp es9028pro_rt.cpp \
 	bme280.cpp bme680.cpp \
-	mcp3423.cpp
+	mcp3423.cpp \
+	ccs811.cpp
 
 UI_SRC = field.cpp ui.cpp basic_ui.cpp raw_ui.cpp controller.cpp shell.cpp \
 	cc1101_ui.cpp cc1101_ui_raw.cpp \
@@ -56,7 +57,8 @@ UI_SRC = field.cpp ui.cpp basic_ui.cpp raw_ui.cpp controller.cpp shell.cpp \
 	es9018k2m_ui.cpp \
 	es9028pro_ui.cpp \
 	bme280_ui.cpp bme680_ui.cpp \
-	mcp3423_ui.cpp
+	mcp3423_ui.cpp \
+	ccs811_ui.cpp
 
 OBJ = $(subst .cpp,.o,$(SRC))
 UI_OBJ = $(subst .cpp,.o,$(UI_SRC))

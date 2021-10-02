@@ -41,25 +41,25 @@ static const std::vector<const char*> mode_map = {
     };
 
 STRINGFIELD(OpMode, "Mode", "", {
-  uint8_t value = ina219.RT._vMode(ina219.RT._rConfiguration(ina219.RT.Buffer()));
+  uint8_t value = ina219.RT._vMode(ina219.RT.Configuration());
   return mode_map[value];
 });
 
 static const std::vector<const char*> brng_map = { "16", "32" };
 STRINGFIELD(BusVoltageRange, "Bus vltg rng", "V", {
-  uint8_t value = ina219.RT._vBRNG(ina219.RT._rConfiguration(ina219.RT.Buffer()));
+  uint8_t value = ina219.RT._vBRNG(ina219.RT.Configuration());
   return brng_map[value];
 });
 
 static const std::vector<const char*> pggain_map = { "1", "1/2", "1/4", "1/8" };
 STRINGFIELD(PGAGain, "PGA gain", "", {
-  uint8_t value = ina219.RT._vPG(ina219.RT._rConfiguration(ina219.RT.Buffer()));
+  uint8_t value = ina219.RT._vPG(ina219.RT.Configuration());
   return pggain_map[value];
 });
 
 static const std::vector<const char*> pgrange_map = { "+-40", "+-80", "+-160", "+-320" };
 STRINGFIELD(PGARange, "PGA range", "mV", {
-  uint8_t value = ina219.RT._vPG(ina219.RT._rConfiguration(ina219.RT.Buffer()));
+  uint8_t value = ina219.RT._vPG(ina219.RT.Configuration());
   return pgrange_map[value];
 });
 

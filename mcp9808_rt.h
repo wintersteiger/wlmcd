@@ -9,7 +9,7 @@
 #define REG(N, P, A, RW, H, V) REGDECL(uint8_t, uint16_t, N, P, A, RW, H, V)
 #define VAR(R, N, P, M, RW, D) VARDECL(uint8_t, uint16_t, R, N, P, M, RW, D)
 
-REGISTER_TABLE_W(MCP9808, RegisterTable, uint8_t, uint16_t,
+REGISTER_TABLE(MCP9808, RegisterTable, uint8_t, uint16_t,
   REG(RFU, "RFU", 0x00, RO,                                     "Reserved for future use", );
   REG(Configuration, "Configuration", 0x01, RW,                 "Configuration",
     VAR(Configuration, T_HYST, "T_HYST", 0x0600, RW,            "");

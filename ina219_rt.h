@@ -9,7 +9,7 @@
 #define REG(N, P, A, RW, H, V) REGDECL(uint8_t, uint16_t, N, P, A, RW, H, V)
 #define VAR(R, N, P, M, RW, D) VARDECL(uint8_t, uint16_t, R, N, P, M, RW, D)
 
-REGISTER_TABLE_W(INA219, RegisterTable, uint8_t, uint16_t,
+REGISTER_TABLE(INA219, RegisterTable, uint8_t, uint16_t,
   REG(Configuration, "Configuration", 0x00, RW,               "All-register reset, settings for bus voltage range, PGA "
                                                               "Gain, ADC resolution/averaging.",
     VAR(Configuration, RST, "RST", 0x8000, RW,                "");

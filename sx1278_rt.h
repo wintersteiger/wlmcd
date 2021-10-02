@@ -9,7 +9,7 @@
 #define REG(N, P, A, RW, H, V) REGDECL(uint8_t, uint8_t, N, P, A, RW, H, V)
 #define VAR(R, N, P, M, RW, D) VARDECL(uint8_t, uint8_t, R, N, P, M, RW, D)
 
-REGISTER_TABLE_W(SX1278, NormalRegisterTable, uint8_t, uint8_t,
+REGISTER_TABLE(SX1278, NormalRegisterTable, uint8_t, uint8_t,
   REG(Fifo, "FIFO", 0x00, RW,                                                   "FIFO read/write access",);
   REG(OpMode, "OpMode", 0x01, RW,                                               "Operating mode & LoRaTM / FSK selection",
     VAR(OpMode, LongRangeMode, "Long range mode", 0x80, RW,                     "");

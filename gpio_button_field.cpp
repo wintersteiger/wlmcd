@@ -30,7 +30,7 @@ void GPIOButtonField::Set(bool value)
     bump_state = value;
 }
 
-void GPIOButtonField::Bump()
+void GPIOButtonField::Flip()
 {
   if (bumpy) {
     bool val = button.ReadBuffered();

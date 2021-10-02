@@ -9,10 +9,10 @@
 #define REG(N, P, A, RW, H, V) REGDECL(uint8_t, uint8_t, N, P, A, RW, H, V)
 #define VAR(R, N, P, M, RW, D) VARDECL(uint8_t, uint8_t, R, N, P, M, RW, D)
 
-REGISTER_TABLE_W(CC1101, RegisterTable, uint8_t, uint8_t,
+REGISTER_TABLE(CC1101, RegisterTable, uint8_t, uint8_t,
   REG(IOCFG2, "IOCFG2", 0x00, RW,                                         "GDO2 output pin configuration",
-      VAR(IOCFG2, GDO2_INV, "GDO2_INV", 0x40, RW,                         "");
-      VAR(IOCFG2, GDO2_CFG_5_0, "GDO2_CFG[5:0]", 0x3F, RW,                "");
+    VAR(IOCFG2, GDO2_INV, "GDO2_INV", 0x40, RW,                           "");
+    VAR(IOCFG2, GDO2_CFG_5_0, "GDO2_CFG[5:0]", 0x3F, RW,                  "");
   );
   REG(IOCFG1, "IOCFG1", 0x01, RW,                                         "GDO1 output pin configuration",
     VAR(IOCFG1, GDO_DS, "GDO_DS", 0x80, RW,                               "");
@@ -25,9 +25,9 @@ REGISTER_TABLE_W(CC1101, RegisterTable, uint8_t, uint8_t,
     VAR(IOCFG0, GDO0_CFG_5_0, "GDO0_CFG[5:0]", 0x3F, RW,                  "");
   );
   REG(FIFOTHR, "FIFOTHR", 0x03, RW,                                       "RX FIFO and TX FIFO thresholds",
-      VAR(FIFOTHR, ADC_RETENTION, "ADC_RETENTION", 0x40, RW,              "");
-      VAR(FIFOTHR, CLOSE_IN_RX_1_0, "CLOSE_IN_RX[1:0]", 0x30, RW,         "");
-      VAR(FIFOTHR, FIFO_THR_3_0, "FIFO_THR[3:0]", 0x0F, RW,               "");
+    VAR(FIFOTHR, ADC_RETENTION, "ADC_RETENTION", 0x40, RW,                "");
+    VAR(FIFOTHR, CLOSE_IN_RX_1_0, "CLOSE_IN_RX[1:0]", 0x30, RW,           "");
+    VAR(FIFOTHR, FIFO_THR_3_0, "FIFO_THR[3:0]", 0x0F, RW,                 "");
   );
   REG(SYNC1, "SYNC1", 0x04, RW,                                           "Sync word, high byte",
     VAR(SYNC1, SYNC_15_8, "SYNC[15:8]", 0xFF, RW,                         "");

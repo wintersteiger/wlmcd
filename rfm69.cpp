@@ -287,7 +287,7 @@ void RFM69::RegisterTable::Write(std::ostream &os)
   for (const auto reg : registers)
     if (reg->Address() != 0x00) {
       char tmp[3];
-      snprintf(tmp, 3, "%02x", (*reg)(buffer));
+      snprintf(tmp, 3, "%02x", (*this)(*reg));
       regs[reg->Name()] = tmp;
     }
   j["registers"] = regs;

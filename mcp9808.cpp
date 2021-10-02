@@ -79,9 +79,9 @@ void MCP9808::RegisterTable::Write(std::ostream &os)
   for (const auto reg : registers) {
     if (reg->Writeable()) {
       if (reg->Name() == "Resolution_")
-        snprintf(tmp, sizeof(tmp), "%02x", (*reg)(buffer) >> 8);
+        snprintf(tmp, sizeof(tmp), "%02x", (*this)(*reg) >> 8);
       else
-        snprintf(tmp, sizeof(tmp), "%04x", (*reg)(buffer));
+        snprintf(tmp, sizeof(tmp), "%04x", (*this)(*reg));
       regs[reg->Name()] = tmp;
     }
   }

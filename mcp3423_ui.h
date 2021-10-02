@@ -10,9 +10,6 @@
 
 class MCP3423;
 
-template <typename D, typename AT, typename VT>
-class RegisterTable;
-
 std::shared_ptr<UI> make_mcp3423_raw_ui(std::shared_ptr<MCP3423> &device);
 
 class MCP3423UI : public UI {

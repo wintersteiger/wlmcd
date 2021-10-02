@@ -12,25 +12,25 @@ namespace SX1278UIFields {
 
 class RegisterField : public Field<uint8_t> {
 protected:
-  const Register<uint8_t, uint8_t> &reg;
+  const SX1278::NormalRegisterTable::TRegister &reg;
   const Variable<uint8_t> *var;
   const SX1278 &sx1278;
   const SX1278::NormalRegisterTable &rt;
 
 public:
-  RegisterField(int row, const Register<uint8_t, uint8_t> *reg, const SX1278 &sx1278) :
+  RegisterField(int row, const SX1278::NormalRegisterTable::TRegister *reg, const SX1278 &sx1278) :
     Field<uint8_t>(UI::statusp, row, 1, reg->Name(), "", ""), reg(*reg), var(NULL), sx1278(sx1278), rt(sx1278.Normal) {
       value_width = 2;
       units_width = 0;
   }
-  RegisterField(int row, const Register<uint8_t, uint8_t> *reg, const Variable<uint8_t> *var, const SX1278 &sx1278) :
+  RegisterField(int row, const SX1278::NormalRegisterTable::TRegister *reg, const Variable<uint8_t> *var, const SX1278 &sx1278) :
     Field<uint8_t>(UI::statusp, row, 1, var->Name(), "", ""), reg(*reg), var(var), sx1278(sx1278), rt(sx1278.Normal) {
       value_width = 2;
       units_width = 0;
   }
   virtual size_t Width() { return key.size() + 4; }
   virtual uint8_t Get() {
-    uint8_t r = reg(rt.Buffer());
+    uint8_t r = rt(reg);
     return var ? (*var)(r) : r;
   }
   virtual void Update(bool full=false) {
@@ -214,9 +214,11 @@ public:
     key_width = 14;
     if (len > 6)
        key_width -= value_width - 12;
+    std::vector<uint8_t> svbuf = {  rt.SyncValue1(), rt.SyncValue2(), rt.SyncValue3(), rt.SyncValue4(),
+                                    rt.SyncValue5(), rt.SyncValue6(), rt.SyncValue7(), rt.SyncValue8() };
     uint64_t sw = 0;
     for (size_t i = 0; i < len; i++)
-      sw = (sw << 8) | rt.Buffer()[rt._rSyncValue1.Address() + i];
+      sw = (sw << 8) | svbuf[i];
     char sws[2*len+1];
     snprintf(sws, 2*len+1, "%" PRIx64, sw);
     return sws;

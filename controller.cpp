@@ -205,7 +205,7 @@ Controller::Controller(
       else if (verb == "r" || verb == "read") {
         try {
           if (ui->Devices().size() > 1)
-            UI::Error("cannot read configurations of multiple devices");
+            UI::Error("Cannot read configurations of multiple devices");
           for (auto device : ui->Devices()) {
             auto is = std::ifstream(args);
             device->Read(is);
@@ -248,7 +248,12 @@ Controller::Controller(
         device->Test({});
   };
 
-  key_bindings[' '] = KEY_FUN { ui->Bump(); };
+  key_bindings[' '] = KEY_FUN {
+    ui->Flip();
+    for (auto &device : ui->Devices())
+      device->UpdateInfrequent();
+    ui->Update(false);
+  };
 
   key_bindings['/'] = KEY_FUN {
     ctrl->PauseTimer();

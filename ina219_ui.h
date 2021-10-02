@@ -12,9 +12,6 @@
 
 class INA219;
 
-template <typename D, typename AT, typename VT>
-class RegisterTable;
-
 class INA219UI : public UI {
 public:
   INA219UI(INA219 &ina219);

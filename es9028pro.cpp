@@ -53,12 +53,17 @@ void ES9028PRO::UpdateTimed()
   // RTS->Professional.Refresh(false);
 }
 
+void ES9028PRO::UpdateInfrequent()
+{
+  RTS->Main.Refresh(false);
+}
+
 double ES9028PRO::FSR() const {
   return (RTS->Main.dpll_num() * F_MCLK) / pow(2.0, 32);
 }
 
 double ES9028PRO::VolumeRampRate() const {
-  return ((1 << RTS->Main.volume_rate()) * FSR()) / 512;
+  return (pow(2.0, RTS->Main.volume_rate()) * FSR()) / 512.0;
 }
 
 double ES9028PRO::SoftStartTime() const {

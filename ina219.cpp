@@ -86,14 +86,14 @@ double INA219::ShuntVoltage(void) const
 double INA219::Current(void) const
 {
   // EXPECTED Current = (Shunt Voltage Register * Calibration Register) / 4096
-  int16_t current_reg = RT._rCurrent(RT.Buffer());
+  int16_t current_reg = RT.Current();
   return current_reg * current_lsb;
 }
 
 double INA219::Power(void) const
 {
   // EXPECTED Power = (Current Register * Bus Voltage Register) / 5000
-  int16_t power_reg = RT._rPower(RT.Buffer());
+  int16_t power_reg = RT.Power();
   return power_reg * power_lsb;
 }
 
@@ -160,9 +160,9 @@ void INA219::RegisterTable::Write(std::ostream &os)
   dev["r_shunt"] = device.r_shunt;
   dev["max_expected_current"] = device.max_expected_current;
   j["device"] = dev;
-  std::vector<Register<uint8_t, uint16_t>*> regobjs = { &device.RT._rConfiguration, &device.RT._rCalibration };
+  std::vector<TRegister*> regobjs = { &device.RT._rConfiguration, &device.RT._rCalibration };
   for (const auto reg : regobjs) {
-    snprintf(tmp, sizeof(tmp), "%04x", (*reg)(buffer));
+    snprintf(tmp, sizeof(tmp), "%04x", (*this)(*reg));
     regs[reg->Name()] = tmp;
   }
   j["registers"] = regs;

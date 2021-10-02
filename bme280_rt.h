@@ -9,7 +9,7 @@
 #define REG(N, P, A, RW, H, V) REGDECL(uint8_t, uint8_t, N, P, A, RW, H, V)
 #define VAR(R, N, P, M, RW, D) VARDECL(uint8_t, uint8_t, R, N, P, M, RW, D)
 
-REGISTER_TABLE_W(BME280, RegisterTable, uint8_t, uint8_t,
+REGISTER_TABLE(BME280, RegisterTable, uint8_t, uint8_t,
   REG(hum_lsb, "hum_lsb", 0xFE, RO,                               "hum_lsb",
     VAR(hum_lsb, hum_7_0, "hum[7:0]", 0xFF, RO,                   "");
   );

@@ -15,7 +15,8 @@ public:
   virtual bool ReadOnly() { return false; }
   virtual bool Get();
   virtual void Set(bool value);
-  virtual void Bump();
+  virtual void Flip();
+  virtual bool Flippable() const override { return true; }
 
 protected:
   GPIOButton &button;

@@ -39,7 +39,7 @@ protected:
 public:
   FieldBase(WINDOW *wndw, int row, int col, const std::string &key, const std::string &value, const std::string &units) :
     wndw(wndw), row(row), col(col), key(key), value(value), units(units), colors(-1),
-    key_width(14), value_width(8), units_width(3), active(false), stale(false), attributes(-1) {}
+    key_width(14), value_width(8), units_width(units.size()), active(false), stale(false), attributes(-1) {}
   virtual ~FieldBase() {}
 
   const std::string& Key() const { return key; }
@@ -59,10 +59,11 @@ public:
   virtual void Update(bool full=false);
   virtual void Active(bool a) { active = a; }
   virtual bool Activateable() const { return true; }
-  virtual bool ReadOnly() { return true; }
+  virtual bool ReadOnly() const { return true; }
   virtual void Set(const char*) {}
   virtual std::string Describe() const { return "(empty)"; }
-  virtual void Bump() {}
+  virtual void Flip() {}
+  virtual bool Flippable() const { return false; }
 };
 
 template <typename T>
@@ -203,7 +204,37 @@ public:
     if (set)
       set(value);
   };
-  virtual bool ReadOnly() override { return set == nullptr; }
+  virtual bool ReadOnly() const override { return set == nullptr; }
+};
+
+class LIndicator : public LField<bool> {
+public:
+  LIndicator(WINDOW *wndw, int row, int col, int value_width,
+            const std::string &key,
+            std::function<bool(void)> &&get) :
+    LField<bool>(wndw, row, col, value_width, key, "", std::move(get)) {
+      units_width = 0;
+      value_width = 0;
+    }
+  virtual ~LIndicator() {}
+  using LField<bool>::Get;
+  virtual void Update(bool full=false) override;
+};
+
+class LSwitch : public LIndicator {
+protected:
+  std::function<void(bool)> bset = nullptr;
+
+public:
+  LSwitch(WINDOW *wndw, int row, int col,
+          const std::string &key,
+          std::function<bool(void)> &&get,
+          std::function<void(bool)> &&bset);
+  virtual ~LSwitch() {}
+  using LIndicator::Get;
+  virtual void Flip() override { if (bset) bset(!Get()); };
+  virtual bool Flippable() const override { return bset != nullptr; }
+  virtual bool ReadOnly() const override { return bset == nullptr; }
 };
 
 #endif

@@ -17,25 +17,25 @@ namespace RFM69UIFields {
 
 class RegisterField : public Field<uint8_t> {
 protected:
-  const Register<uint8_t, uint8_t> &reg;
+  const typename RFM69::RegisterTable::TRegister &reg;
   const Variable<uint8_t> *var;
   const RFM69 &rfm69;
   const RFM69::RegisterTable &rt;
 
 public:
-  RegisterField(int row, const Register<uint8_t, uint8_t> *reg, const RFM69 &rfm69) :
+  RegisterField(int row, const typename RFM69::RegisterTable::TRegister *reg, const RFM69 &rfm69) :
     Field<uint8_t>(UI::statusp, row, 1, reg->Name(), "", ""), reg(*reg), var(NULL), rfm69(rfm69), rt(*rfm69.RT) {
       value_width = 2;
       units_width = 0;
   }
-  RegisterField(int row, const Register<uint8_t, uint8_t> *reg, const Variable<uint8_t> *var, const RFM69 &rfm69) :
+  RegisterField(int row, const typename RFM69::RegisterTable::TRegister *reg, const Variable<uint8_t> *var, const RFM69 &rfm69) :
     Field<uint8_t>(UI::statusp, row, 1, var->Name(), "", ""), reg(*reg), var(var), rfm69(rfm69), rt(*rfm69.RT) {
       value_width = 2;
       units_width = 0;
   }
   virtual size_t Width() { return key.size() + 4; }
   virtual uint8_t Get() {
-    uint8_t r = reg(rt.Buffer());
+    uint8_t r = rt(reg);
     return var ? (*var)(r) : r;
   }
   virtual void Update(bool full=false) {

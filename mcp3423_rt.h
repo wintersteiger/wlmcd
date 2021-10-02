@@ -9,7 +9,7 @@
 #define REG(N, P, A, RW, H, V) REGDECL(uint8_t, uint8_t, N, P, A, RW, H, V)
 #define VAR(R, N, P, M, RW, D) VARDECL(uint8_t, uint8_t, R, N, P, M, RW, D)
 
-REGISTER_TABLE_W(MCP3423, RegisterTable, uint8_t, uint8_t,
+REGISTER_TABLE(MCP3423, RegisterTable, uint8_t, uint8_t,
   REG(Configuration, "Configuration", 0x00, RW,                 "Configuration",
     VAR(Configuration, RDY, "RDY", 0x80, RW,                    "");
     VAR(Configuration, C1_C0, "C1-C0", 0x60, RW,                "");

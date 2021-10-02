@@ -10,25 +10,25 @@
 
 class SX1278RawField : public Field<uint8_t> {
 protected:
-  const Register<uint8_t, uint8_t> &reg;
+  const SX1278::NormalRegisterTable::TRegister &reg;
   const Variable<uint8_t> *var;
   SX1278::NormalRegisterTable &rt;
 
 public:
-  SX1278RawField(int row, const Register<uint8_t, uint8_t> *reg, SX1278::NormalRegisterTable &rt) :
+  SX1278RawField(int row, const SX1278::NormalRegisterTable::TRegister *reg, SX1278::NormalRegisterTable &rt) :
     Field<uint8_t>(UI::statusp, row, 1, reg->Name(), "", ""), reg(*reg), var(NULL), rt(rt) {
       value_width = 2;
       units_width = 0;
       attributes = A_BOLD;
   }
-  SX1278RawField(int row, const Register<uint8_t, uint8_t> *reg, const Variable<uint8_t> *var, SX1278::NormalRegisterTable &rt) :
+  SX1278RawField(int row, const SX1278::NormalRegisterTable::TRegister *reg, const Variable<uint8_t> *var, SX1278::NormalRegisterTable &rt) :
     Field<uint8_t>(UI::statusp, row, 1, var->Name(), "", ""), reg(*reg), var(var), rt(rt) {
       value_width = 2;
       units_width = 0;
   }
   virtual size_t Width() { return key.size() + 4; }
   virtual uint8_t Get() {
-    uint8_t r = reg(rt.Buffer());
+    uint8_t r = rt(reg);
     return var ? (*var)(r) : r;
   }
   virtual void Update(bool full=false) {
@@ -46,9 +46,9 @@ public:
     uint8_t v = 0;
     size_t v_str_len = strlen(v_str);
     if (v_str_len == 0 || v_str_len > 2 || sscanf(v_str, "%02hhx", &v) != 1)
-      UI::Error("invalid value '%s'", v_str);
+      UI::Error("Invalid value '%s'", v_str);
     else if (var != NULL)
-      rt.Write(reg, var->Set(reg(rt.Buffer()), v));
+      rt.Write(reg, var->Set(rt(reg), v));
     else
       rt.Write(reg, v);
   }

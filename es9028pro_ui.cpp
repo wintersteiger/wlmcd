@@ -31,6 +31,9 @@ ES9028PROUI::ES9028PROUI(std::shared_ptr<ES9028PRO> &es9028pro) : UI()
 
   auto* main = &es9028pro->RTS->Main;
 
+  Add(new LIndicator(statusp, row, col + 2, 10, "Automute", [RTS](){ return RTS->Main.automute_status(); }));
+  Add(new LIndicator(statusp, row++, col + 12, 10, "Lock", [RTS](){ return RTS->Main.lock_status(); }));
+
   static const char *auto_inputs[] = { "None", "I2S|DSD", "I2S|S/PDIF", "I2S|S/PDIF|DSD" };
   static const char *manual_inputs[] = { "I2S", "S/PDIF", "?", "DSD" };
   Add(new LField<const char*>(statusp, row++, col, 10, "Input", "",
@@ -59,7 +62,7 @@ ES9028PROUI::ES9028PROUI(std::shared_ptr<ES9028PRO> &es9028pro) : UI()
         }
       }
     }
-    UI::Error("invalid value '%s'", v);
+    UI::Error("Invalid value '%s'", v);
   }));
 
   Add(new LField<double>(statusp, row++, col, 10, "Sample rate", "kHz", [es9028pro]() {
@@ -68,10 +71,23 @@ ES9028PROUI::ES9028PROUI(std::shared_ptr<ES9028PRO> &es9028pro) : UI()
   Add(new Empty(row++, col));
 
   Add(new Label(UI::statusp, row++, col + 18, "Volume"));
-  Add(new LField<bool>(statusp, row++, col, 10, "Mute", "", [RTS]() {
-    return RTS->Main.mute();
-  }));
-  Add(new LField<double>(statusp, row++, col, 10, "Master trim", "%", [RTS]() {
+  Add(new LSwitch(statusp, row, col + 3, "Mute",
+    [RTS]() { return RTS->Main.mute(); },
+    [RTS](bool v) { RTS->Main.Write(RTS->Main._rFBWSMTE, RTS->Main._vmute, v); }
+  ));
+  Add(new LSwitch(statusp, row, col + 9, "Stereo",
+    [RTS]() { return RTS->Main.stereo_mode(); },
+    [RTS](bool v) { RTS->Main.Write(RTS->Main._rGPIOINPUT, RTS->Main._vstereo_mode, v); }
+  ));
+  Add(new LSwitch(statusp, row, col + 17, "CH1",
+    [RTS]() { return RTS->Main.ch1_vol(); },
+    [RTS](bool v) { RTS->Main.Write(RTS->Main._rGPIOINPUT, RTS->Main._vch1_vol, v); }
+  ));
+  Add(new LSwitch(statusp, row++, col + 22, "Latch",
+    [RTS]() { return RTS->Main.latch_vol(); },
+    [RTS](bool v) { RTS->Main.Write(RTS->Main._rGPIOINPUT, RTS->Main._vlatch_vol, v); }
+  ));
+  Add(new LField<double>(statusp, row++, col, 10, "Master", "%", [RTS]() {
     return (RTS->Main.master_trim() / (double)0x7FFFFFFF) * 100.0;
   }));
   Add(new LField<double>(statusp, row++, col, 10, "Channel 1", "dB", [RTS]() { return -0.5 * RTS->Main.volume1(); } ));
@@ -121,18 +137,24 @@ ES9028PROUI::ES9028PROUI(std::shared_ptr<ES9028PRO> &es9028pro) : UI()
     static const char *values[] = { "consumer", "pro/AES3" };
     return values[RTS->Main.user_bits()];
   }));
-  Add(new LField<bool>(statusp, row++, col, 10, "Ign. data flg", "", [RTS]() {
-    return RTS->Main.spdif_ig_data();
-  }));
-  Add(new LField<bool>(statusp, row++, col, 10, "Ign. valid flg", "", [RTS]() {
-    return RTS->Main.spdif_ig_valid();
-  }));
-  Add(new LField<bool>(statusp, row++, col, 10, "Auto de-emph", "", [RTS]() {
-    return RTS->Main.auto_deemph();
-  }));
-  Add(new LField<bool>(statusp, row++, col, 10, "De-emph bypass", "", [RTS]() {
-    return RTS->Main.deemph_bypass();
-  }));
+  Add(new Label(statusp, row, col, "Ignore flags:"));
+  Add(new LSwitch(statusp, row, col + 15, "Data",
+    [RTS]() { return RTS->Main.spdif_ig_data(); },
+    [RTS](bool v) { RTS->Main.Write(RTS->Main._rINPUT, RTS->Main._vspdif_ig_data, v); }
+  ));
+  Add(new LSwitch(statusp, row++, col + 21, "Valid",
+    [RTS]() { return RTS->Main.spdif_ig_valid(); },
+    [RTS](bool v) { RTS->Main.Write(RTS->Main._rINPUT, RTS->Main._vspdif_ig_valid, v); }
+  ));
+  Add(new Label(statusp, row, col, "De-emphasis:"));
+  Add(new LSwitch(statusp, row, col + 14, "Auto",
+    [RTS]() { return RTS->Main.auto_deemph(); },
+    [RTS](bool v) { RTS->Main.Write(RTS->Main._rDEEMPHVOL, RTS->Main._vauto_deemph, v); }
+  ));
+  Add(new LSwitch(statusp, row++, col + 20, "Bypass",
+    [RTS]() { return RTS->Main.deemph_bypass(); },
+    [RTS](bool v) { RTS->Main.Write(RTS->Main._rDEEMPHVOL, RTS->Main._vdeemph_bypass, v); }
+  ));
   Add(new LField<const char*>(statusp, row++, col, 10, "De-emph filter", "kHz", [RTS]() {
     const char* values[] = { "32", "44.1", "48", "?" };
     return values[RTS->Main.deemph_sel()];
@@ -167,22 +189,45 @@ ES9028PROUI::ES9028PROUI(std::shared_ptr<ES9028PRO> &es9028pro) : UI()
   }));
   Add(new Empty(row++, col));
 
-  Add(new Label(UI::statusp, row++, col + 18, "Jitter eliminator & DPLL"));
-  Add(new LField<bool>(statusp, row++, col, 10, "Enabled", "", [RTS]() {
-    return RTS->Main.jitterelim_en();
-  }));
-  Add(new LField<uint8_t>(statusp, row++, col, 10, "DPLL B/W Ser.", "/15", [RTS]() {
+  Add(new Label(UI::statusp, row++, col + 18, "Improvements"));
+  Add(new LSwitch(statusp, row, col + 3, "JE",
+    [RTS]() { return RTS->Main.jitterelim_en(); },
+    [RTS](bool v) { RTS->Main.Write(RTS->Main._rJTTRELMDPLL2, RTS->Main._vjitterelim_en, v); }
+  ));
+  Add(new LSwitch(statusp, row, col + 7, "Dither",
+    [RTS]() { return RTS->Main.ns_dither_enb(); },
+    [RTS](bool v) { RTS->Main.Write(RTS->Main._rJTTRELMDPLL2, RTS->Main._vns_dither_enb, v); }
+  ));
+  Add(new LSwitch(statusp, row++, col + 14, "THDC",
+    [RTS]() { return RTS->Main.thd_enb(); },
+    [RTS](bool v) { RTS->Main.Write(RTS->Main._rJTTRELMDPLL2, RTS->Main._vthd_enb, v); }
+  ));
+  Add(new LField<uint8_t>(statusp, row++, col, 10, "DPLL B/W ser.", "/15", [RTS]() {
     return RTS->Main.dpll_bw_serial();
   }));
   Add(new LField<uint8_t>(statusp, row++, col, 10, "DPLL B/W DSD", "/15", [RTS]() {
     return RTS->Main.dpll_bw_dsd();
   }));
-  Add(new LField<bool>(statusp, row++, col, 10, "Dither", "", [RTS]() {
-    return RTS->Main.ns_dither_enb();
-  }));
-  Add(new LField<bool>(statusp, row++, col, 10, "THD comp.", "", [RTS]() {
-    return RTS->Main.thd_enb();
-  }));
+  Add(new LField<uint16_t>(statusp, row++, col, 10, "2nd harm coef", "",
+    [RTS]() { return RTS->Main.thd_comp_c2(); },
+    [RTS](const char *v) {
+      uint16_t x = 0;
+      if (sscanf(v, "%04hx", &x) == 1)  {
+        RTS->Main.Write(RTS->Main._rTHDCOMP_C2_7_0, x & 0x00FF);
+        RTS->Main.Write(RTS->Main._rTHDCOMP_C2_15_8, x >> 8);
+      }
+    }
+  ));
+  Add(new LField<uint16_t>(statusp, row++, col, 10, "3rd harm coef", "",
+    [RTS]() { return RTS->Main.thd_comp_c3(); },
+    [RTS](const char *v) {
+      uint16_t x = 0;
+      if (sscanf(v, "%04hx", &x) == 1)  {
+        RTS->Main.Write(RTS->Main._rTHDCOMP_C3_7_0, x & 0x00FF);
+        RTS->Main.Write(RTS->Main._rTHDCOMP_C3_15_8, x >> 8);
+      }
+    }
+  ));
   Add(new Empty(row++, col));
 
   Add(new Label(UI::statusp, row++, col + 18, "Soft-Start"));
@@ -195,6 +240,38 @@ ES9028PROUI::ES9028PROUI(std::shared_ptr<ES9028PRO> &es9028pro) : UI()
   }));
   Add(new LField<bool>(statusp, row++, col, 10, "Soft stop", "", [RTS]() {
     return RTS->Main.soft_stop_on_unlock();
+  }));
+  Add(new Empty(row++, col));
+
+  Add(new Label(UI::statusp, row++, col + 18, "GPIO"));
+  const char *gpio_cfg_vals[] = { "Automute", "Lock", "Volume min", "Clk",
+                                  "A/M/Lock int", "ADC clk", "?", "0",
+                                  "Std input", "Input sel", "Mute all", "?",
+                                  "?", "1/2 ADC", "Soft-Start", "1" };
+  Add(new LField<const char*>(statusp, row++, col, 10, "GPIO 1 Cfg", "", [RTS, gpio_cfg_vals]() {
+    return gpio_cfg_vals[RTS->Main.gpio1_cfg()];
+  }));
+  Add(new LField<const char*>(statusp, row++, col, 10, "GPIO 2 Cfg", "", [RTS, gpio_cfg_vals]() {
+    return gpio_cfg_vals[RTS->Main.gpio2_cfg()];
+  }));
+  Add(new LField<const char*>(statusp, row++, col, 10, "GPIO 3 Cfg", "", [RTS, gpio_cfg_vals]() {
+    return gpio_cfg_vals[RTS->Main.gpio3_cfg()];
+  }));
+  Add(new LField<const char*>(statusp, row++, col, 10, "GPIO 4 Cfg", "", [RTS, gpio_cfg_vals]() {
+    return gpio_cfg_vals[RTS->Main.gpio4_cfg()];
+  }));
+
+  Add(new LSwitch(statusp, row++, col, "Invert",
+    [RTS]() { return RTS->Main.invert_gpio(); },
+    [RTS](bool v) { RTS->Main.Write(RTS->Main._rSPDIFMUXGPIO, RTS->Main._vinvert_gpio, v); }
+  ));
+
+  const char *gpio_sel_values[] = { "Serial", "S/PDIF", "?", "DSD"};
+  Add(new LField<const char*>(statusp, row++, col, 10, "Input select 0", "", [RTS, gpio_sel_values]() {
+    return gpio_sel_values[RTS->Main.gpio_sel1()];
+  }));
+  Add(new LField<const char*>(statusp, row++, col, 10, "Input select 1", "", [RTS, gpio_sel_values]() {
+    return gpio_sel_values[RTS->Main.gpio_sel2()];
   }));
   Add(new Empty(row++, col));
 }

@@ -112,3 +112,14 @@ void I2CDevice<uint8_t, uint16_t>::Write(const uint8_t &addr, const uint16_t &va
   if (write(fd, buf, 3) != 3)
     throw_errno("failed to write to the I2C bus");
 }
+
+template<>
+std::vector<uint8_t> I2CDevice<uint8_t, std::vector<uint8_t>>::Read(const uint8_t &addr)
+{
+  return {};
+}
+
+template <>
+void I2CDevice<uint8_t, std::vector<uint8_t>>::Write(const uint8_t &addr, const std::vector<uint8_t> &value)
+{
+}

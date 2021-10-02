@@ -12,25 +12,25 @@ namespace CC1101UIFields {
 
 class RawField : public Field<uint8_t> {
 protected:
-  const Register<uint8_t, uint8_t> &reg;
+  const CC1101::RegisterTable::TRegister &reg;
   const Variable<uint8_t> *var;
   CC1101::RegisterTable &rt;
 
 public:
-  RawField(int row, const Register<uint8_t, uint8_t> *reg, CC1101::RegisterTable &rt) :
+  RawField(int row, const CC1101::RegisterTable::TRegister *reg, CC1101::RegisterTable &rt) :
     Field<uint8_t>(UI::statusp, row, 1, reg->NiceName(), "", ""), reg(*reg), var(NULL), rt(rt) {
       value_width = 2;
       units_width = 0;
       attributes = A_BOLD;
   }
-  RawField(int row, const Register<uint8_t, uint8_t> *reg, const Variable<uint8_t> *var, CC1101::RegisterTable &rt) :
+  RawField(int row, const CC1101::RegisterTable::TRegister *reg, const Variable<uint8_t> *var, CC1101::RegisterTable &rt) :
     Field<uint8_t>(UI::statusp, row, 1, var->NiceName(), "", ""), reg(*reg), var(var), rt(rt) {
       value_width = 2;
       units_width = 0;
   }
   virtual size_t Width() { return key.size() + 4; }
   virtual uint8_t Get() {
-    uint8_t r = reg(rt.Buffer());
+    uint8_t r = rt(reg);
     return var ? (*var)(r) : r;
   }
   virtual void Update(bool full=false) {
@@ -92,9 +92,9 @@ public:
     uint8_t v = 0;
     size_t v_str_len = strlen(v_str);
     if (v_str_len == 0 || v_str_len > 2 || sscanf(v_str, "%02hhx", &v) != 1)
-      UI::Error("invalid value '%s'", v_str);
+      UI::Error("Invalid value '%s'", v_str);
     else if (var != NULL)
-      rt.Write(reg, var->Set(reg(rt.Buffer()), v));
+      rt.Write(reg, var->Set(rt(reg), v));
     else
       rt.Write(reg, v);
   }

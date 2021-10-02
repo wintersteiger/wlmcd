@@ -214,7 +214,7 @@ void UI::Error(const char *format, ...)
 
 void UI::Info(const char *format, ...)
 {
-  wclear(cmdw);
+  werase(cmdw);
   wattron(cmdw, COLOR_PAIR(HIGHLIGHT_PAIR));
   va_list argp;
   va_start(argp, format);
@@ -556,12 +556,16 @@ void UI::Describe()
   Update(true);
 }
 
-void UI::Bump()
+void UI::Flip()
 {
   if (active_field_index >= fields.size())
     return;
 
   FieldBase *f = fields[active_field_index];
-  f->Bump();
-  f->Update(true);
+  if (f->Flippable()) {
+    f->Flip();
+    f->Update(true);
+  }
+  else
+    UI::Error("Field is not flippable");
 }

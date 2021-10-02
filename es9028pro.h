@@ -29,6 +29,7 @@ public:
   using I2CDevice::Read;
   using I2CDevice::Write;
 
+  virtual void UpdateInfrequent() override;
   virtual void UpdateTimed() override;
 
   double FSR() const;

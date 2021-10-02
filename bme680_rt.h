@@ -14,7 +14,7 @@ static const float lookup_k1_range[16] = {  0.0, 0.0,  0.0,  0.0, 0.0, -1.0, 0.0
 static const float lookup_k2_range[16] = {  0.0, 0.0,  0.0,  0.0, 0.1,  0.7, 0.0, -0.8,
                                            -0.1, 0.0,  0.0,  0.0, 0.0,  0.0, 0.0,  0.0 };
 
-REGISTER_TABLE_W(BME680, RegisterTable, uint8_t, uint8_t,
+REGISTER_TABLE(BME680, RegisterTable, uint8_t, uint8_t,
   REG(Status, "Status", 0x73, RW,                                 "Status",
     VAR(Status, spi_mem_page, "spi_mem_page", 0x10, RO,           "");
   );

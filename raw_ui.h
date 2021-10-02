@@ -17,40 +17,43 @@ struct ValueParser {
   virtual bool Parse(const char *v_str, VT &value);
 };
 
-template <typename AT, typename VT, typename D>
-class RawField : public FieldBase, ValueParser<VT> {
+template <typename VT>
+struct ValueFormatter {
+  virtual void Format(const VT& value, std::string &formatted);
+};
+
+template <typename TT, typename VT, typename D>
+class RawField : public FieldBase, ValueParser<VT>, ValueFormatter<VT> {
 protected:
-  const Register<AT, VT> &reg;
+  const typename TT::TRegister &reg;
   const Variable<VT> *var;
-  RegisterTable<AT, VT, D> &rt;
+  TT &rt;
 
   using ValueParser<VT>::Parse;
+  using ValueFormatter<VT>::Format;
 
 public:
-  RawField(int row, const Register<AT, VT> *reg, RegisterTable<AT, VT, D> &rt) :
+  RawField(int row, const typename TT::TRegister *reg, TT &rt) :
     FieldBase(UI::statusp, row, 1, reg->NiceName(), "", ""), reg(*reg), var(NULL), rt(rt) {
-      value_width = 2;
+      value_width = 2 * reg->value_size();
       units_width = 0;
       attributes = A_BOLD;
   }
-  RawField(int row, const Register<AT, VT> *reg, const Variable<VT> *var, RegisterTable<AT, VT, D> &rt) :
+  RawField(int row, const typename TT::TRegister *reg, const Variable<VT> *var, TT &rt) :
     FieldBase(UI::statusp, row, 1, var->NiceName(), "", ""), reg(*reg), var(var), rt(rt) {
-      value_width = 2;
+      value_width = 2 * reg->value_size();
       units_width = 0;
   }
-  virtual size_t Width() override { return key.size() + 4; }
+  virtual size_t Width() override { return key.size() + value.size() + 2; }
   virtual VT Get() {
-    VT r = reg(rt.Buffer());
+    VT r = rt(reg);
     return var ? (*var)(r) : r;
   }
   virtual void Update(bool full=false) override {
     if (wndw) {
       key_width = key.size();
-      value_width = 2;
-      static std::string reg_fmt = std::string("%0") + std::to_string(2 * sizeof(VT)) + "x";
-      std::string fmt = var ? "%x" : reg_fmt;
-      snprintf(tmp, sizeof(tmp), fmt.c_str(), Get());
-      value = tmp;
+      Format(Get(), value);
+      value_width = value.size();
       FieldBase::Update(full);
     }
   }
@@ -106,15 +109,15 @@ public:
     return description;
   }
   virtual bool Activateable() const override { return true; }
-  virtual bool ReadOnly() override { return !(var ? var->Writeable() : reg.Writeable()); }
+  virtual bool ReadOnly() const override { return !(var ? var->Writeable() : reg.Writeable()); }
   virtual void Set(const char *v_str) override
   {
-    VT v = 0;
+    VT v;
     size_t v_str_len = strlen(v_str);
     if (v_str_len == 0 || v_str_len > 2 || !Parse(v_str, v))
-      UI::Error("invalid value '%s'", v_str);
+      UI::Error("Invalid value '%s'", v_str);
     else if (var != NULL)
-      rt.Device().Write(reg, var->Set(reg(rt.Buffer()), v));
+      rt.Device().Write(reg, var->Set(rt(reg), v));
     else
       rt.Device().Write(reg, v);
   }
@@ -127,7 +130,47 @@ std::shared_ptr<UI> make_raw_ui(std::shared_ptr<D> &device, RegisterTable<AT, VT
 
   ui->Add(device.get());
 
-  typedef RawField<AT, VT, D> RF;
+  typedef RawField<RegisterTable<AT, VT, D>, VT, D> RF;
+
+  int row = 1, col = 1;
+  for (auto reg : rt) {
+    ui->Add(new RF(row++, reg, rt));
+    for (auto var : *reg)
+      ui->Add(new RF(row++, reg, var, rt));
+    ui->Add(new Empty(row++, col));
+  }
+
+  return ui;
+}
+
+template <typename D, typename AT, typename VT>
+std::shared_ptr<UI> make_raw_ui(std::shared_ptr<D> &device, RegisterTableSparse<AT, VT, D> &rt)
+{
+  auto ui = std::make_shared<UI>();
+
+  ui->Add(device.get());
+
+  typedef RawField<RegisterTableSparse<AT, VT, D>, VT, D> RF;
+
+  int row = 1, col = 1;
+  for (auto reg : rt) {
+    ui->Add(new RF(row++, reg, rt));
+    for (auto var : *reg)
+      ui->Add(new RF(row++, reg, var, rt));
+    ui->Add(new Empty(row++, col));
+  }
+
+  return ui;
+}
+
+template <typename D, typename AT>
+std::shared_ptr<UI> make_raw_ui(std::shared_ptr<D> &device, RegisterTableSparseVar<AT, D> &rt)
+{
+  auto ui = std::make_shared<UI>();
+
+  ui->Add(device.get());
+
+  typedef RawField<RegisterTableSparseVar<AT, D>, std::vector<uint8_t>, D> RF;
 
   int row = 1, col = 1;
   for (auto reg : rt) {

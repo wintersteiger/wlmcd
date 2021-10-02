@@ -478,8 +478,9 @@ void CC1101::RegisterTable::Write(std::ostream &os)
         x = (x << 8) | b;
       snprintf(tmp, sizeof(tmp), "%016" PRIx64, x);
     }
-    else
-      snprintf(tmp, sizeof(tmp), "%02x", (*reg)(buffer));
+    else {
+      snprintf(tmp, sizeof(tmp), "%02x", (*this)(*reg));
+    }
     regs[reg->Name()] = tmp;
   }
   j["registers"] = regs;

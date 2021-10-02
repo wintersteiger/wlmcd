@@ -7,7 +7,6 @@
 #include <mutex>
 
 #include "device.h"
-#include "register.h"
 
 class SI4463 : public Device<uint16_t, uint8_t>
 {
@@ -69,11 +68,9 @@ public:
 
   virtual uint8_t Read(const uint16_t &addr);
   virtual std::vector<uint8_t> Read(const uint16_t &addr, size_t length);
-  virtual std::vector<uint8_t> Read(const Register<uint16_t, uint8_t> &r, size_t length) { return Device::Read(r, length); }
 
   virtual void Write(const uint16_t &addr, const uint8_t &value);
   virtual void Write(const uint16_t &addr, const std::vector<uint8_t> &values);
-  virtual void Write(const Register<uint16_t, uint8_t> &r, const uint8_t &v) { Device::Write(r, v); }
 
   void Reset();
   uint8_t Strobe(const Command &cmd, size_t delay_us = 1);

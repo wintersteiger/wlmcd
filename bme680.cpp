@@ -95,7 +95,7 @@ void BME680::RegisterTable::Write(std::ostream &os) {
   j["device"] = dev;
   for (const auto& reg : this->registers) {
     if (reg->Writeable()) {
-      snprintf(tmp, sizeof(tmp), "%02x", (*reg)(buffer));
+      snprintf(tmp, sizeof(tmp), "%02x", (*this)(*reg));
       regs[reg->Name()] = tmp;
     }
   }

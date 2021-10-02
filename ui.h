@@ -62,7 +62,7 @@ public:
 
   void Edit();
   static std::string GetCommand(const char *prompt = ":");
-  void Bump();
+  void Flip();
 
   virtual void Layout();
   virtual std::string Name() const { return "Unnamed"; }

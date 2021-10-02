@@ -11,25 +11,26 @@
 template <typename AT>
 class SI4463RawField : public Field<uint8_t> {
 protected:
-  const Register<AT, uint8_t> &reg;
+  using RT = RegisterTable<AT, uint8_t, SI4463>;
+  const typename RT::TRegister &reg;
   const Variable<uint8_t> *var;
-  RegisterTable<AT, uint8_t, SI4463> *rt;
+  RT *rt;
 
 public:
-  SI4463RawField(int row, const Register<AT, uint8_t> *reg, RegisterTable<AT, uint8_t, SI4463> *rt) :
+  SI4463RawField(int row, const typename RT::TRegister *reg, RT *rt) :
     Field<uint8_t>(UI::statusp, row, 1, reg->Name(), "", ""), reg(*reg), var(NULL), rt(rt) {
       value_width = 2;
       units_width = 0;
       attributes = A_BOLD;
   }
-  SI4463RawField(int row, const Register<AT, uint8_t> *reg, const Variable<uint8_t> *var, RegisterTable<AT, uint8_t, SI4463> *rt) :
+  SI4463RawField(int row, const typename RT::TRegister *reg, const Variable<uint8_t> *var, RT *rt) :
     Field<uint8_t>(UI::statusp, row, 1, var->Name(), "", ""), reg(*reg), var(var), rt(rt) {
       value_width = 2;
       units_width = 0;
   }
   virtual size_t Width() { return key.size() + 4; }
   virtual uint8_t Get() {
-    uint8_t r = reg(rt->Buffer());
+    uint8_t r = (*rt)(reg);
     return var ? (*var)(r) : r;
   }
   virtual void Update(bool full=false) {
@@ -50,7 +51,7 @@ public:
 //     uint8_t v = 0;
 //     size_t v_str_len = strlen(v_str);
 //     if (v_str_len == 0 || v_str_len > 2 || sscanf(v_str, "%02hhx", &v) != 1)
-//       UI::Error("invalid value '%s'", v_str);
+//       UI::Error("Invalid value '%s'", v_str);
 //     else if (var != NULL)
 //       rt->Write(reg, var->Set(reg(rt->Buffer()), v));
 //     else
