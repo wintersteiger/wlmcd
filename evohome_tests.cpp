@@ -28,7 +28,7 @@ static std::vector<const char *> vectors = {
   "2ccaaacaa5656a96699965995665a96699965995665a966aaaa55956a59565595655aaaaa95655ab2aaa88400010000000000000008000100401000810000160000000000000101000800000542444080064004000c000080000230040008008000000000200040c200000008822440002600000000181002040820000409400",
 };
 
-int decoder_tests(int argc, const char **argv) {
+static int decoder_tests(int argc, const char **argv) {
   int r = 0;
   static Evohome::Decoder decoder;
 
@@ -52,7 +52,7 @@ int decoder_tests(int argc, const char **argv) {
   return r;
 }
 
-int encoder_tests()
+static int encoder_tests()
 {
   Evohome::Encoder encoder;
   Evohome::Decoder decoder;

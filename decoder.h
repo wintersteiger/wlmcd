@@ -33,7 +33,7 @@ inline uint8_t get_bit(const std::vector<uint8_t> &buf, size_t i)
   size_t byte_inx = i / 8;
   uint8_t byte = buf[byte_inx];
   size_t bit_inx = i % 8;
-  return (byte & (0x01 << (8 - bit_inx - 1))) != 0;
+  return (byte & (0x01 << (8 - bit_inx - 1))) != 0 ? 0x01 : 0x00;
 }
 
 inline uint8_t get_byte(const std::vector<uint8_t> &buf, size_t i)
