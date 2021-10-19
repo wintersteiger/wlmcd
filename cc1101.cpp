@@ -41,10 +41,10 @@ CC1101::CC1101(
     Read(is);
   }
 
+  RT->Refresh(false);
+
   StrobeFor(SIDLE, State::IDLE, 10);
   StrobeFor(SRX, State::RX, 10);
-
-  RT->Refresh(false);
 }
 
 CC1101::~CC1101()

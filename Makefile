@@ -21,7 +21,7 @@ LDFLAGS=-lrt -lcrypto -lwiringPi -lgpiod -lpthread -lgpiod
 SRC = errors.cpp \
 	decoder.cpp basic.cpp logfile.cpp \
 	spidev.cpp i2c_device.cpp\
-	evohome.cpp radbot.cpp enocean.cpp \
+	evohome.cpp radbot.cpp \
 	cc1101.cpp \
 	sx1278.cpp \
 	gpio_device.cpp \
@@ -75,7 +75,7 @@ libwlmcd-dev.so: $(OBJ)
 libwlmcd-ui.so: $(UI_OBJ) libwlmcd-dev.so
 	${CXX} -shared -o $@ $^ ${LDFLAGS} -lncurses -L . -lwlmcd-dev
 
-tests: tests.o evohome_tests.o radbot_tests.o enocean_tests.o $(OBJ)
+tests: tests.o evohome_tests.o radbot_tests.o $(OBJ)
 	${CXX} ${CXXFLAGS} -o $@ $^ ${LDFLAGS}
 
 clean:
