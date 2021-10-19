@@ -285,6 +285,11 @@ CC1101::StatusByte CC1101::WriteS(const uint8_t &addr, const uint8_t &value)
   return b[0];
 }
 
+CC1101::StatusByte CC1101::WriteS(Register<uint8_t, uint8_t> &reg, const uint8_t &value)
+{
+  return WriteS(reg.Address(), value);
+}
+
 CC1101::StatusByte CC1101::WriteS(const uint8_t &addr, const std::vector<uint8_t> &values)
 {
   const std::lock_guard<std::mutex> lock(mtx);
@@ -294,6 +299,11 @@ CC1101::StatusByte CC1101::WriteS(const uint8_t &addr, const std::vector<uint8_t
   memcpy(&b[1], values.data(), n);
   SPIDev::Transfer(b);
   return b[0];
+}
+
+CC1101::StatusByte CC1101::WriteS(Register<uint8_t, uint8_t> &reg, const std::vector<uint8_t> &values)
+{
+  return WriteS(reg.Address(), values);
 }
 
 void CC1101::Setup(const std::vector<uint8_t> &config, const std::vector<uint8_t> &patable)
@@ -379,45 +389,45 @@ void CC1101::Receive(std::vector<uint8_t> &packet)
 void CC1101::Transmit(const std::vector<uint8_t> &pkt)
 {
   State state_before = (State)RT->MARCSTATE();
+  uint8_t pktlen_before = (State)RT->PKTLEN();
+  StatusByte sb = StrobeFor(CommandStrobe::SFSTXON, State::FSTXON, 1);
   uint8_t pktctrl0_before = Read(RT->_rPKTCTRL0);
-  StatusByte sb = WriteS(RT->_rPKTCTRL0.Address(), (pktctrl0_before & 0xFC) | 0x02);
 
-  if (sb.State() == StatusByte::SState::TXFIFO_UNDERFLOW) {
-    Strobe(CommandStrobe::SFTX, 10);
-    StrobeFor(CommandStrobe::SIDLE, State::IDLE, 10);
-    StrobeFor(CommandStrobe::SFSTXON, State::FSTXON, 10);
-  }
+  uint8_t pkctrl0 = (pktctrl0_before & 0xFC) | (pkt.size() > 256 ? 0x02 : 0x00);
 
-  sb = WriteS(RT->_rPKTLEN.Address(), pkt.size() % 256);
-  sb = Strobe(CommandStrobe::STX, 1);
+  sb = WriteS(RT->_rPKTLEN, pkt.size() % 256);
+  sb = Strobe(CommandStrobe::STX);
 
   size_t sent = 0;
   while (sent < pkt.size())
   {
+    sb = Strobe(CommandStrobe::SNOP);
     size_t to_send = std::min((size_t)sb.FIFO_BYTES_AVAILABLE(), pkt.size() - sent);
-    const auto first = pkt.begin() + sent;
-    const auto last = first + to_send;
-    sb = WriteS(RT->_rFIFO.Address(), std::vector<uint8_t>(first, last));
-    switch (sb.State()) {
-      case StatusByte::SState::RXFIFO_OVERFLOW:
-      case StatusByte::SState::TXFIFO_UNDERFLOW: return;
-      case StatusByte::SState::TX: break;
-      default: Strobe(CommandStrobe::STX, 10);
+    if (to_send > 0) {
+      const auto first = pkt.begin() + sent;
+      const auto last = first + to_send;
+      sb = WriteS(RT->_rFIFO, std::vector<uint8_t>(first, last));
+      sent += to_send;
     }
-    sent += to_send;
-    if (pkt.size() - sent < 256)
-      sb = WriteS(RT->_rPKTCTRL0.Address(), pktctrl0_before & 0xFC);
+    size_t remaining = pkt.size() - sent;
+    if (0 < remaining && remaining < 256)
+      sb = WriteS(RT->_rPKTCTRL0, pktctrl0_before & 0xFC);
   }
 
+  sleep_us(10000);
+
+  size_t cnt = 0;
   do {
+    sleep_us(1000);
     sb = Strobe(CommandStrobe::SNOP);
-    sleep_us(10000);
+    cnt++;
   } while (sb.State() == StatusByte::SState::TX);
 
   Write(RT->_rPKTCTRL0, pktctrl0_before);
+  Write(RT->_rPKTLEN, pktlen_before);
 
-  if (state_before == State::RX)
-    StrobeFor(SRX, State::RX, 10);
+  if (sent != pkt.size())
+    throw std::runtime_error("partial tx: " + std::to_string(sent));
 }
 
 void CC1101::Test(const std::vector<uint8_t> &data)
@@ -510,11 +520,11 @@ void CC1101::RegisterTable::Read(std::istream &is)
             sscanf(sval.c_str() + 2*i, "%02hhx", &val);
             patable[i] = val;
           }
-          device.Write(device.RT->_rPATABLE.Address(), patable);
+          device.Write(device.RT->_rPATABLE, patable);
         }
-        else {
+        else if (reg->Writeable()) {
           sscanf(sval.c_str(), "%02hhx", &val);
-          device.Write(reg->Address(), val);
+          device.Write(*reg, val);
         }
         found = true;
         break;

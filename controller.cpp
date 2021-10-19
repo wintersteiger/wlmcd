@@ -220,33 +220,39 @@ Controller::Controller(
         for (auto device : ui->Devices())
             device->Reset();
       }
-      else
-        UI::Error("Unknown command '%s'", verb.c_str());
+      else {
+        auto cit = ctrl->commands.find(verb);
+        if (cit != ctrl->commands.end()) {
+          cit->second(args);
+        }
+        else
+          UI::Error("Unknown command '%s'", verb.c_str());
+      }
     }
   };
 
-  key_bindings['t'] = KEY_FUN {
-    if (e) {
-      static size_t cnt = 0;
-      static std::vector<uint8_t> data(128, 0);
-      for (size_t i = 0; i < 128; i++)
-        data[i] = i;
-      static char tmp[1024];
-      std::vector<uint8_t> encoded = e->Encode(data);
-      for (auto d : ui->Devices()) {
-        char *p = tmp;
-        p += snprintf(tmp, sizeof(tmp), "TX %s C=%zu N=%d MSG: ", d->Name(), cnt++, data.size());
-        for (auto b : encoded)
-          p += snprintf(p, sizeof(tmp) - (p - tmp), "%02x", b);
-        UI::Log(tmp);
-        d->Test(encoded);
-        ui->Update(false);
-      }
-    }
-    else
-      for (auto device : ui->Devices())
-        device->Test({});
-  };
+  // key_bindings['t'] = KEY_FUN {
+  //   if (e) {
+  //     static size_t cnt = 0;
+  //     static std::vector<uint8_t> data(128, 0);
+  //     for (size_t i = 0; i < 128; i++)
+  //       data[i] = i;
+  //     static char tmp[1024];
+  //     std::vector<uint8_t> encoded = e->Encode(data);
+  //     for (auto d : ui->Devices()) {
+  //       char *p = tmp;
+  //       p += snprintf(tmp, sizeof(tmp), "TX %s C=%zu N=%d MSG: ", d->Name(), cnt++, data.size());
+  //       for (auto b : encoded)
+  //         p += snprintf(p, sizeof(tmp) - (p - tmp), "%02x", b);
+  //       UI::Log(tmp);
+  //       d->Test(encoded);
+  //       ui->Update(false);
+  //     }
+  //   }
+  //   else
+  //     for (auto device : ui->Devices())
+  //       device->Test({});
+  // };
 
   key_bindings[' '] = KEY_FUN {
     ui->Flip();
@@ -473,4 +479,9 @@ void Controller::ResumeTimer()
 {
   if (sigprocmask(SIG_UNBLOCK, &sigmask_timer, NULL) == -1)
     throw std::runtime_error("sigprocmask");
+}
+
+void Controller::AddCommand(const std::string &verb, std::function<void(const std::string&)> f)
+{
+  commands[verb] = f;
 }

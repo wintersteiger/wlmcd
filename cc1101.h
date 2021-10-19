@@ -181,7 +181,9 @@ public:
   virtual void Write(const uint8_t &addr, const std::vector<uint8_t> &values) override { WriteS(addr, values); }
 
   StatusByte WriteS(const uint8_t &addr, const uint8_t &value);
+  StatusByte WriteS(Register<uint8_t, uint8_t> &reg, const uint8_t &value);
   StatusByte WriteS(const uint8_t &addr, const std::vector<uint8_t> &values);
+  StatusByte WriteS(Register<uint8_t, uint8_t> &reg, const std::vector<uint8_t> &values);
 
   static std::string StateName(State st);
 

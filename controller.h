@@ -40,6 +40,8 @@ public:
 
   void AddBackgroundDevice(std::shared_ptr<DeviceBase> &device);
 
+  void AddCommand(const std::string &verb, std::function<void(const std::string&)> f);
+
 protected:
   bool running;
   size_t cur_frequent_interval, cur_infrequent_interval;
@@ -56,6 +58,8 @@ protected:
                              std::shared_ptr<Decoder>,
                              std::shared_ptr<Encoder>)> key_fun_t;
   std::map<int, key_fun_t> key_bindings;
+
+  std::map<const std::string, std::function<void(const std::string&)>> commands;
 
   void PauseTimer();
   void ResumeTimer();

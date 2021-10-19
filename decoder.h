@@ -8,6 +8,7 @@
 
 #include <string>
 #include <vector>
+#include <array>
 
 inline uint8_t hex_char_to_byte(char c)
 {
@@ -25,8 +26,16 @@ inline uint8_t hex_to_byte(char c1, char c2)
   return hex_char_to_byte(c1) << 4 | hex_char_to_byte(c2);
 }
 
-extern std::vector<uint8_t> hex_string_to_bytes(const char *s);
+std::vector<uint8_t> hex_string_to_bytes(const char *s);
 
+std::string bytes_to_hex(const std::vector<uint8_t> &bytes);
+
+template <size_t SZ>
+inline std::string bytes_to_hex(const std::array<uint8_t, SZ> &bytes) {
+  return bytes_to_hex(std::vector<uint8_t>(bytes.begin(), bytes.end()));
+}
+
+std::vector<uint8_t> from_hex(const std::string &data);
 
 inline uint8_t get_bit(const std::vector<uint8_t> &buf, size_t i)
 {

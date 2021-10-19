@@ -63,7 +63,7 @@ template<>
 inline std::vector<uint8_t> Variable<std::vector<uint8_t>>::operator()(const std::vector<uint8_t> &rv) const {
   size_t to_shift = shift;
   std::vector<uint8_t> r;
-  for (size_t i = rv.size()-1; i != SIZE_MAX && to_shift > 0; i--)
+  for (size_t i = rv.size()-1; i != SIZE_MAX; i--)
   {
     size_t bshft = to_shift > 8 ? 8 : to_shift;
     size_t tmp = (rv[i] & mask[i]) >> bshft;
@@ -151,6 +151,7 @@ VARSET(uint64_t);
 
 template<>
 inline std::vector<uint8_t> Variable<std::vector<uint8_t>>::Set(const std::vector<uint8_t> &rv, const std::vector<uint8_t> &vv) const {
+  throw std::runtime_error("NYI");
   return {};
 };
 
@@ -178,8 +179,8 @@ public:
   const std::string &Name() const { return name; }
   const std::string &NiceName() const { return nice_name; }
   const std::string &Description() const { return description; }
-  virtual bool Readable() const { return true; }
-  virtual bool Writeable() const { return false; }
+  virtual bool Readable() const { return rws.readable; }
+  virtual bool Writeable() const { return rws.writeable; }
 };
 
 template <typename AT, typename VT>

@@ -81,6 +81,7 @@ void UI::Reset()
   wresize(logboxw, logboxw_h, logboxw_w);
   mvwin(logboxw, logboxw_y, logboxw_x);
   box(logboxw, 0, 0);
+  wrefresh(logboxw);
 
   logp_h = logboxw_h - 2;
   logp_w = logboxw_w - 2;
@@ -97,11 +98,6 @@ void UI::Reset()
 
   wresize(cmdw, 1, screen_width);
   mvwin(cmdw, screen_height-1, 0);
-
-  for (auto w : {logboxw, cmdw}) {
-    wrefresh(w);
-    // wclear(w);
-  }
 
   active_field_index = (size_t)-1;
   for (auto f: fields)
@@ -144,7 +140,6 @@ void UI::Update(bool full)
   size_t indicator_width = max_indicator_value > 0 ? std::floor(std::log10(max_indicator_value)) + 1 : 1;
   snprintf(indicator_buf, sizeof(indicator_buf), "[%0llu]", indicator_value);
   mvwprintw(logboxw, logp_h+1, screen_width - (2 + strlen(indicator_buf)), indicator_buf);
-  wrefresh(logboxw);
 #endif
 
   // prefresh(w, (y, x) in pad, (y1, x1, y2, x2) on screen);

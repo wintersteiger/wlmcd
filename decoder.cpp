@@ -16,3 +16,27 @@ std::vector<uint8_t> hex_string_to_bytes(const char *s)
 
   return bytes;
 }
+
+std::string bytes_to_hex(const std::vector<uint8_t> &bytes)
+{
+  std::string r;
+  r.reserve(bytes.size() * 2 + 1);
+  for (auto &b : bytes) {
+    char tmp[3];
+    sprintf(tmp, "%02x", b);
+    r += tmp;
+  }
+  return r;
+}
+
+std::vector<uint8_t> from_hex(const std::string &data)
+{
+  std::vector<uint8_t> r;
+  for (size_t i=0; i < data.size(); i += 2) {
+    uint8_t t;
+    if (sscanf(data.c_str() + i, "%02hhx", &t) != 1)
+      return {};
+    r.push_back(t);
+  }
+  return r;
+}
