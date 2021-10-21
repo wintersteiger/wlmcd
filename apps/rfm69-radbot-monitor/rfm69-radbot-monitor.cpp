@@ -132,10 +132,12 @@ int main(void)
     return shell->exit_code;
   }
   catch (std::exception &ex) {
+    UI::End();
     std::cout << "Exception: " << ex.what() << std::endl;
     return 1;
   }
   catch (...) {
+    UI::End();
     std::cout << "Caught unknown exception." << std::endl;
     return 1;
   }
