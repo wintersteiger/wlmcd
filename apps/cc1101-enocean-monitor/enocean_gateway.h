@@ -45,6 +45,7 @@ namespace EnOcean
     EEP _eep = 0xA53808;
     MID _mid = 0x7FF;
     std::mutex mtx;
+    bool _learning_enabled;
   };
 }
 

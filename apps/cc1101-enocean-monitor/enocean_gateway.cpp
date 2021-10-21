@@ -17,7 +17,8 @@ namespace EnOcean
 
   Gateway::Gateway(std::function<void(const Frame&)> &&transmit, TXID txid) :
     _transmit(transmit),
-    _txid(txid)
+    _txid(txid),
+    _learning_enabled(false)
   {
     _devices[0x0580CC3A] = { 0xA52006, 0x49,
       std::make_shared<EnOcean::A5_20_06::DeviceState>(),
@@ -34,19 +35,21 @@ namespace EnOcean
       case 0xA5: {
           EnOcean::Telegram_4BS t(f);
           if (t.is_teach_in()) {
-            EnOcean::Telegram_LEARN_4BS_3 tti(f);
-            UI::Log("Learn txid=%08x eep=%06x manufacturer=%06x", f.txid(), tti.eep(), tti.mid());
-            _devices[f.txid()] = { tti.eep() };
+            if (_learning_enabled) {
+              EnOcean::Telegram_LEARN_4BS_3 tti(f);
+              UI::Log("Learn txid=%08x eep=%06x manufacturer=%06x", f.txid(), tti.eep(), tti.mid());
+              _devices[f.txid()] = { tti.eep() };
 
-            switch (tti.eep()) {
-              case 0xA52006: {
-                // Bi-directional 4BS teach-in
-                EnOcean::Frame fo;
-                EnOcean::Telegram_LEARN_4BS_3 reply((tti.eep() & 0xFF00) >> 8, (tti.eep() & 0x00FF), tti.mid(), _txid, f.txid(), fo);
-                send(fo);
-                break;
+              switch (tti.eep()) {
+                case 0xA52006: {
+                  // Bi-directional 4BS teach-in
+                  EnOcean::Frame fo;
+                  EnOcean::Telegram_LEARN_4BS_3 reply((tti.eep() & 0xFF00) >> 8, (tti.eep() & 0x00FF), tti.mid(), _txid, f.txid(), fo);
+                  send(fo);
+                  break;
+                }
+                default: break;
               }
-              default: break;
             }
           }
           else {
