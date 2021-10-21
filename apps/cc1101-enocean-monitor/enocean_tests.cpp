@@ -13,6 +13,9 @@
 static std::vector<const char *> vectors = {
   "00ab2ed7773776d76d776d37714f69337729480000000000004688215004",
   "aacbb5ddcb4dbb5b2ddb4ddc53da4cddc4220000155976bbb969b76b65bb69bb8a7b499bb8844000",
+  "5e590840d0ac443d6eb8020c2a42b2ed7772d36d56d776d37714f6933772aa800000000000000000000000200000000000000000000000000565daeee5a6daadaeeda6ee29ed266ee555000000000000000000000000000000000000000000000000",
+  "559769bbb5baaa9bbbb69bb8a7b499bb8ab40000000000000000000000000000000000000000000000003acbb4dddadd554ddddb4ddc53da4cddc55a00000000000000000000000000000000000000000000",
+  "002640200443ff2ed7da3d35ddb4ddc53da4cddd352000000000000000000000000000000000000000000000000000000000facbb5ddcddda3d35ddb4ddc53da4cddd35200000000000000000000000000000000000000000000000000000000010000082000"
 };
 
 static int decoder_tests(int argc, const char **argv) {
@@ -28,8 +31,11 @@ static int decoder_tests(int argc, const char **argv) {
   for (auto& str : vectors) {
     std::vector<uint8_t> bytes = hex_string_to_bytes(str);
     try {
-      const std::string &msg = decoder.Decode(bytes);
-      std::cout << msg << std::endl;
+      auto frames = decoder.get_frames(bytes);
+      std::cout << frames.size() << ":";
+      for (auto &f : frames)
+        std::cout << " " << f.describe();
+      std::cout << std::endl;
     } catch (const std::runtime_error &err) {
       std::cout << "Failed: " << str << " (" << err.what() << ")" << std::endl;
       r = 1;

@@ -149,6 +149,9 @@ Controller::Controller(
   key_bindings[KEY_PPAGE] = KEY_FUN { ui->ScrollUp(); };
   key_bindings[KEY_NPAGE] = KEY_FUN { ui->ScrollDown(); };
 
+  key_bindings[KEY_LEFT] = KEY_FUN { ui->Left(); };
+  key_bindings[KEY_RIGHT] = KEY_FUN { ui->Right(); };
+
   key_bindings['\n'] =
   key_bindings[KEY_ENTER] = KEY_FUN {
     ctrl->PauseTimer();
