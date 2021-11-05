@@ -7,27 +7,58 @@
 #include <vector>
 #include <array>
 
+#include "json.hpp"
+using json = nlohmann::json;
+
 #include "enocean.h"
 
 namespace EnOcean
 {
+  class DeviceState { public: DeviceState() {}; virtual ~DeviceState() {}};
+
+  class DeviceConfiguration {
+  public:
+    DeviceConfiguration() {};
+    virtual ~DeviceConfiguration() {}
+
+    bool dirty = false;
+
+    virtual void to_json(json& j) const {}
+    virtual void from_json(const json& j) {}
+  };
+
+  inline void to_json(json& j, const DeviceConfiguration& p) { p.to_json(j); }
+  inline void from_json(const json& j, DeviceConfiguration& p) { return p.from_json(j); }
+
   class Telegram {
   public:
     Telegram() : frame(std::move(Frame())) {}
     Telegram(const Frame &f) : frame(f) {}
     virtual ~Telegram() {}
 
+    operator const std::vector<uint8_t>&() const { return frame; }
+
+    TXID txid() const { return frame.txid(); }
+
   protected:
     const Frame& frame;
   };
 
-  class DeviceState { public: DeviceState() {}; virtual ~DeviceState() {}};
+  class AddressedTelegram : public Telegram {
+  public:
+    AddressedTelegram(const Frame &f) : Telegram(f) {
+      if (frame.rorg() != 0xA6)
+        throw std::runtime_error("not an addressed telegram");
+    }
+    AddressedTelegram(const Telegram &t, TXID destination, Frame &f);
+    virtual ~AddressedTelegram() {}
 
-  class DeviceConfiguration {
-    public:
-    DeviceConfiguration() {};
-    virtual ~DeviceConfiguration() {}
-    virtual Frame mk_update(TXID source, TXID destination, uint8_t status) = 0;
+    TXID destination() const {
+      return  (frame.data()[frame.size() - 10] << 24) |
+              (frame.data()[frame.size() - 9] << 16) |
+              (frame.data()[frame.size() - 8] << 8) |
+              (frame.data()[frame.size() - 7]);
+    }
   };
 
   class Telegram_4BS : public Telegram {
@@ -65,6 +96,24 @@ namespace EnOcean
     uint8_t type() const { return ((frame.data()[0] & 0x03) << 5) | (frame.data()[1] >> 3); }
     MID mid() const { return (frame.data()[1] & 0x07 << 8) | frame.data()[2]; }
     EEP eep() const { return (rorg() << 16) | (func() << 8) | type(); }
+  };
+
+  class Telegram_SYS_EX_ERP1 : public Telegram {
+  public:
+    Telegram_SYS_EX_ERP1() : Telegram() {}
+    virtual ~Telegram_SYS_EX_ERP1() {}
+
+    uint16_t SEQ() const { return frame.data()[0] >> 6; }
+    uint32_t IDX() const { return frame.data()[0] & 0x3F; }
+    uint64_t data() const {
+      uint64_t r = 0;
+      for (size_t i = 1; i < 9; i++)
+        r = r << 8 | frame.data()[i];
+      return r;
+    };
+    const uint8_t* raw() const {
+      return &frame.data()[0];
+    }
   };
 
   namespace A5_20_06 {
@@ -132,16 +181,42 @@ namespace EnOcean
       DeviceConfiguration() {}
       virtual ~DeviceConfiguration() {}
 
+      enum class SetpointSelection { VALVE_POSITION = 0, TEMPERATURE = 1 };
+
       uint8_t setpoint = 42; // == 21 C
       uint8_t rcu_temperature = 84; // == 21 C
       bool reference_run = false;
-      uint8_t communication_interval = 1;
+      uint8_t communication_interval = 3;
       bool summer_mode = false;
-      bool set_point_selection = true; // temperature setpoints
+      SetpointSelection setpoint_selection = SetpointSelection::TEMPERATURE;
       bool temperature_selection = false;
       bool standby = false;
 
-      virtual Frame mk_update(TXID source, TXID destination, uint8_t status) override;
+      virtual Frame mk_update(TXID source, TXID destination, uint8_t status);
+
+      virtual void to_json(json& j) const override
+      {
+        j["setpoint"] = setpoint;
+        j["rcu_temperature"] = rcu_temperature;
+        j["reference_run"] = reference_run;
+        j["communication_interval"] = communication_interval;
+        j["summer_mode"] = summer_mode;
+        j["setpoint_selection"] = setpoint_selection;
+        j["temperature_selection"] = temperature_selection;
+        j["standby"] = standby;
+      }
+
+      virtual void from_json(const json& j) override
+      {
+        setpoint = j["setpoint"];
+        rcu_temperature = j["rcu_temperature"];
+        reference_run = j["reference_run"];
+        communication_interval = j["communication_interval"];
+        summer_mode = j["summer_mode"];
+        setpoint_selection = j["setpoint_selection"];
+        temperature_selection = j["temperature_selection"];
+        standby = j["standby"];
+      }
     };
   };
 }

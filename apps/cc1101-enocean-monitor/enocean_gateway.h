@@ -8,14 +8,14 @@
 #include <functional>
 #include <mutex>
 
+#include <json.hpp>
+using json = nlohmann::json;
+
 #include "enocean.h"
+#include "enocean_telegrams.h"
 
 namespace EnOcean
 {
-  class Telegram;
-  class DeviceState;
-  class DeviceConfiguration;
-
   struct Device {
     EEP eep;
     MID mid;
@@ -26,26 +26,45 @@ namespace EnOcean
 
   class Gateway {
   public:
-    Gateway(std::function<void(const Frame&)> &&transmit, TXID txid = 0xAABBCCDD);
+    Gateway(std::function<void(const Frame&)> &&transmit,
+            const std::string &config_file = "enocean-gateway.json",
+            TXID txid = 0xAABBCCDD);
     virtual ~Gateway();
 
     void receive(const Frame &frame);
     void send(const Frame &frame);
 
-    EEP eep() const { return _eep; }
-    TXID txid() const { return _txid; }
-    MID mid() const { return _mid; }
+    EEP eep() const { return config.eep; }
+    TXID txid() const { return config.txid; }
+    MID mid() const { return config.mid; }
 
-    const std::map<TXID, Device> devices() { return _devices; }
+    const std::map<TXID, Device> device_map() { return this->devices; }
+
+    void set_learning(bool enabled) { learning_enabled = enabled; }
 
   protected:
-    std::function<void(const Frame&)> _transmit;
-    std::map<TXID, Device> _devices;
-    TXID _txid;
-    EEP _eep = 0xA53808;
-    MID _mid = 0x7FF;
+    std::function<void(const Frame&)> transmit;
+    std::string config_file;
+    std::map<TXID, Device> devices;
     std::mutex mtx;
-    bool _learning_enabled;
+    bool learning_enabled;
+
+    class Configuration : public DeviceConfiguration {
+    public:
+      Configuration() {}
+      virtual ~Configuration() {}
+
+      TXID txid = 0xAABBCCDD;
+      MID mid = 0x7FF;
+      EEP eep = 0xA53808;
+
+      std::map<TXID, DeviceConfiguration> devices;
+
+      virtual void to_json(json& j) const override;
+      virtual void from_json(const json& j) override;
+    };
+
+    Configuration config;
   };
 }
 

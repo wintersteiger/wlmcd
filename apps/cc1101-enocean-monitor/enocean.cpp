@@ -3,12 +3,14 @@
 
 #include <cstring>
 #include <array>
+#include <stdexcept>
 
 #include <openssl/evp.h>
 
 #include <json.hpp>
-#include <stdexcept>
 using json = nlohmann::json;
+
+#include <integrity.h>
 
 #include "enocean.h"
 
@@ -27,29 +29,6 @@ namespace EnOcean
       }
     }
     return end;
-  }
-
-  static uint8_t crc8(const std::vector<uint8_t> &data, uint8_t polynomial, bool skip_last = false)
-  {
-    uint8_t rem = 0;
-    size_t sz = data.size();
-
-    if (skip_last)
-      sz--;
-
-    for (size_t i = 0; i < sz; i++)
-    {
-      rem = rem ^ data[i];
-      for (size_t j = 0; j < 8; j++)
-      {
-        if (rem & 0x80)
-          rem = (rem << 1) ^ polynomial;
-        else
-          rem = (rem << 1);
-      }
-    }
-
-    return rem;
   }
 
   Frame::Frame(std::vector<uint8_t>&& fbytes) :
@@ -98,9 +77,15 @@ namespace EnOcean
   }
 
   bool Frame::crc_ok() const {
-    if (integrity_mechanism() != IntegrityMechanism::CRC8)
-      throw std::runtime_error("non-crc8 checksums not implemented");
-    return crc8(buffer, 0x07, true) == buffer.back();
+    switch (integrity_mechanism())
+    {
+      case IntegrityMechanism::CRC8:
+        return crc8(buffer, 0x07, true) == buffer.back();
+      case IntegrityMechanism::Checksum:
+        return checksum(buffer, true) == buffer.back();
+      default:
+        throw std::logic_error("invalid integrity mechanism");
+    }
   }
 
 
@@ -157,7 +142,7 @@ namespace EnOcean
           break;
 
         fbytes.push_back(b[0] << 7 | b[1] << 6 | b[2] << 5 | b[4] << 4 |
-                        b[5] << 3 | b[6] << 2 | b[8] << 1 | b[9] << 0);
+                         b[5] << 3 | b[6] << 2 | b[8] << 1 | b[9] << 0);
         fbytes.back() = ~fbytes.back();
 
         pos += 12;

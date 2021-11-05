@@ -5,6 +5,21 @@
 
 namespace EnOcean
 {
+  AddressedTelegram::AddressedTelegram(const Telegram &t, TXID destination, Frame &f) :
+    Telegram(f)
+  {
+    std::vector<uint8_t> bytes = t;
+    if (bytes.size() < 6)
+      throw std::runtime_error("invalid telegram size");
+    uint8_t status = bytes[bytes.size()-2];
+    bytes.resize(bytes.size() - 6); // strip txid, status, crc
+    bytes.push_back((destination >> 24) & 0xFF);
+    bytes.push_back((destination >> 16) & 0xFF);
+    bytes.push_back((destination >> 8) & 0xFF);
+    bytes.push_back(destination & 0xFF);
+    f = Frame(0xA6, bytes, t.txid(), status);
+  }
+
   Telegram_4BS::Telegram_4BS(const std::array<uint8_t, 4> &data, TXID source, uint8_t status, Frame &f)
   {
     f = Frame(0xA5, {data.begin(), data.end()}, source, status);
@@ -78,10 +93,10 @@ namespace EnOcean
     payload[3] = (reference_run ? 0x01 : 0x00) << 7 |
                  (communication_interval & 0x07) << 4 |
                  (summer_mode ? 0x01 : 0x00) << 3 |
-                 (set_point_selection ? 0x01 : 0x00) << 2 |
+                 (setpoint_selection == SetpointSelection::TEMPERATURE ? 0x01 : 0x00) << 2 |
                  (temperature_selection ? 0x01 : 0x00) << 1 |
                  (standby ? 0x01 : 0x00);
-    payload[4] = 0;
+    payload[4] = 0x08;
     payload[5] = (destination >> 24) & 0xFF;
     payload[6] = (destination >> 16) & 0xFF;
     payload[7] = (destination >> 8) & 0xFF;

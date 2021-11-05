@@ -1,0 +1,23 @@
+{
+  "devices": {
+    "0580CC3A": {
+      "eep": "A52006",
+      "mid": "49",
+      "configuration": {
+        "setpoint": 0,
+        "rcu_temperature": 0,
+        "reference_run": false,
+        "communication_interval": 3,
+        "summer_mode": false,
+        "setpoint_selection": "temperature",
+        "temperature_selection": 1,
+        "standby": false
+      }
+    }
+  },
+  "controller": {
+    "txid": "AABBCCDD",
+    "mid": "7FF",
+    "eep": "A53808"
+  }
+}

@@ -14,16 +14,13 @@ EnOceanUI::EnOceanUI(const std::unique_ptr<EnOcean::Gateway>& gateway,
                      const std::vector<std::shared_ptr<DeviceBase>> radio_devices) :
   UI()
 {
-  for (auto d: radio_devices)
-    this->devices.insert(d.get());
-
   size_t row = 1, col = 1;
 
   Add(new TimeField(UI::statusp, row, col));
   Add(new Label(UI::statusp, row++, col + 18, Name()));
   fields.push_back(new Empty(row++, col));
 
-  for (auto &kv : gateway->devices())
+  for (auto &kv : gateway->device_map())
   {
     auto &txid = kv.first;
     auto &dev = kv.second;
@@ -38,10 +35,13 @@ EnOceanUI::EnOceanUI(const std::unique_ptr<EnOcean::Gateway>& gateway,
     auto s = std::dynamic_pointer_cast<EnOcean::A5_20_06::DeviceState>(dev.state);
     auto c = std::dynamic_pointer_cast<EnOcean::A5_20_06::DeviceConfiguration>(dev.configuration);
 
+    Add(new LWarningIndicator(UI::statusp, row, col, 0, "HVST",
+      [s]() { return !s->last_telegram.harvesting(); }));
+    Add(new LWarningIndicator(UI::statusp, row++, col + 5, 10, "CHRG",
+      [s]() { return !s->last_telegram.charged(); }));
+
     Add(new LField<float>(UI::statusp, row++, col, 10, "Valve position", "%",
-      [s]() { return (s->last_telegram.valve_position() / 80.0f) * 40.0f; },
-      [s](const char *value) {}
-    ));
+      [s]() { return s->last_telegram.valve_position(); }));
     Add(new LField<const char*>(UI::statusp, row++, col, 10, "L/O mode", "",
       [s]() { return s->last_telegram.local_offset_absolute() ? "absolute" : "relative"; }));
     Add(new LField<float>(UI::statusp, row++, col, 10, "Local offset", "°C",
@@ -50,10 +50,6 @@ EnOceanUI::EnOceanUI(const std::unique_ptr<EnOcean::Gateway>& gateway,
       [s]() { return (s->last_telegram.temperature() / 80.0f) * 40.0f; }));
     Add(new LField<const char*>(UI::statusp, row++, col, 10, "Temp sensor", "",
       [s]() { return s->last_telegram.feed_temp_sensor() ? "feed" : "ambient"; }));
-    Add(new LField<bool>(UI::statusp, row++, col, 10, "Energy input", "",
-      [s]() { return s->last_telegram.harvesting(); }));
-    Add(new LField<const char*>(UI::statusp, row++, col, 10, "Energy storage", "",
-      [s]() { return s->last_telegram.charged() ? "sufficient" : "low"; }));
     Add(new LField<const char*>(UI::statusp, row++, col, 10, "Window", "",
       [s]() { return s->last_telegram.window_open() ? "open" : "closed"; }));
     Add(new LField<bool>(UI::statusp, row++, col, 10, "Radio errors", "",
@@ -80,11 +76,17 @@ EnOceanUI::EnOceanUI(const std::unique_ptr<EnOcean::Gateway>& gateway,
 
     fields.push_back(new Empty(row++, col));
 
-    Add(new LField<float>(UI::statusp, row++, col, 10, "Set point", "°C",
+    Add(new LEnabledIndicator(UI::statusp, row++, col, 0, "DTY", [c](){ return c->dirty; }));
+    Add(new LField<const char*>(UI::statusp, row++, col, 10, "S/P selection", "",
+      [c]() {
+        auto t = EnOcean::A5_20_06::DeviceConfiguration::SetpointSelection::TEMPERATURE;
+        return c->setpoint_selection == t ? "temp" : "valve"; }
+    ));
+    Add(new LField<float>(UI::statusp, row++, col, 10, "S/P", "°C",
       [c]() { return (c->setpoint / 80.0f) * 40.0f; },
       [c](const char *value) {},
-      [c]() { c->setpoint = std::max(c->setpoint - 1, 0); },
-      [c]() { c->setpoint = std::min(c->setpoint + 1, 100); }
+      [c]() { c->dirty = true; c->setpoint = std::max(c->setpoint - 1, 0); },
+      [c]() { c->dirty = true; c->setpoint = std::min(c->setpoint + 1, 80); }
     ));
     Add(new LField<float>(UI::statusp, row++, col, 10, "RCU temp", "°C",
       [c]() { return (c->rcu_temperature / 160.0f) * 40.0f; },

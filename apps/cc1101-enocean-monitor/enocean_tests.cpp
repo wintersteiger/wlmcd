@@ -23,7 +23,7 @@ static int decoder_tests(int argc, const char **argv) {
   static EnOcean::Decoder decoder;
 
   if (argc != 1) {
-   vectors.clear();
+    vectors.clear();
     for (int i = 1; i < argc; i++)
       vectors.push_back(argv[i]);
   }
@@ -50,9 +50,15 @@ static int encoder_tests()
   return 0;
 }
 
-int enocean_tests(int argc, const char **argv) {
+int enocean_tests(int argc, const char **argv)
+{
   int r = 0;
   if ((r = decoder_tests(argc, argv)) != 0) return r;
   if ((r = encoder_tests()) != 0) return r;
   return r;
+}
+
+int main(int argc, const char **argv)
+{
+  return enocean_tests(argc, argv);
 }
