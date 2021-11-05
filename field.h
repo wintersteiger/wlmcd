@@ -64,6 +64,8 @@ public:
   virtual std::string Describe() const { return "(empty)"; }
   virtual void Flip() {}
   virtual bool Flippable() const { return false; }
+  virtual void Right() {}
+  virtual void Left() {}
 };
 
 template <typename T>
@@ -185,26 +187,32 @@ class LField : public Field<T> {
 protected:
   std::function<T(void)> get = nullptr;
   std::function<void(const char*)> set = nullptr;
+  std::function<void()> left = nullptr;
+  std::function<void()> right = nullptr;
 
 public:
   LField(WINDOW *wndw, int row, int col, int value_width,
             const std::string &key,
             const std::string &units,
             std::function<T(void)> &&get,
-            std::function<void(const char*)> &&set = nullptr) :
+            std::function<void(const char*)> &&set = nullptr,
+            std::function<void()> &&left = nullptr,
+            std::function<void()> &&right = nullptr) :
     Field<T>(wndw, row, col, key, "", units),
     get(get),
-    set(set)
+    set(set),
+    left(left),
+    right(right)
   {
     FieldBase::value_width = value_width;
   }
   virtual ~LField() = default;
-  virtual T Get() override { return get(); };
-  virtual void Set(const char* value) override {
-    if (set)
-      set(value);
-  };
+
   virtual bool ReadOnly() const override { return set == nullptr; }
+  virtual T Get() override { return get(); };
+  virtual void Set(const char* value) override { if (set) set(value); };
+  virtual void Left() override { if (left) left(); }
+  virtual void Right() override { if (right) right(); }
 };
 
 template <int TCOL, int FCOL>

@@ -113,16 +113,18 @@ void UI::Reset()
 
 void UI::ScrollUp()
 {
-  logp_scrollback += logp_h;
-  if (logp_scrollback > logp_b - logp_h)
-    logp_scrollback = logp_b - logp_h;
+  if (logp_scrollback <= logp_b - logp_h)
+    logp_scrollback += logp_h;
+  int logp_r = logp_b-logp_scrollback-logp_h;
+  prefresh(logp, logp_r, 0, logp_y, logp_x, logp_y + logp_h - 1, logp_x + logp_w - 1);
 }
 
 void UI::ScrollDown()
 {
-  logp_scrollback -= logp_h;
-  if (logp_scrollback < 0)
-    logp_scrollback = 0;
+  if (logp_scrollback >= logp_h)
+    logp_scrollback -= logp_h;
+  int logp_r = logp_b-logp_scrollback-logp_h;
+  prefresh(logp, logp_r, 0, logp_y, logp_x, logp_y + logp_h - 1, logp_x + logp_w - 1);
 }
 
 void UI::Update(bool full)
@@ -140,6 +142,7 @@ void UI::Update(bool full)
   size_t indicator_width = max_indicator_value > 0 ? std::floor(std::log10(max_indicator_value)) + 1 : 1;
   snprintf(indicator_buf, sizeof(indicator_buf), "[%0llu]", indicator_value);
   mvwprintw(logboxw, logp_h+1, screen_width - (2 + strlen(indicator_buf)), indicator_buf);
+  wrefresh(logboxw);
 #endif
 
   // prefresh(w, (y, x) in pad, (y1, x1, y2, x2) on screen);
@@ -563,4 +566,22 @@ void UI::Flip()
   }
   else
     UI::Error("Field is not flippable");
+}
+
+void UI::Right()
+{
+  if (active_field_index >= fields.size())
+    return;
+
+  FieldBase *f = fields[active_field_index];
+  f->Right();
+}
+
+void UI::Left()
+{
+  if (active_field_index >= fields.size())
+    return;
+
+  FieldBase *f = fields[active_field_index];
+  f->Left();
 }

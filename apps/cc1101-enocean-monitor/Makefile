@@ -7,22 +7,27 @@ WLMCD_ROOT=../..
 # CXXFLAGS+=-O1 -g -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG
 # LDFLAGS+=-g -fsanitize=address
 
-CXXFLAGS+=-g -I ${WLMCD_ROOT} -Wno-psabi
+CXXFLAGS+=-g -MMD -MP -I ${WLMCD_ROOT} -Wno-psabi
 
 %.o: %.cpp
 	${CXX} ${CXXFLAGS} $< -c -o $@
 
-all: cc1101-enocean-monitor cc1101-enocean-monitor-shared
+all: cc1101-enocean-monitor cc1101-enocean-monitor-shared enocean-test
 
-# Static libwlmcd
+SRC = enocean.cpp enocean_telegrams.cpp enocean_ui.cpp enocean_gateway.cpp cc1101-enocean-monitor.cpp
+OBJ = $(subst .cpp,.o,$(SRC))
+
 LDFLAGS_STATIC=${LDFLAGS} ${WLMCD_ROOT}/libwlmcd-dev.a ${WLMCD_ROOT}/libwlmcd-ui.a -lwiringPi -lpthread -lrt -lncurses -lcrypto -lgpiod
-cc1101-enocean-monitor: cc1101-enocean-monitor.o ${WLMCD_ROOT}/libwlmcd-dev.a ${WLMCD_ROOT}/libwlmcd-ui.a
-	${CXX} -o $@ $< ${LDFLAGS_STATIC}
+cc1101-enocean-monitor: ${OBJ} ${WLMCD_ROOT}/libwlmcd-dev.a ${WLMCD_ROOT}/libwlmcd-ui.a
+	${CXX} -o $@ ${OBJ} ${LDFLAGS_STATIC}
 
-# Dynamic libwlmcd
-LDFLAGS_SHARED=${LDFLAGS} -L ${WLMCD_ROOT} -lwlmcd-dev -lwlmcd-ui -lwiringPi -lpthread -lrt -lncurses -lcrypto -lgpiod
-cc1101-enocean-monitor-shared: cc1101-enocean-monitor.o ${WLMCD_ROOT}/libwlmcd-dev.so ${WLMCD_ROOT}/libwlmcd-ui.so
-	${CXX} -o $@ $< ${LDFLAGS_SHARED}
+usb300: usb300.o
+	${CXX} -o $@ $<
+
+enocean-test: enocean_tests.o enocean.o
+	${CXX} -o $@ $^ ${LDFLAGS_STATIC}
 
 clean:
-	rm -rf *.o cc1101-enocean-monitor cc1101-enocean-monitor-shared
+	rm -rf *.o cc1101-enocean-monitor
+
+-include *.d

@@ -65,6 +65,9 @@ public:
   static std::string GetCommand(const char *prompt = ":");
   void Flip();
 
+  void Right();
+  void Left();
+
   virtual void Layout();
   virtual std::string Name() const { return "Unnamed"; }
 
