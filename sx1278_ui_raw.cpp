@@ -74,19 +74,19 @@ public:
 
 #define EMPTY() fields.push_back(new Empty(row++, col));
 
-SX1278UIRaw::SX1278UIRaw(SX1278 &sx1278) :
+SX1278UIRaw::SX1278UIRaw(std::shared_ptr<SX1278> sx1278) :
   UI(),
   sx1278(sx1278)
 {
-  devices.insert(&sx1278);
+  devices.insert(sx1278);
 
   int row = 1, col = 1;
   bool first = true;
-  for (auto reg : sx1278.Normal) {
+  for (auto reg : sx1278->Normal) {
     if (first) { first = false; continue; }
-    fields.push_back(new SX1278RawField(row++, reg, sx1278.Normal));
+    fields.push_back(new SX1278RawField(row++, reg, sx1278->Normal));
     for (auto var : *reg)
-      fields.push_back(new SX1278RawField(row++, reg, var, sx1278.Normal));
+      fields.push_back(new SX1278RawField(row++, reg, var, sx1278->Normal));
     fields.push_back(new Empty(row++, col));
   }
 }

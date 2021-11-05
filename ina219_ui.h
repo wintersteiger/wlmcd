@@ -14,7 +14,7 @@ class INA219;
 
 class INA219UI : public UI {
 public:
-  INA219UI(INA219 &ina219);
+  INA219UI(std::shared_ptr<INA219> ina219);
   virtual ~INA219UI();
 
   virtual std::string Name() const override { return "INA219"; }

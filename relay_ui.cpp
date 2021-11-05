@@ -10,9 +10,9 @@ using namespace RelayUIFields;
 
 #define EMPTY() fields.push_back(new Empty(row++, col));
 
-RelayUI::RelayUI(RelayDevice &relay) : UI()
+RelayUI::RelayUI(std::shared_ptr<RelayDevice> relay) : UI()
 {
-  devices.insert(&relay);
+  devices.insert(relay);
 
   size_t row = 1, col = 1;
 
@@ -20,8 +20,8 @@ RelayUI::RelayUI(RelayDevice &relay) : UI()
   Add(new Label(UI::statusp, row++, col + 18, Name()));
   EMPTY();
 
-  for (size_t i=0; i < relay.Offsets().size(); i++) {
-    Indicator *indicator_field = new Indicator(row, col, relay, i);
+  for (size_t i=0; i < relay->Offsets().size(); i++) {
+    Indicator *indicator_field = new Indicator(row, col, *relay, i);
     fields.push_back(indicator_field);
     col += indicator_field->Key().size() + 1;
   }

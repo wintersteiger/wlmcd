@@ -19,17 +19,17 @@ class RegisterField : public Field<uint8_t> {
 protected:
   const typename RFM69::RegisterTable::TRegister &reg;
   const Variable<uint8_t> *var;
-  const RFM69 &rfm69;
+  const std::shared_ptr<RFM69> rfm69;
   const RFM69::RegisterTable &rt;
 
 public:
-  RegisterField(int row, const typename RFM69::RegisterTable::TRegister *reg, const RFM69 &rfm69) :
-    Field<uint8_t>(UI::statusp, row, 1, reg->Name(), "", ""), reg(*reg), var(NULL), rfm69(rfm69), rt(*rfm69.RT) {
+  RegisterField(int row, const typename RFM69::RegisterTable::TRegister *reg, const std::shared_ptr<RFM69> rfm69) :
+    Field<uint8_t>(UI::statusp, row, 1, reg->Name(), "", ""), reg(*reg), var(NULL), rfm69(rfm69), rt(*rfm69->RT) {
       value_width = 2;
       units_width = 0;
   }
-  RegisterField(int row, const typename RFM69::RegisterTable::TRegister *reg, const Variable<uint8_t> *var, const RFM69 &rfm69) :
-    Field<uint8_t>(UI::statusp, row, 1, var->Name(), "", ""), reg(*reg), var(var), rfm69(rfm69), rt(*rfm69.RT) {
+  RegisterField(int row, const typename RFM69::RegisterTable::TRegister *reg, const Variable<uint8_t> *var, const std::shared_ptr<RFM69> rfm69) :
+    Field<uint8_t>(UI::statusp, row, 1, var->Name(), "", ""), reg(*reg), var(var), rfm69(rfm69), rt(*rfm69->RT) {
       value_width = 2;
       units_width = 0;
   }
@@ -55,8 +55,8 @@ class IndicatorField : public ::IndicatorField {
 protected:
   const RFM69::RegisterTable &rt;
 public:
-  IndicatorField(int r, int c, const std::string &key, const RFM69 &rfm69) :
-    ::IndicatorField(UI::statusp, r, c, key), rt(*rfm69.RT) {}
+  IndicatorField(int r, int c, const std::string &key, const std::shared_ptr<RFM69> rfm69) :
+    ::IndicatorField(UI::statusp, r, c, key), rt(*rfm69->RT) {}
   virtual bool Get() = 0;
 };
 
@@ -64,12 +64,12 @@ template <typename T>
 class ConfigField : public Field<T>
 {
 protected:
-  const RFM69 &rfm69;
+  const std::shared_ptr<RFM69> rfm69;
   RFM69::RegisterTable &rt;
 
 public:
-  ConfigField<T>(int row, int col, const std::string &key, const std::string &value, const std::string &units, const RFM69 &rfm69) :
-    Field<T>(UI::statusp, row, col, key, value, units), rfm69(rfm69), rt(*rfm69.RT) {}
+  ConfigField<T>(int row, int col, const std::string &key, const std::string &value, const std::string &units, const std::shared_ptr<RFM69> rfm69) :
+    Field<T>(UI::statusp, row, col, key, value, units), rfm69(rfm69), rt(*rfm69->RT) {}
   virtual ~ConfigField<T>() {}
   virtual T Get() = 0;
   virtual void Update(bool full=false) { Field<T>::Update(full); }
@@ -79,7 +79,7 @@ public:
 
 class SettingField : public ConfigField<bool> {
 public:
-  SettingField(int r, int c, const std::string &key, const RFM69 &rfm69) :
+  SettingField(int r, int c, const std::string &key, const std::shared_ptr<RFM69> rfm69) :
     ConfigField<bool>(r, c, key, "", "", rfm69) {}
   virtual size_t Width() { return key.size(); }
   virtual bool Get() = 0;
@@ -98,7 +98,7 @@ public:
 #define SIND(N,NN,G) \
   class N##SInd : public IndicatorField { \
   public: \
-    N##SInd(int r, int c, const RFM69 &rfm69) : \
+    N##SInd(int r, int c, const std::shared_ptr<RFM69> rfm69) : \
       IndicatorField(r, c, NN, rfm69) {} \
     virtual bool Get() { G } \
   };
@@ -106,7 +106,7 @@ public:
 #define TCF(N,K,U,T,G) \
   class N##Field : public ConfigField<T> { \
   public: \
-    N##Field(int r, int c, const RFM69 &rfm69) : \
+    N##Field(int r, int c, const std::shared_ptr<RFM69> rfm69) : \
       ConfigField<T>(r, c, K, "", U, rfm69) {} \
     virtual T Get() { G } \
   };
@@ -114,7 +114,7 @@ public:
 #define STG(N,K,G) \
   class N##Sttng : public SettingField { \
   public: \
-    N##Sttng(int r, int c, const RFM69 &rfm69) : \
+    N##Sttng(int r, int c, const std::shared_ptr<RFM69> rfm69) : \
       SettingField(r, c, K, rfm69) {} \
     virtual bool Get() { G } \
   };
@@ -156,7 +156,7 @@ TCF(ModulationShaping, "Mod shaping",  "",     const char*,  {
 
 static std::vector<const char*> mode_map = { "Sleep", "Stdby", "FS", "TX", "RX", "?", "?", "?" };
 TCF(Mode, "Mode",  "",     const char*,  {
-  if (rfm69.Responsive()) {
+  if (rfm69->Responsive()) {
     this->colors = -1;
     if (rt.ListenOn())
       return "LISTEN";
@@ -176,21 +176,21 @@ TCF(RSSI,  "RSSI",   "dBm",  double,  {
 
 TCF(Frequency,  "Frequency",   "MHz",  double,      {
   double f_rf = (double) ((rt.Frf_23_16() << 16) | (rt.Frf_15_8() << 8) | rt.Frf_7_0());
-  return (rfm69.F_STEP() * f_rf) / 1e6;
+  return (rfm69->F_STEP() * f_rf) / 1e6;
 });
 
 TCF(FrequencyError,  "Freq error",   "kHz",  double,  {
   int16_t fei_value = (rt.FeiMsb() << 8) | rt.FeiLsb();
-  return (rfm69.F_STEP() * fei_value) / 1e3;
+  return (rfm69->F_STEP() * fei_value) / 1e3;
 });
 
 TCF(Deviation,  "Deviation",   "kHz",  double,  {
   uint64_t f_dev = (rt.Fdev_13_8() << 8) | rt.Fdev_7_0();
-  return (rfm69.F_STEP() * (double)f_dev) / 1e3;
+  return (rfm69->F_STEP() * (double)f_dev) / 1e3;
 });
 
 TCF(Bitrate,  "Bitrate",   "kBd",  double,  {
-  return rfm69.rBitrate();
+  return rfm69->rBitrate();
 });
 
 static double dcc_freq_map[] = {16, 8, 4, 2, 1, 0.5, 0.25, 0.125};
@@ -204,7 +204,7 @@ TCF(FilterBW,  "Fltr bandwidth",   "kHz",  double,  {
   auto divisor = (rxbw_mant_map[mant_raw] * pow(2, rt.RxBwExp() + 2));
   if (rt.ModulationType() == 1)
     divisor *= 2;
-  auto res = rfm69.F_XOSC() / divisor / 1e3;
+  auto res = rfm69->F_XOSC() / divisor / 1e3;
   return res;
 });
 
@@ -249,10 +249,10 @@ TCF(BroadcastAddress, "Broadcast addr", "", uint8_t, {
 TCF(PayloadLength, "Payload length", "", uint8_t, { return rt.PayloadLength(); });
 
 class SyncWordField : public ::HexField {
-  const RFM69 &rfm69;
+  const std::shared_ptr<RFM69> rfm69;
   uint64_t last_sync_word;
 public:
-  SyncWordField(int r, int c, const RFM69 &rfm69) :
+  SyncWordField(int r, int c, const std::shared_ptr<RFM69> rfm69) :
     ::HexField(UI::statusp, r, c, 0, NULL), rfm69(rfm69), last_sync_word(0) {
     key = "Sync word";
     key_width = key.size();
@@ -261,9 +261,9 @@ public:
   virtual ~SyncWordField() {}
   void Update(bool full) {
     if (wndw) {
-      uint64_t sw = rfm69.rSyncWord();
+      uint64_t sw = rfm69->rSyncWord();
       if (sw != last_sync_word || full) {
-        attributes = rfm69.RT->SyncOn() > 0 ? A_NORMAL : A_DIM;
+        attributes = rfm69->RT->SyncOn() > 0 ? A_NORMAL : A_DIM;
         if (active)
           attributes |= A_STANDOUT;
         char tmp2[256];
@@ -297,7 +297,7 @@ TCF(FilterBWAFC,  "Fltr bandwidth",   "kHz",  double,  {
   auto divisor = (rxbw_mant_afc_map[mant_raw] * pow(2, rt.RxBwExpAfc() + 2));
   if (rt.ModulationType() == 1)
     divisor *= 2;
-  auto res = rfm69.F_XOSC() / divisor / 1e3;
+  auto res = rfm69->F_XOSC() / divisor / 1e3;
   return res;
 });
 
@@ -315,12 +315,12 @@ TCF(LowBetaAfcOffset, "low b o/s", "kHz", double, {
 
 using namespace RFM69UIFields;
 
-RFM69UI::RFM69UI(RFM69 &rfm69, GPIOButton *reset_button) :
+RFM69UI::RFM69UI(std::shared_ptr<RFM69> rfm69, GPIOButton *reset_button) :
   UI(),
   rfm69(rfm69),
   num_status_fields(0)
 {
-  devices.insert(&rfm69);
+  devices.insert(rfm69);
 
   int row = 1, col = 1;
 

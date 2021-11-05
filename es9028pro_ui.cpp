@@ -19,7 +19,7 @@ static bool str_eq_insensitive(const std::string& a, const std::string& b)
 
 ES9028PROUI::ES9028PROUI(std::shared_ptr<ES9028PRO> &es9028pro) : UI()
 {
-  devices.insert(es9028pro.get());
+  devices.insert(es9028pro);
 
   int row = 1, col = 1;
 
@@ -31,8 +31,8 @@ ES9028PROUI::ES9028PROUI(std::shared_ptr<ES9028PRO> &es9028pro) : UI()
 
   auto* main = &es9028pro->RTS->Main;
 
-  Add(new LIndicator(statusp, row, col + 2, 10, "Automute", [RTS](){ return RTS->Main.automute_status(); }));
-  Add(new LIndicator(statusp, row++, col + 12, 10, "Lock", [RTS](){ return RTS->Main.lock_status(); }));
+  Add(new LEnabledIndicator(statusp, row, col + 2, 10, "Automute", [RTS](){ return RTS->Main.automute_status(); }));
+  Add(new LEnabledIndicator(statusp, row++, col + 12, 10, "Lock", [RTS](){ return RTS->Main.lock_status(); }));
 
   static const char *auto_inputs[] = { "None", "I2S|DSD", "I2S|S/PDIF", "I2S|S/PDIF|DSD" };
   static const char *manual_inputs[] = { "I2S", "S/PDIF", "?", "DSD" };

@@ -6,16 +6,17 @@
 
 #include <cstdint>
 #include <vector>
+#include <memory>
 
 #include "ui.h"
 #include "field.h"
 
 class RFM69UIRaw: public UI {
 protected:
-  RFM69 &rfm69;
+  std::shared_ptr<RFM69> rfm69;
 
 public:
-  RFM69UIRaw(RFM69 &rfm69);
+  RFM69UIRaw(std::shared_ptr<RFM69> rfm69);
   virtual ~RFM69UIRaw();
 
   virtual std::string Name() const { return "RFM69 (raw)"; }

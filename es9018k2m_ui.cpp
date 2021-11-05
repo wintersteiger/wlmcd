@@ -11,7 +11,7 @@
 
 ES9018K2MUI::ES9018K2MUI(std::shared_ptr<ES9018K2M> &es9018k2m) : UI()
 {
-  devices.insert(es9018k2m.get());
+  devices.insert(es9018k2m);
 
   int row = 1, col = 1;
 

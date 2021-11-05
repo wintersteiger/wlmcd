@@ -14,11 +14,11 @@ class GPIOButton;
 
 class RFM69UI: public UI {
 protected:
-  RFM69 &rfm69;
+  std::shared_ptr<RFM69> rfm69;
   size_t num_status_fields;
 
 public:
-  RFM69UI(RFM69 &rfm69, GPIOButton *reset_button = NULL);
+  RFM69UI(std::shared_ptr<RFM69> rfm69, GPIOButton *reset_button = NULL);
   virtual ~RFM69UI();
 
   virtual std::string Name() const { return "RFM69"; }

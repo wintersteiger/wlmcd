@@ -51,7 +51,7 @@ RadbotUI::RadbotUI(const Radbot::State &state, std::vector<std::shared_ptr<Devic
   state(state)
 {
   for (auto d: devices)
-    this->devices.insert(d.get());
+    this->devices.insert(d);
 
   size_t row = 1, col = 1;
 

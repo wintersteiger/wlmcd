@@ -16,20 +16,22 @@ namespace DHT22UIFields {
 
 class Temperature : public Field<float> {
 protected:
-  DHT22 &dht22;
+  std::shared_ptr<DHT22> dht22;
   float last;
   bool last_stale;
 
 public:
-  Temperature(DHT22 &dht22, int row, int col) : Field<float>(UI::statusp, row, col, "Temperature", "", "C"), dht22(dht22), last_stale(true) {}
+  Temperature(std::shared_ptr<DHT22> dht22, int row, int col) :
+    Field<float>(UI::statusp, row, col, "Temperature", "", "C"), dht22(dht22), last_stale(true)
+  {}
   virtual ~Temperature() {}
 
   virtual float Get() {
-    if (!dht22.ChecksumOK())
+    if (!dht22->ChecksumOK())
       last_stale = true;
     else {
       last_stale = false;
-      last = dht22.Temperature();
+      last = dht22->Temperature();
     }
 
     return last;
@@ -46,20 +48,20 @@ public:
 
 class Humidity : public Field<float> {
 protected:
-  DHT22 &dht22;
+  std::shared_ptr<DHT22> dht22;
   float last;
   bool last_stale;
 
 public:
-  Humidity(DHT22 &dht22, int row, int col) : Field<float>(UI::statusp, row, col, "Humidity", "", "%"), dht22(dht22), last(0), last_stale(true) {}
+  Humidity(std::shared_ptr<DHT22> dht22, int row, int col) : Field<float>(UI::statusp, row, col, "Humidity", "", "%"), dht22(dht22), last(0), last_stale(true) {}
   virtual ~Humidity() {}
 
     virtual float Get() {
-    if (!dht22.ChecksumOK())
+    if (!dht22->ChecksumOK())
       last_stale = true;
     else {
       last_stale = false;
-      last = dht22.Humidity();
+      last = dht22->Humidity();
     }
 
     return last;
@@ -76,27 +78,27 @@ public:
 
 class Checksum : public IndicatorField {
 protected:
-  DHT22 &dht22;
+  std::shared_ptr<DHT22> dht22;
 
 public:
-  Checksum(DHT22 &dht22, int row, int col) : IndicatorField(UI::statusp, row, col, "CRC"), dht22(dht22) {}
+  Checksum(std::shared_ptr<DHT22> dht22, int row, int col) : IndicatorField(UI::statusp, row, col, "CRC"), dht22(dht22) {}
   virtual ~Checksum() {}
 
   virtual bool Get() {
-    return dht22.ChecksumOK();
+    return dht22->ChecksumOK();
   }
 };
 
 class LastReadTime : public Field<double> {
 protected:
-  DHT22 &dht22;
+  std::shared_ptr<DHT22> dht22;
 
 public:
-  LastReadTime(DHT22 &dht22, int row, int col) : Field<double>(UI::statusp, row, col, "Last read time", "", "ms"), dht22(dht22) {}
+  LastReadTime(std::shared_ptr<DHT22> dht22, int row, int col) : Field<double>(UI::statusp, row, col, "Last read time", "", "ms"), dht22(dht22) {}
   virtual ~LastReadTime() {}
 
   virtual double Get() {
-    double r = dht22.LastReadTime() / 1e6;
+    double r = dht22->LastReadTime() / 1e6;
     return r > 999999.9 ? std::numeric_limits<double>::infinity() : r;
   }
 
@@ -110,27 +112,27 @@ public:
 
 class Tries : public Field<uint64_t> {
 protected:
-  DHT22 &dht22;
+  std::shared_ptr<DHT22> dht22;
 
 public:
-  Tries(DHT22 &dht22, int row, int col) : Field<uint64_t>(UI::statusp, row, col, "# tries", "", ""), dht22(dht22) {}
+  Tries(std::shared_ptr<DHT22> dht22, int row, int col) : Field<uint64_t>(UI::statusp, row, col, "# tries", "", ""), dht22(dht22) {}
   virtual ~Tries() {}
 
   virtual uint64_t Get() {
-    return dht22.Tries();
+    return dht22->Tries();
   }
 };
 
 class Reads : public Field<double> {
 protected:
-  DHT22 &dht22;
+  std::shared_ptr<DHT22> dht22;
 
 public:
-  Reads(DHT22 &dht22, int row, int col) : Field<double>(UI::statusp, row, col, "bad reads", "0.0", "%"), dht22(dht22) {}
+  Reads(std::shared_ptr<DHT22> dht22, int row, int col) : Field<double>(UI::statusp, row, col, "bad reads", "0.0", "%"), dht22(dht22) {}
   virtual ~Reads() {}
 
   virtual double Get() {
-    return 100.0 * (dht22.BadReads() / (double)dht22.Reads());
+    return 100.0 * (dht22->BadReads() / (double)dht22->Reads());
   }
 };
 
@@ -140,9 +142,9 @@ using namespace DHT22UIFields;
 
 #define EMPTY() Add(new Empty(row++, col))
 
-DHT22UI::DHT22UI(DHT22 &dht22) : UI()
+DHT22UI::DHT22UI(std::shared_ptr<DHT22> dht22) : UI()
 {
-  devices.insert(&dht22);
+  devices.insert(dht22);
 
   size_t row = 1, col = 1;
 

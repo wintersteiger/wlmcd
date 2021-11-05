@@ -4,18 +4,12 @@
 #ifndef _CC1101_UI_RAW_H_
 #define _CC1101_UI_RAW_H_
 
-#include <cstdint>
-#include <vector>
+#include <memory>
 
-#include "ui.h"
-#include "field.h"
+#include <ui.h>
 
-class CC1101UIRaw: public UI {
-public:
-  CC1101UIRaw(CC1101 &cc1101);
-  virtual ~CC1101UIRaw() {}
+class CC1101;
 
-  virtual std::string Name() const { return "CC1101 (raw)"; }
-};
+std::shared_ptr<UI> make_cc1101_raw_ui(std::shared_ptr<CC1101> &cc1101);
 
 #endif

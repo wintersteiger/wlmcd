@@ -38,7 +38,7 @@ public:
 
   bool Running() const { return running; }
 
-  void AddBackgroundDevice(std::shared_ptr<DeviceBase> &device);
+  void AddBackgroundDevice(std::shared_ptr<DeviceBase> device);
 
   void AddCommand(const std::string &verb, std::function<void(const std::string&)> f);
 

@@ -207,6 +207,7 @@ public:
   virtual bool ReadOnly() const override { return set == nullptr; }
 };
 
+template <int TCOL, int FCOL>
 class LIndicator : public LField<bool> {
 public:
   LIndicator(WINDOW *wndw, int row, int col, int value_width,
@@ -217,11 +218,26 @@ public:
       value_width = 0;
     }
   virtual ~LIndicator() {}
+
   using LField<bool>::Get;
-  virtual void Update(bool full=false) override;
+
+  virtual void Update(bool full) override
+  {
+    colors = Get() ? TCOL : FCOL;
+    if (wndw) {
+      if (active) wattron(wndw, A_STANDOUT);
+      if (colors != -1) wattron(wndw, COLOR_PAIR(colors));
+      mvwprintw(wndw, row, col, "%s", key.c_str());
+      if (colors != -1) wattroff(wndw, COLOR_PAIR(colors));
+      if (active) wattroff(wndw, A_STANDOUT);
+    }
+  }
 };
 
-class LSwitch : public LIndicator {
+typedef LIndicator<ENABLED_PAIR, DISABLED_PAIR> LEnabledIndicator;
+typedef LIndicator<LOW_PAIR, ENABLED_PAIR> LWarningIndicator;
+
+class LSwitch : public LIndicator<ENABLED_PAIR, DISABLED_PAIR> {
 protected:
   std::function<void(bool)> bset = nullptr;
 

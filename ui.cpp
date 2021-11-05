@@ -225,7 +225,7 @@ void UI::Add(FieldBase *field)
   fields.push_back(field);
 }
 
-void UI::Add(DeviceBase *device)
+void UI::Add(std::shared_ptr<DeviceBase> device)
 {
   devices.insert(device);
 }

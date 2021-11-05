@@ -44,6 +44,7 @@ CC1101::CC1101(
   RT->Refresh(false);
 
   StrobeFor(SIDLE, State::IDLE, 10);
+  Strobe(SCAL, 1000);
   StrobeFor(SRX, State::RX, 10);
 }
 
@@ -114,7 +115,7 @@ void CC1101::Config::Write()
 }
 
 double CC1101::rFOE() const {
-  return f_xosc/pow(2, 14) * RT->FREQOFF_7_0();
+  return f_xosc/pow(2, 14) * RT->FREQEST();
 }
 
 double CC1101::rRSSI() const {
@@ -318,14 +319,14 @@ void CC1101::Setup(const std::vector<uint8_t> &config, const std::vector<uint8_t
 
 void CC1101::Receive(std::vector<uint8_t> &packet)
 {
-  uint8_t crc;
-
-  uint8_t pktctrl0 = Read(RT->_rPKTCTRL0);
-  uint8_t pktctrl1 = Read(RT->_rPKTCTRL1);
+  uint8_t pktctrl0 = RT->PKTCTRL0();
+  uint8_t pktctrl1 = RT->PKTCTRL1();
   bool variable = (pktctrl0 & 0x3) == 1;
   size_t variable_remaining = (size_t)-1;
   bool status_appended = (pktctrl1 & 0x04) != 0;
   unsigned sleep_interval = 16 * (1e6 / rDataRate());
+  bool fixed = (pktctrl0 & 0x3) == 0;
+  size_t fixed_size = RT->PKTLEN() + (status_appended ? 2 : 0);
 
   size_t rxbytes_last = 0, rxbytes = 1, waited = 0;
 
@@ -340,6 +341,9 @@ void CC1101::Receive(std::vector<uint8_t> &packet)
     size_t n = rxbytes & 0x7F;
 
     size_t m = n <= 1 ? n : n-1;
+
+    if (fixed)
+      m = std::min(m, fixed_size - recv_buf_held());
 
     if ((!variable && n == 0) ||
         (variable && variable_remaining == 0))
@@ -371,6 +375,9 @@ void CC1101::Receive(std::vector<uint8_t> &packet)
     else if (waited++ > 5)
       break;
 
+    if (fixed && recv_buf_held() == fixed_size)
+      break;
+
     sleep_us(sleep_interval); // give the FIFO a chance to catch up
   }
 
@@ -390,18 +397,19 @@ void CC1101::Transmit(const std::vector<uint8_t> &pkt)
 {
   State state_before = (State)RT->MARCSTATE();
   uint8_t pktlen_before = (State)RT->PKTLEN();
-  StatusByte sb = StrobeFor(CommandStrobe::SFSTXON, State::FSTXON, 1);
-  uint8_t pktctrl0_before = Read(RT->_rPKTCTRL0);
+  StatusByte sb = Strobe(CommandStrobe::SFSTXON, 10);
+  uint8_t pktctrl0_before = RT->PKTCTRL0();
 
   uint8_t pkctrl0 = (pktctrl0_before & 0xFC) | (pkt.size() > 256 ? 0x02 : 0x00);
 
   sb = WriteS(RT->_rPKTLEN, pkt.size() % 256);
-  sb = Strobe(CommandStrobe::STX);
 
   size_t sent = 0;
-  while (sent < pkt.size())
+  while (sent < pkt.size() &&
+    sb.State() != StatusByte::SState::TXFIFO_UNDERFLOW &&
+    sb.State() != StatusByte::SState::RXFIFO_OVERFLOW)
   {
-    sb = Strobe(CommandStrobe::SNOP);
+    sb = Strobe(CommandStrobe::STX);
     size_t to_send = std::min((size_t)sb.FIFO_BYTES_AVAILABLE(), pkt.size() - sent);
     if (to_send > 0) {
       const auto first = pkt.begin() + sent;
@@ -414,20 +422,20 @@ void CC1101::Transmit(const std::vector<uint8_t> &pkt)
       sb = WriteS(RT->_rPKTCTRL0, pktctrl0_before & 0xFC);
   }
 
-  sleep_us(10000);
-
   size_t cnt = 0;
   do {
-    sleep_us(1000);
+    sleep_us(500);
     sb = Strobe(CommandStrobe::SNOP);
     cnt++;
-  } while (sb.State() == StatusByte::SState::TX);
+  }
+  while (sb.FIFO_BYTES_AVAILABLE() < 64 &&
+         sb.State() == StatusByte::SState::TX);
 
   Write(RT->_rPKTCTRL0, pktctrl0_before);
   Write(RT->_rPKTLEN, pktlen_before);
 
   if (sent != pkt.size())
-    throw std::runtime_error("partial tx: " + std::to_string(sent));
+    throw std::runtime_error("partial tx: " + std::to_string(sent) + "/" + std::to_string(pkt.size()));
 }
 
 void CC1101::Test(const std::vector<uint8_t> &data)
@@ -453,6 +461,56 @@ void CC1101::Write(std::ostream &os)
 void CC1101::Read(std::istream &is)
 {
   RT->Read(is);
+}
+
+void CC1101::inc_frequency() {
+  uint32_t fr = (RT->FREQ2() << 16) | (RT->FREQ1() << 8) | RT->FREQ0();
+  fr = (fr + 1) & 0x3FFFFF;
+  if (fr == 0)
+    return;
+  Write(RT->_rFREQ2, (fr >> 16) & 0x3F);
+  Write(RT->_rFREQ1, (fr >> 8) & 0xFF);
+  Write(RT->_rFREQ0, fr & 0xFF);
+  UpdateFrequent();
+}
+
+void CC1101::dec_frequency() {
+  uint32_t fr = (RT->FREQ2() << 16) | (RT->FREQ1() << 8) | RT->FREQ0();
+  if (fr == 0)
+    return;
+  fr = (fr - 1) & 0x3FFFFF;
+  Write(RT->_rFREQ2, (fr >> 16) & 0x3F);
+  Write(RT->_rFREQ1, (fr >> 8) & 0xFF);
+  Write(RT->_rFREQ0, fr & 0xFF);
+  UpdateFrequent();
+}
+
+void CC1101::inc_datarate()
+{
+  uint8_t drate_m = RT->MDMCFG3();
+  uint8_t mdmcfg4 = RT->MDMCFG4();
+  uint8_t drate_e = mdmcfg4 & 0x0F;
+  if (drate_m == 0xFF && drate_e == 0x0F)
+    return;
+  drate_m++;
+  if (drate_m == 0x00)
+    drate_e++;
+  Write(RT->_rMDMCFG4, (mdmcfg4 & 0xF0) | drate_e);
+  Write(RT->_rMDMCFG3, drate_m);
+}
+
+void CC1101::dec_datarate()
+{
+  uint8_t drate_m = RT->MDMCFG3();
+  uint8_t mdmcfg4 = RT->MDMCFG4();
+  uint8_t drate_e = mdmcfg4 & 0x0F;
+  if (drate_m == 0x00 && drate_e == 0x00)
+    return;
+  drate_m--;
+  if (drate_m == 0xFF)
+    drate_e--;
+  Write(RT->_rMDMCFG4, (mdmcfg4 & 0xF0) | drate_e);
+  Write(RT->_rMDMCFG3, drate_m);
 }
 
 void CC1101::RegisterTable::Refresh(bool frequent)

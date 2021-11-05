@@ -308,18 +308,6 @@ void CharField::Update(bool full)
   }
 }
 
-void LIndicator::Update(bool full)
-{
-  colors = Get() ? ENABLED_PAIR : DISABLED_PAIR;
-  if (wndw) {
-    if (active) wattron(wndw, A_STANDOUT);
-    if (colors != -1) wattron(wndw, COLOR_PAIR(colors));
-    mvwprintw(wndw, row, col, "%s", key.c_str());
-    if (colors != -1) wattroff(wndw, COLOR_PAIR(colors));
-    if (active) wattroff(wndw, A_STANDOUT);
-  }
-}
-
 LSwitch::LSwitch(WINDOW *wndw, int row, int col,
     const std::string &key,
     std::function<bool(void)> &&get,

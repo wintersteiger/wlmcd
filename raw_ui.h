@@ -128,7 +128,7 @@ std::shared_ptr<UI> make_raw_ui(std::shared_ptr<D> &device, RegisterTable<AT, VT
 {
   auto ui = std::make_shared<UI>();
 
-  ui->Add(device.get());
+  ui->Add(device);
 
   typedef RawField<RegisterTable<AT, VT, D>, VT, D> RF;
 
@@ -148,7 +148,7 @@ std::shared_ptr<UI> make_raw_ui(std::shared_ptr<D> &device, RegisterTableSparse<
 {
   auto ui = std::make_shared<UI>();
 
-  ui->Add(device.get());
+  ui->Add(device);
 
   typedef RawField<RegisterTableSparse<AT, VT, D>, VT, D> RF;
 
@@ -168,7 +168,7 @@ std::shared_ptr<UI> make_raw_ui(std::shared_ptr<D> &device, RegisterTableSparseV
 {
   auto ui = std::make_shared<UI>();
 
-  ui->Add(device.get());
+  ui->Add(device);
 
   typedef RawField<RegisterTableSparseVar<AT, D>, std::vector<uint8_t>, D> RF;
 

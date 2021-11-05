@@ -9,6 +9,7 @@
 #include <vector>
 #include <set>
 #include <string>
+#include <memory>
 
 #include "field.h"
 
@@ -22,7 +23,7 @@ protected:
   unsigned logp_b, logp_x, logp_y, logp_h, logp_w, logp_scrollback;
   std::vector<FieldBase*> fields;
   size_t active_field_index;
-  std::set<DeviceBase*> devices;
+  std::set<std::shared_ptr<DeviceBase>> devices;
 
 public:
   UI();
@@ -58,7 +59,7 @@ public:
   void Reset();
   virtual void Update(bool full);
   void Add(FieldBase *field);
-  void Add(DeviceBase *device);
+  void Add(std::shared_ptr<DeviceBase> device);
 
   void Edit();
   static std::string GetCommand(const char *prompt = ":");
@@ -67,7 +68,7 @@ public:
   virtual void Layout();
   virtual std::string Name() const { return "Unnamed"; }
 
-  const std::set<DeviceBase*>& Devices() { return devices; }
+  const std::set<std::shared_ptr<DeviceBase>>& Devices() { return devices; }
 };
 
 #endif

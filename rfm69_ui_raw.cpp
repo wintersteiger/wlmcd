@@ -85,23 +85,23 @@ public:
 
 #define EMPTY() fields.push_back(new Empty(row++, col));
 
-RFM69UIRaw::RFM69UIRaw(RFM69 &rfm69) :
+RFM69UIRaw::RFM69UIRaw(std::shared_ptr<RFM69> rfm69) :
   UI(),
   rfm69(rfm69)
 {
-  devices.insert(&rfm69);
+  devices.insert(rfm69);
 
   int row = 1, col = 1;
 
-  fields.push_back(new Responsiveness(row++, col, rfm69));
+  fields.push_back(new Responsiveness(row++, col, *rfm69));
   EMPTY();
 
   bool first = true;
-  for (auto reg : *rfm69.RT) {
+  for (auto reg : *rfm69->RT) {
     if (first) { first = false; /* Skip FIFO */ continue; }
-    fields.push_back(new RFM69RawField(row++, reg, *rfm69.RT, true));
+    fields.push_back(new RFM69RawField(row++, reg, *rfm69->RT, true));
     for (auto var : *reg)
-      fields.push_back(new RFM69RawField(row++, reg, var, *rfm69.RT));
+      fields.push_back(new RFM69RawField(row++, reg, var, *rfm69->RT));
     fields.push_back(new Empty(row++, col));
   }
 }

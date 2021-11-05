@@ -4,12 +4,14 @@
 #ifndef _RELAY_UI_H_
 #define _RELAY_UI_H_
 
+#include <memory>
+
 #include "ui.h"
 #include "relay_device.h"
 
 class RelayUI : public UI {
 public:
-  RelayUI(RelayDevice &relay);
+  RelayUI(std::shared_ptr<RelayDevice> relay);
   virtual ~RelayUI();
 
   virtual std::string Name() const { return "Relay"; }

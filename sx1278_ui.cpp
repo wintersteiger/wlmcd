@@ -14,17 +14,17 @@ class RegisterField : public Field<uint8_t> {
 protected:
   const SX1278::NormalRegisterTable::TRegister &reg;
   const Variable<uint8_t> *var;
-  const SX1278 &sx1278;
+  const std::shared_ptr<SX1278> sx1278;
   const SX1278::NormalRegisterTable &rt;
 
 public:
-  RegisterField(int row, const SX1278::NormalRegisterTable::TRegister *reg, const SX1278 &sx1278) :
-    Field<uint8_t>(UI::statusp, row, 1, reg->Name(), "", ""), reg(*reg), var(NULL), sx1278(sx1278), rt(sx1278.Normal) {
+  RegisterField(int row, const SX1278::NormalRegisterTable::TRegister *reg, const std::shared_ptr<SX1278> sx1278) :
+    Field<uint8_t>(UI::statusp, row, 1, reg->Name(), "", ""), reg(*reg), var(NULL), sx1278(sx1278), rt(sx1278->Normal) {
       value_width = 2;
       units_width = 0;
   }
-  RegisterField(int row, const SX1278::NormalRegisterTable::TRegister *reg, const Variable<uint8_t> *var, const SX1278 &sx1278) :
-    Field<uint8_t>(UI::statusp, row, 1, var->Name(), "", ""), reg(*reg), var(var), sx1278(sx1278), rt(sx1278.Normal) {
+  RegisterField(int row, const SX1278::NormalRegisterTable::TRegister *reg, const Variable<uint8_t> *var, const std::shared_ptr<SX1278> sx1278) :
+    Field<uint8_t>(UI::statusp, row, 1, var->Name(), "", ""), reg(*reg), var(var), sx1278(sx1278), rt(sx1278->Normal) {
       value_width = 2;
       units_width = 0;
   }
@@ -50,8 +50,8 @@ class IndicatorField : public ::IndicatorField {
 protected:
   const SX1278::NormalRegisterTable &rt;
 public:
-  IndicatorField(int r, int c, const std::string &key, const SX1278 &sx1278) :
-    ::IndicatorField(UI::statusp, r, c, key), rt(sx1278.Normal) {}
+  IndicatorField(int r, int c, const std::string &key, const std::shared_ptr<SX1278> sx1278) :
+    ::IndicatorField(UI::statusp, r, c, key), rt(sx1278->Normal) {}
   virtual bool Get() = 0;
 };
 
@@ -59,12 +59,12 @@ template <typename T>
 class ConfigField : public Field<T>
 {
 protected:
-  const SX1278 &sx1278;
+  const std::shared_ptr<SX1278> sx1278;
   const SX1278::NormalRegisterTable &rt;
 
 public:
-  ConfigField<T>(int row, int col, const std::string &key, const std::string &value, const std::string &units, const SX1278 &sx1278) :
-    Field<T>(UI::statusp, row, col, key, value, units), sx1278(sx1278), rt(sx1278.Normal) {}
+  ConfigField<T>(int row, int col, const std::string &key, const std::string &value, const std::string &units, const std::shared_ptr<SX1278> sx1278) :
+    Field<T>(UI::statusp, row, col, key, value, units), sx1278(sx1278), rt(sx1278->Normal) {}
   virtual ~ConfigField<T>() {}
   virtual T Get() = 0;
   virtual void Update(bool full=false) { Field<T>::Update(full); }
@@ -74,7 +74,7 @@ public:
 
 class SettingField : public ConfigField<bool> {
 public:
-  SettingField(int r, int c, const std::string &key, const SX1278 &sx1278) :
+  SettingField(int r, int c, const std::string &key, const std::shared_ptr<SX1278> sx1278) :
     ConfigField<bool>(r, c, key, "", "", sx1278) {}
   virtual size_t Width() { return key.size(); }
   virtual bool Get() = 0;
@@ -93,14 +93,14 @@ public:
 class NameField : public Label
 {
 protected:
-  const SX1278 &sx1278;
+  const std::shared_ptr<SX1278> sx1278;
 
 public:
-  NameField(int row, int col, const SX1278 &sx1278) :
+  NameField(int row, int col, const std::shared_ptr<SX1278> sx1278) :
     Label(UI::statusp, row, col, ""), sx1278(sx1278) {}
   virtual ~NameField() {}
   virtual void Update(bool full=false) {
-    key = sx1278.Normal.LongRangeMode() ? "SX1278 LoRa" : "SX1278";
+    key = sx1278->Normal.LongRangeMode() ? "SX1278 LoRa" : "SX1278";
     Label::Update(full);
   }
 };
@@ -108,7 +108,7 @@ public:
 #define SIND(N,NN,T,G) \
   class N##SInd : public IndicatorField { \
   public: \
-    N##SInd(int r, int c, const SX1278 &sx1278) : \
+    N##SInd(int r, int c, const std::shared_ptr<SX1278> sx1278) : \
       IndicatorField(r, c, NN, sx1278) {} \
     virtual bool Get() { G } \
   };
@@ -116,7 +116,7 @@ public:
 #define TCF(N,K,U,T,G) \
   class N##Field : public ConfigField<T> { \
   public: \
-    N##Field(int r, int c, const SX1278 &sx1278) : \
+    N##Field(int r, int c, const std::shared_ptr<SX1278> sx1278) : \
       ConfigField<T>(r, c, K, "", U, sx1278) {} \
     virtual T Get() { G } \
   };
@@ -124,7 +124,7 @@ public:
 #define STG(N,K,G) \
   class N##Sttng : public SettingField { \
   public: \
-    N##Sttng(int r, int c, const SX1278 &sx1278) : \
+    N##Sttng(int r, int c, const std::shared_ptr<SX1278> sx1278) : \
       SettingField(r, c, K, sx1278) {} \
     virtual bool Get() { G } \
   };
@@ -153,7 +153,7 @@ TCF(Modulation, "Modulation",  "",     const char*,  { return modulation_map[rt.
 
 static std::vector<const char*> mode_map = { "Sleep", "Stdby", "FS TX", "TX", "FS RX", "RX", "?", "?" };
 TCF(Mode, "Mode",  "",     const char*,  {
-  if (sx1278.Responsive()) {
+  if (sx1278->Responsive()) {
     this->colors = -1;
     return mode_map[rt.Mode()];
   } else {
@@ -168,22 +168,22 @@ TCF(RSSI,  "RSSI",   "dBm",  double,  {
 
 TCF(Frequency,  "Frequency",   "MHz",  double,      {
   double f_rf = (double) ((rt.Frf_23_16() << 16) | (rt.Frf_15_8() << 8) | rt.Frf_7_0());
-  return (sx1278.F_STEP() * f_rf) / 1e6;
+  return (sx1278->F_STEP() * f_rf) / 1e6;
 });
 
 TCF(FrequencyError,  "Freq error",   "kHz",  double,  {
   double f_ei = (double) ((rt.FeiValue_15_8() << 8) | rt.FeiValue_7_0());
-  return (sx1278.F_STEP() * f_ei) / 1e3;
+  return (sx1278->F_STEP() * f_ei) / 1e3;
 });
 
 TCF(Deviation,  "Deviation",   "kHz",  double,  {
   uint64_t f_dev = (rt.Fdev_13_8() << 8) | rt.Fdev_7_0();
-  return (sx1278.F_STEP() * (double)f_dev) / 1e3;
+  return (sx1278->F_STEP() * (double)f_dev) / 1e3;
 });
 
 TCF(Bitrate,  "Bitrate",   "kBd",  double,  {
   uint64_t br = (rt.BitRate_15_8() << 8) | rt.BitRate_7_0();
-  return (sx1278.F_XOSC() / (br + (rt.BitRateFrac() / 16.0))) / 1e3;
+  return (sx1278->F_XOSC() / (br + (rt.BitRateFrac() / 16.0))) / 1e3;
 });
 
 static uint8_t rxbw_mant_map[] = {16, 20, 24};
@@ -191,7 +191,7 @@ TCF(FilterBW,  "Filter B/W",   "kHz",  double,  {
   uint8_t mant_raw = rt.RxBwMant();
   if (mant_raw == 0b11)
     return (1.0/0.0);
-  return (sx1278.F_XOSC() / (rxbw_mant_map[mant_raw] * pow(2, rt.RxBwExp() + 2))) / 1e3;
+  return (sx1278->F_XOSC() / (rxbw_mant_map[mant_raw] * pow(2, rt.RxBwExp() + 2))) / 1e3;
 });
 
 TCF(RSSIThreshold,  "RSSI T/H",   "dBm",  double,  {
@@ -203,7 +203,7 @@ TCF(SyncSize,  "Sync size",   "B",  uint8_t,  { return rt.DcFreIoHomeOne() ? rt.
 
 class SyncWordField : public ConfigField<std::string> {
 public:
-  SyncWordField(int r, int c, const SX1278 &sx1278) :
+  SyncWordField(int r, int c, const std::shared_ptr<SX1278> sx1278) :
     ConfigField<std::string>(r, c, "Sync word", "", "", sx1278) {
       key_width = 10; value_width = 16; units_width = 0;
     }
@@ -244,12 +244,12 @@ TCF(OutputPower,  "Output power",   "dBm",  double,  {
 
 using namespace SX1278UIFields;
 
-SX1278UI::SX1278UI(SX1278 &sx1278) :
+SX1278UI::SX1278UI(std::shared_ptr<SX1278> sx1278) :
   UI(),
   sx1278(sx1278),
   num_status_fields(0)
 {
-  devices.insert(&sx1278);
+  devices.insert(sx1278);
 
   int row = 1, col = 1;
 

@@ -12,7 +12,7 @@
 
 BME280UI::BME280UI(std::shared_ptr<BME280> bme280)
 {
-  devices.insert(bme280.get());
+  devices.insert(bme280);
 
   size_t row = 1, col = 1;
 

@@ -214,6 +214,11 @@ public:
   double rChannelSpacing() const;
   double rEvent0() const;
   double rRXTimeout() const;
+
+  void inc_frequency();
+  void dec_frequency();
+  void inc_datarate();
+  void dec_datarate();
 };
 
 #endif

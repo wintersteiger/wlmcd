@@ -79,8 +79,8 @@ static void timer_setup(double frequency)
 
 class UpdateThread {
 public:
-  UpdateThread(DeviceBase *device) : device(device), done(false) {
-    auto f = [=](DeviceBase* device) {
+  UpdateThread(std::shared_ptr<DeviceBase> device) : device(device), done(false) {
+    auto f = [=](std::shared_ptr<DeviceBase> device) {
       try {
         device->UpdateTimed();
       }
@@ -99,7 +99,7 @@ public:
   void Join() { if (thread.joinable()) thread.join(); }
 protected:
   std::thread thread;
-  DeviceBase *device;
+  std::shared_ptr<DeviceBase> device;
   bool done;
 };
 
@@ -114,9 +114,9 @@ Controller::Controller(
   cur_frequent_interval(frequent_interval),
   cur_infrequent_interval(infrequent_interval),
   cur_frequency(frequency),
-  ui_inx(-1),
-  decoder_inx(-1),
-  encoder_inx(-1)
+  ui_inx(SIZE_MAX),
+  decoder_inx(SIZE_MAX),
+  encoder_inx(SIZE_MAX)
 {
   if (!have_timer && cur_frequency != 0)
     timer_setup(cur_frequency);
@@ -171,7 +171,7 @@ Controller::Controller(
     {
       size_t fpos = cmd.find(' ');
       verb = cmd.substr(0, fpos);
-      args = cmd.substr(fpos + 1);
+      args = fpos == std::string::npos ? "" : cmd.substr(fpos + 1);
 
       while (std::isspace(args[0]))
         args = args.substr(1);
@@ -230,29 +230,6 @@ Controller::Controller(
       }
     }
   };
-
-  // key_bindings['t'] = KEY_FUN {
-  //   if (e) {
-  //     static size_t cnt = 0;
-  //     static std::vector<uint8_t> data(128, 0);
-  //     for (size_t i = 0; i < 128; i++)
-  //       data[i] = i;
-  //     static char tmp[1024];
-  //     std::vector<uint8_t> encoded = e->Encode(data);
-  //     for (auto d : ui->Devices()) {
-  //       char *p = tmp;
-  //       p += snprintf(tmp, sizeof(tmp), "TX %s C=%zu N=%d MSG: ", d->Name(), cnt++, data.size());
-  //       for (auto b : encoded)
-  //         p += snprintf(p, sizeof(tmp) - (p - tmp), "%02x", b);
-  //       UI::Log(tmp);
-  //       d->Test(encoded);
-  //       ui->Update(false);
-  //     }
-  //   }
-  //   else
-  //     for (auto device : ui->Devices())
-  //       device->Test({});
-  // };
 
   key_bindings[' '] = KEY_FUN {
     ui->Flip();
@@ -411,7 +388,7 @@ void Controller::Run()
             threads.insert(t);
           }
           for (auto &device : background_devices) {
-            UpdateThread *t = new UpdateThread(device.get());
+            UpdateThread *t = new UpdateThread(device);
             if (t == NULL)
               throw std::runtime_error("could not spawn thread");
             threads.insert(t);
@@ -439,7 +416,7 @@ void Controller::Run()
     }
   }
 
-  ui_inx = -1;
+  ui_inx = SIZE_MAX;
   running = false;
   timed_out = false;
 }
@@ -454,7 +431,8 @@ void Controller::Stop()
       ThreadCleanup();
       if (num_threads != last) {
         UI::Info("threads to join: %lu", num_threads);
-        uis[ui_inx]->Update(false);
+        if (ui_inx != SIZE_MAX)
+          uis[ui_inx]->Update(false);
       }
       sleep_ms(10);
       last = num_threads;
@@ -464,7 +442,7 @@ void Controller::Stop()
   running = false;
 }
 
-void Controller::AddBackgroundDevice(std::shared_ptr<DeviceBase> &device)
+void Controller::AddBackgroundDevice(std::shared_ptr<DeviceBase> device)
 {
   background_devices.insert(device);
 }

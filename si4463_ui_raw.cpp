@@ -63,23 +63,23 @@ public:
 #define ADD(AT,REG,RT) fields.push_back(new SI4463RawField<AT>(row++, REG, RT));
 #define ADDV(AT,REG,VAR,RT) fields.push_back(new SI4463RawField<AT>(row++, REG, VAR, RT));
 
-SI4463UIRaw::SI4463UIRaw(SI4463 &si4463) :
+SI4463UIRaw::SI4463UIRaw(std::shared_ptr<SI4463> si4463) :
   UI(),
   si4463(si4463)
 {
-  devices.insert(&si4463);
+  devices.insert(si4463);
   int row = 1, col = 1;
 
   typedef RegisterTable<uint8_t, uint8_t, SI4463> RTT;
-  RTT *pirt = &si4463.RTS.PartInfo;
-  RTT *firt = &si4463.RTS.FuncInfo;
-  RTT *gpiort = &si4463.RTS.GPIO;
-  RTT *fifort = &si4463.RTS.FIFO;
-  RTT *statert = &si4463.RTS.DeviceState;
-  RTT *intsrt = &si4463.RTS.Interrupts;
-  RTT *pktinfort = &si4463.RTS.PacketInfo;
-  RTT *mdmstsrt = &si4463.RTS.ModemStatus;
-  RTT *adcrt = &si4463.RTS.ADC;
+  RTT *pirt = &si4463->RTS.PartInfo;
+  RTT *firt = &si4463->RTS.FuncInfo;
+  RTT *gpiort = &si4463->RTS.GPIO;
+  RTT *fifort = &si4463->RTS.FIFO;
+  RTT *statert = &si4463->RTS.DeviceState;
+  RTT *intsrt = &si4463->RTS.Interrupts;
+  RTT *pktinfort = &si4463->RTS.PacketInfo;
+  RTT *mdmstsrt = &si4463->RTS.ModemStatus;
+  RTT *adcrt = &si4463->RTS.ADC;
 
   for (RTT *rt : {pirt, firt, gpiort, fifort, statert, intsrt, pktinfort, mdmstsrt, adcrt}) {
     for (auto &reg : *rt) {
@@ -90,10 +90,10 @@ SI4463UIRaw::SI4463UIRaw(SI4463 &si4463) :
     EMPTY();
   }
 
-  for (auto &reg : si4463.RTS.Property) {
-    ADD(uint16_t, reg, &si4463.RTS.Property);
+  for (auto &reg : si4463->RTS.Property) {
+    ADD(uint16_t, reg, &si4463->RTS.Property);
     for (auto var : *reg)
-      ADDV(uint16_t, reg, var, &si4463.RTS.Property);
+      ADDV(uint16_t, reg, var, &si4463->RTS.Property);
     EMPTY();
   }
 }

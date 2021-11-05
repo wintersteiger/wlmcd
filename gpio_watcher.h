@@ -56,8 +56,8 @@ protected:
       return GPIOD_CTXLESS_EVENT_CB_RET_STOP;
 
     if (event_type == GPIOD_CTXLESS_EVENT_CB_RISING_EDGE) {
-        bool ok = w->f(event_type, offset, timestamp, w->data);
-        if (!ok) return GPIOD_CTXLESS_EVENT_CB_RET_ERR;
+      bool ok = w->f(event_type, offset, timestamp, w->data);
+      if (!ok) return GPIOD_CTXLESS_EVENT_CB_RET_ERR;
     }
 
     return GPIOD_CTXLESS_EVENT_CB_RET_OK;

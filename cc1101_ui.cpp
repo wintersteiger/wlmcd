@@ -14,18 +14,18 @@ namespace CC1101UIFields {
 template<typename T>
 class StatusField : public Field<T> {
 protected:
-  const CC1101 &cc1101;
+  const std::shared_ptr<CC1101> cc1101;
   CC1101::RegisterTable &rt;
 public:
-  StatusField<T>(int row, int col, const std::string &key, const std::string &value, const std::string &units, const CC1101 &cc1101) :
-    Field<T>(UI::statusp, row, col, key, value, units), cc1101(cc1101), rt(*cc1101.RT) {}
+  StatusField<T>(int row, int col, const std::string &key, const std::string &value, const std::string &units, const std::shared_ptr<CC1101> cc1101) :
+    Field<T>(UI::statusp, row, col, key, value, units), cc1101(cc1101), rt(*cc1101->RT) {}
   virtual T Get() = 0;
 };
 
 #define TSF(N,K,U,T,G) \
   class N##Field : public StatusField<T> { \
   public: \
-    N##Field(int r, int c, const CC1101 &cc1101) : \
+    N##Field(int r, int c, const std::shared_ptr<CC1101> cc1101) : \
       StatusField<T>(r, c, K, "", U, cc1101) {} \
     virtual T Get() { G } \
   };
@@ -34,15 +34,15 @@ class StatusIndicator : public IndicatorField {
 protected:
   CC1101::RegisterTable &rt;
 public:
-  StatusIndicator(int r, int c, const std::string &key, const CC1101 &cc1101) :
-    IndicatorField(UI::statusp, r, c, key), rt(*cc1101.RT) {}
+  StatusIndicator(int r, int c, const std::string &key, const std::shared_ptr<CC1101> cc1101) :
+    IndicatorField(UI::statusp, r, c, key), rt(*cc1101->RT) {}
   virtual bool Get() = 0;
 };
 
 #define IND(N,T,G) \
   class N##StatusIndicator : public StatusIndicator { \
   public: \
-    N##StatusIndicator(int r, int c, const CC1101 &cc1101) : \
+    N##StatusIndicator(int r, int c, const std::shared_ptr<CC1101> cc1101) : \
       StatusIndicator(r, c, "" # N, cc1101) {} \
     virtual bool Get() { G } \
   };
@@ -54,8 +54,8 @@ protected:
   CC1101::RegisterTable &rt;
 
 public:
-  ConfigField<T>(int row, int col, const std::string &key, const std::string &value, const std::string &units, CC1101 &cc1101) :
-    Field<T>(UI::statusp, row, col, key, value, units), rt(*cc1101.RT) {}
+  ConfigField<T>(int row, int col, const std::string &key, const std::string &value, const std::string &units, std::shared_ptr<CC1101> cc1101) :
+    Field<T>(UI::statusp, row, col, key, value, units), rt(*cc1101->RT) {}
   virtual ~ConfigField<T>() {}
   virtual T Get() = 0;
   virtual void Update(bool full=false) { Field<T>::Update(full); }
@@ -66,23 +66,14 @@ public:
 #define TCF(N,K,U,T,G) \
   class N##Field : public ConfigField<T> { \
   public: \
-    N##Field(int r, int c, CC1101 &cc1101) : \
+    N##Field(int r, int c, std::shared_ptr<CC1101> cc1101) : \
       ConfigField<T>(r, c, K, "", U, cc1101) {} \
     virtual T Get() { G } \
-  };
-
-#define TCFS(N,K,U,T,G,S) \
-  class N##Field : public ConfigField<T> { \
-  public: \
-    N##Field(int r, int c, CC1101 &cc1101) : \
-      ConfigField<T>(r, c, K, "", U, cc1101) {} \
-    virtual T Get() { G } \
-    virtual void Set(const char* v) { S } \
   };
 
 class SettingField : public ConfigField<bool> {
 public:
-  SettingField(int r, int c, const std::string &key, CC1101 &cc1101) :
+  SettingField(int r, int c, const std::string &key, std::shared_ptr<CC1101> cc1101) :
     ConfigField<bool>(r, c, key, "", "", cc1101) {}
   virtual size_t Width() { return key.size(); }
   virtual bool Get() = 0;
@@ -101,17 +92,17 @@ public:
 #define STG(N,K,G) \
   class N##Sttng : public SettingField { \
   public: \
-    N##Sttng(int r, int c, CC1101 &cc1101) : \
+    N##Sttng(int r, int c, std::shared_ptr<CC1101> cc1101) : \
       SettingField(r, c, K, cc1101) {} \
     virtual bool Get() { G } \
   };
 
 
-TSF(FREQEST,  "Freq O/S E", "kHz",  uint8_t,      { return cc1101.rFOE(); });
-TSF(LQI,      "LQI",        "%",    uint8_t,      { return cc1101.rLQI(); });
-TSF(RSSI,     "RSSI",       "dBm",  double,       { return cc1101.rRSSI(); });
+TSF(FREQEST,  "Freq O/S E", "kHz",  uint8_t,      { return cc1101->rFOE(); });
+TSF(LQI,      "LQI",        "%",    uint8_t,      { return cc1101->rLQI(); });
+TSF(RSSI,     "RSSI",       "dBm",  double,       { return cc1101->rRSSI(); });
 TSF(State,    "State",      "",     std::string,  {
-  if (cc1101.Responsive()) {
+  if (cc1101->Responsive()) {
     this->colors = -1;
     return CC1101::StateName((CC1101::State)rt.MARCSTATE());
   } else {
@@ -132,12 +123,14 @@ IND(SFD,  uint8_t, { return rt.PKTSTATUS() & 0x08; });
 IND(GDO0, uint8_t, { return rt.PKTSTATUS() & 0x01; });
 IND(GDO2, uint8_t, { return rt.PKTSTATUS() & 0x04; });
 
+IND(PLL,  uint8_t, { return rt.FSCAL1() != 0x3F; });
+
 class GDOField : public ConfigField<uint8_t>
 {
 protected:
   size_t colon_inx;
 public:
-  GDOField(int row, int col, CC1101 &cc1101) :
+  GDOField(int row, int col, std::shared_ptr<CC1101> cc1101) :
     ConfigField<uint8_t>(row, col, "", "", "", cc1101), colon_inx(col+1) {}
   virtual ~GDOField() {}
   virtual uint8_t Get() { return 0; }
@@ -148,14 +141,6 @@ static std::vector<const char*> gdo_drive_map = { "low", "high" };
 TCF(GDODrive,   "Drive",       "",    const char*,  { return gdo_drive_map[(rt.IOCFG1() & 0x80) >> 7]; });
 
 STG(ATS,        "TEMP", { return (rt.IOCFG0() & 0x80) != 0; });
-TCFS(Frqncy,    "Frequency",  "MHz",  double,       { return rt.Device().rFrequency()/1e6; }, {
-  double vd = atof(v);
-  uint32_t vi = static_cast<uint32_t>(vd / (rt.Device().F_XOSC() / pow(2, 16)));
-  rt.Write(rt._rFREQ2, (vi >> 16) & 0xFF);
-  rt.Write(rt._rFREQ1, (vi >> 8) & 0xFF);
-  rt.Write(rt._rFREQ0, vi & 0xFF);
-});
-TCF(Datarate,   "Data rate",  "kBd",  double,       { return rt.Device().rDataRate()/1e3; });
 TCF(Deviation,  "Deviation",  "kHz",  double,       { return rt.Device().rDeviation()/1e3; });
 TCF(FilterBW,   "Filter B/W", "kHz",  double,       { return rt.Device().rFilterBW()/1e3; });
 
@@ -425,12 +410,12 @@ void GDOField::Update(bool full)
 
 using namespace CC1101UIFields;
 
-CC1101UI::CC1101UI(CC1101 &cc1101) :
+CC1101UI::CC1101UI(std::shared_ptr<CC1101> cc1101) :
   UI()
 {
-  // const CC1101::Status &status = cc1101.StatusBuffer();
+  // const CC1101::Status &status = cc1101->StatusBuffer();
 
-  devices.insert(&cc1101);
+  devices.insert(cc1101);
 
   size_t row = 1, col = 1;
 
@@ -449,6 +434,7 @@ CC1101UI::CC1101UI(CC1101 &cc1101) :
   Add(new CCAStatusIndicator(row, col + 8, cc1101));
   Add(new CRCStatusIndicator(row, col + 12, cc1101));
   Add(new SFDStatusIndicator(row, col + 16, cc1101));
+  Add(new PLLStatusIndicator(row, col + 20, cc1101));
   row++;
 
   Add(new GDO0StatusIndicator(row, col + 4, cc1101));
@@ -467,7 +453,17 @@ CC1101UI::CC1101UI(CC1101 &cc1101) :
   Add(new Empty(row++, col));
 
   Add(new Label(UI::statusp, row++, col, "Radio"));
-  Add(new FrqncyField(row++, col, cc1101));
+  Add(new LField<double>(UI::statusp, row++, col, 8, "Frequency", "MHz",
+  [&cc1101](){ return cc1101->rFrequency()/1e6; },
+  [&cc1101](const char *v){
+    double vd = atof(v);
+    uint32_t vi = static_cast<uint32_t>(vd / (cc1101->F_XOSC() / pow(2, 16)));
+    cc1101->Write(cc1101->RT->_rFREQ2, (vi >> 16) & 0xFF);
+    cc1101->Write(cc1101->RT->_rFREQ1, (vi >> 8) & 0xFF);
+    cc1101->Write(cc1101->RT->_rFREQ0, vi & 0xFF);
+  },
+  [&cc1101](){ cc1101->dec_frequency(); },
+  [&cc1101](){ cc1101->inc_frequency(); }));
   Add(new DeviationField(row++, col, cc1101));
   Add(new FOCPreKField(row++, col, cc1101));
   Add(new FOCPostKField(row++, col, cc1101));
@@ -477,7 +473,14 @@ CC1101UI::CC1101UI(CC1101 &cc1101) :
 
   Add(new Label(UI::statusp, row++, col, "Modem"));
   Add(new FilterBWField(row++, col, cc1101));
-  Add(new DatarateField(row++, col, cc1101));
+
+  Add(new LField<double>(UI::statusp, row++, col, 8, "Data rate", "kBd",
+    [&cc1101](){ return cc1101->rDataRate()/1e3; },
+    [&cc1101](const char *v){},
+    [&cc1101](){ cc1101->dec_datarate(); },
+    [&cc1101](){ cc1101->inc_datarate(); }
+  ));
+
   Add(new ModulationField(row++, col, cc1101));
   Add(new SyncModeField(row++, col, cc1101));
   Add(new SyncWordField(row++, col, cc1101));
@@ -584,10 +587,10 @@ void CC1101UI::Layout() {
   size_t r = 1, c = 30, widest = 0;
   getmaxyx(statusp, h, w);
 
-  // Skip the 17 status fields
+  // Skip the 18 status fields
   int last_r = -1;
   int last_c = -1;
-  for (size_t i=17; i < fields.size(); i++) {
+  for (size_t i=18; i < fields.size(); i++) {
     FieldBase *f = fields[i];
     int this_c = c;
 

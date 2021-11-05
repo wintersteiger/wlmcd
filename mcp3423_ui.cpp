@@ -17,7 +17,7 @@ std::shared_ptr<UI> make_mcp3423_raw_ui(std::shared_ptr<MCP3423> &device)
 MCP3423UI::MCP3423UI(std::shared_ptr<MCP3423> mcp3423) :
   UI()
 {
-  devices.insert(mcp3423.get());
+  devices.insert(mcp3423);
 
   size_t row = 1, col = 1;
 

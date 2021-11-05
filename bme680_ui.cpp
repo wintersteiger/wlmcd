@@ -12,7 +12,7 @@
 
 BME680UI::BME680UI(std::shared_ptr<BME680> bme680)
 {
-  devices.insert(bme680.get());
+  devices.insert(bme680);
 
   size_t row = 1, col = 1;
 
@@ -69,7 +69,7 @@ BME680UI::BME680UI(std::shared_ptr<BME680> bme680)
   Add(new Empty(row++, col));
   Add(new Label(UI::statusp, row++, col, "Heater profile"));
 
-  #define GAS_SET_POINT(X)  Add(new LField<std::string>(UI::statusp, row++, col, 12, "Set point "#X , "", [bme680]() { \
+  #define GAS_SET_POINT(X)  Add(new LField<std::string>(UI::statusp, row++, col, 12, "Setpoint "#X , "", [bme680]() { \
     static constexpr uint16_t factors[] = {1, 4, 16, 64}; \
     uint8_t val = bme680->RT->Gas_wait_##X(); \
     if (val == 0) return std::string(12, '-'); else { \
