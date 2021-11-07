@@ -312,7 +312,7 @@ LSwitch::LSwitch(WINDOW *wndw, int row, int col,
     const std::string &key,
     std::function<bool(void)> &&get,
     std::function<void(bool)> &&bset) :
-  LIndicator(wndw, row, col, 0, key, std::move(get)),
+  LIndicator(wndw, row, col, key, std::move(get)),
   bset(std::move(bset))
 {
   if (bset) {

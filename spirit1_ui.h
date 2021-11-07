@@ -16,7 +16,8 @@ public:
   SPIRIT1UI(std::shared_ptr<SPIRIT1> spirit1);
   virtual ~SPIRIT1UI();
 
-  virtual std::string Name() const { return "SPIRIT1"; }
+  virtual std::string Name() const override { return "SPIRIT1"; }
+  virtual void Layout() override;
 };
 
 std::shared_ptr<UI> make_spirit1_raw_ui(std::shared_ptr<SPIRIT1> &device, std::shared_ptr<GPIOButton> reset_button = nullptr);

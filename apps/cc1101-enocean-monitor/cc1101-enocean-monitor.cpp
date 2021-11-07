@@ -172,7 +172,7 @@ int main()
     auto encoder = std::make_shared<EnOcean::Encoder>();
 
     auto radio = std::make_shared<CC1101>(0, 0, "cc1101-enocean.cfg");
-    auto radio_ui = std::make_shared<CC1101UI>(*radio);
+    auto radio_ui = std::make_shared<CC1101UI>(radio);
     auto radio_ui_raw = make_cc1101_raw_ui(radio);
 
     gateway = std::make_unique<EnOcean::Gateway>(
@@ -182,7 +182,7 @@ int main()
     enocean_ui = std::make_shared<EnOceanUI>(gateway, radio_devs);
 
     std::vector<GPIOWatcher<Radio>*> gpio_watchers;
-    gpio_watchers.push_back(new GPIOWatcher<Radio>("/dev/gpiochip0", 25, "WLMCD-CC1101", radio,
+    gpio_watchers.push_back(new GPIOWatcher<Radio>("/dev/gpiochip0", 25, "WLMCD-CC1101", radio, true,
       [&decoder, &encoder](int, unsigned, const timespec*, std::shared_ptr<Radio> radio) {
         return fRX(radio, decoder, encoder);
       }));

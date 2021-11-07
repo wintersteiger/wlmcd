@@ -207,6 +207,13 @@ public:
   const_iterator end() const { return variables.end(); }
   size_t size() const { return variables.size(); }
   virtual size_t value_size() const { return sizeof(VT); }
+  Variable<VT>* find_variable(const char *name) {
+    for (auto *v : variables) {
+      if (v->Name() == name)
+        return v;
+    }
+    return nullptr;
+  }
 };
 
 template <typename AT>

@@ -24,22 +24,22 @@ CCS811UI::CCS811UI(std::shared_ptr<CCS811> ccs811)
   Add(new Label(UI::statusp, row++, col + 18, namess.str()));
   Add(new Empty(row++, col));
 
-  Add(new LEnabledIndicator(UI::statusp, row, col, 0, "APP", [ccs811](){
+  Add(new LEnabledIndicator(UI::statusp, row, col, "APP", [ccs811](){
      auto val = ccs811->RT->FW_MODE();
      return val[0] == 1;
     }));
 
-  Add(new LEnabledIndicator(UI::statusp, row++, col + 5, 0, "VLD", [ccs811](){
+  Add(new LEnabledIndicator(UI::statusp, row++, col + 5, "VLD", [ccs811](){
     auto val = ccs811->RT->APP_VALID();
     return val[0] == 1;
   }));
 
-  Add(new LEnabledIndicator(UI::statusp, row, col, 0, "RDY", [ccs811](){
+  Add(new LEnabledIndicator(UI::statusp, row, col, "RDY", [ccs811](){
      auto val = ccs811->RT->DATA_READY();
      return val[0] == 1;
     }));
 
-  Add(new LWarningIndicator(UI::statusp, row++, col + 5, 0, "ERR", [ccs811](){
+  Add(new LWarningIndicator(UI::statusp, row++, col + 5, "ERR", [ccs811](){
     return ccs811->RT->ERROR()[0] != 0;
   }));
   Add(new Empty(row++, col));
@@ -89,27 +89,27 @@ CCS811UI::CCS811UI(std::shared_ptr<CCS811> ccs811)
 
   Add(new Label(UI::statusp, row++, col + 18, "Error ID"));
 
-  Add(new LEnabledIndicator(UI::statusp, row, col, 0, "WRG", [ccs811](){
+  Add(new LEnabledIndicator(UI::statusp, row, col, "WRG", [ccs811](){
     return ccs811->RT->ERROR_ID()[0] & 0x01;
   }));
 
-  Add(new LEnabledIndicator(UI::statusp, row, col + 4, 0, "RRG", [ccs811](){
+  Add(new LEnabledIndicator(UI::statusp, row, col + 4, "RRG", [ccs811](){
     return ccs811->RT->ERROR_ID()[0] & 0x02;
   }));
 
-  Add(new LEnabledIndicator(UI::statusp, row++, col + 8, 0, "MMD", [ccs811](){
+  Add(new LEnabledIndicator(UI::statusp, row++, col + 8, "MMD", [ccs811](){
     return ccs811->RT->ERROR_ID()[0] & 0x04;
   }));
 
-  Add(new LEnabledIndicator(UI::statusp, row, col, 0, "MXR", [ccs811](){
+  Add(new LEnabledIndicator(UI::statusp, row, col, "MXR", [ccs811](){
     return ccs811->RT->ERROR_ID()[0] & 0x08;
   }));
 
-  Add(new LEnabledIndicator(UI::statusp, row, col + 4, 0, "HTR", [ccs811](){
+  Add(new LEnabledIndicator(UI::statusp, row, col + 4, "HTR", [ccs811](){
     return ccs811->RT->ERROR_ID()[0] & 0x10;
   }));
 
-  Add(new LEnabledIndicator(UI::statusp, row, col + 8, 0, "HSY", [ccs811](){
+  Add(new LEnabledIndicator(UI::statusp, row, col + 8, "HSY", [ccs811](){
     return ccs811->RT->ERROR_ID()[0] & 0x20;
   }));
 

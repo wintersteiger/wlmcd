@@ -69,6 +69,7 @@ public:
   void Left();
 
   virtual void Layout();
+  virtual void SkippingLayout(size_t skip);
   virtual std::string Name() const { return "Unnamed"; }
 
   const std::set<std::shared_ptr<DeviceBase>>& Devices() { return devices; }

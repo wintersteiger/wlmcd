@@ -18,7 +18,6 @@ public:
   virtual ~INA219UI();
 
   virtual std::string Name() const override { return "INA219"; }
-  virtual void Layout() override;
 };
 
 std::shared_ptr<UI> make_ina219_raw_ui(std::shared_ptr<INA219> &device);

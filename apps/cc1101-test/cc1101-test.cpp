@@ -62,7 +62,7 @@ int main()
     auto cc1101 = std::make_shared<CC1101>(0, 0, "cc1101.cfg");
 
     std::vector<GPIOWatcher<CC1101>*> gpio_watchers;
-    gpio_watchers.push_back(new GPIOWatcher<CC1101>("/dev/gpiochip0", 25, "WLMCD-CC1101", cc1101,
+    gpio_watchers.push_back(new GPIOWatcher<CC1101>("/dev/gpiochip0", 25, "WLMCD-CC1101", cc1101, true,
       [](int, unsigned, const timespec*, std::shared_ptr<CC1101> cc1101) {
         return fRX(cc1101);
       }));

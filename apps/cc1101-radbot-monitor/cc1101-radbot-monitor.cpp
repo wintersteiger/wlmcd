@@ -111,11 +111,11 @@ int main()
 
     std::vector<std::shared_ptr<DeviceBase>> devs = {cc1101};
     auto radbot_ui = std::make_shared<RadbotUI>(radbot_decoder->state, devs);
-    auto cc1101_ui = std::make_shared<CC1101UI>(*cc1101);
-    auto cc1101_ui_raw = std::make_shared<CC1101UIRaw>(*cc1101);
+    auto cc1101_ui = std::make_shared<CC1101UI>(cc1101);
+    auto cc1101_ui_raw = make_cc1101_raw_ui(cc1101);
 
     std::vector<GPIOWatcher<CC1101>*> gpio_watchers;
-    gpio_watchers.push_back(new GPIOWatcher<CC1101>("/dev/gpiochip0", 25, "WLMCD-CC1101", cc1101,
+    gpio_watchers.push_back(new GPIOWatcher<CC1101>("/dev/gpiochip0", 25, "WLMCD-CC1101", cc1101, true,
       [&radbot_decoder](int, unsigned, const timespec*, std::shared_ptr<CC1101> cc1101) {
         return CC1101_fRX(cc1101, radbot_decoder);
       }));

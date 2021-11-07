@@ -465,6 +465,7 @@ CC1101UI::CC1101UI(std::shared_ptr<CC1101> cc1101) :
   [&cc1101](){ cc1101->dec_frequency(); },
   [&cc1101](){ cc1101->inc_frequency(); }));
   Add(new DeviationField(row++, col, cc1101));
+  Add(new ModulationField(row++, col, cc1101));
   Add(new FOCPreKField(row++, col, cc1101));
   Add(new FOCPostKField(row++, col, cc1101));
   Add(new FOCLimitField(row++, col, cc1101));
@@ -481,7 +482,6 @@ CC1101UI::CC1101UI(std::shared_ptr<CC1101> cc1101) :
     [&cc1101](){ cc1101->inc_datarate(); }
   ));
 
-  Add(new ModulationField(row++, col, cc1101));
   Add(new SyncModeField(row++, col, cc1101));
   Add(new SyncWordField(row++, col, cc1101));
   Add(new NPreambleField(row++, col, cc1101));
@@ -582,37 +582,7 @@ CC1101UI::CC1101UI(std::shared_ptr<CC1101> cc1101) :
   Add(new TestField(row++, col, cc1101));
 }
 
-void CC1101UI::Layout() {
-  int h, w;
-  size_t r = 1, c = 30, widest = 0;
-  getmaxyx(statusp, h, w);
-
-  // Skip the 18 status fields
-  int last_r = -1;
-  int last_c = -1;
-  for (size_t i=18; i < fields.size(); i++) {
-    FieldBase *f = fields[i];
-    int this_c = c;
-
-    if (f->Row() == last_r) {
-      this_c += f->Col() - last_c;
-      r--;
-    }
-    else {
-      last_c = f->Col();
-      last_r = f->Row();
-    }
-
-    f->Move(r++, this_c);
-
-    size_t w = f->Width();
-    if (w > widest)
-      widest = w;
-
-    if (r >= (unsigned)h) {
-      r = 1;
-      c += widest + 1;
-      widest = 0;
-    }
-  }
+void CC1101UI::Layout()
+{
+  SkippingLayout(18);
 };

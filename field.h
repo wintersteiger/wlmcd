@@ -218,12 +218,11 @@ public:
 template <int TCOL, int FCOL>
 class LIndicator : public LField<bool> {
 public:
-  LIndicator(WINDOW *wndw, int row, int col, int value_width,
+  LIndicator(WINDOW *wndw, int row, int col,
             const std::string &key,
             std::function<bool(void)> &&get) :
-    LField<bool>(wndw, row, col, value_width, key, "", std::move(get)) {
+    LField<bool>(wndw, row, col, 0, key, "", std::move(get)) {
       units_width = 0;
-      value_width = 0;
     }
   virtual ~LIndicator() {}
 

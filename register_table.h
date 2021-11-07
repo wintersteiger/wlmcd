@@ -126,7 +126,7 @@ public:
   virtual void Write(const TRegister &reg, const VT &value) {
     device.Write(reg.Address(), value);
   }
-  virtual void Write(const TRegister &reg, const Variable<VT> &var, const VT &value) {
+  virtual void Write(const TRegister &reg, const TVariable &var, const VT &value) {
     device.Write(reg.Address(), var.Set((*this)(reg), value));
   }
   virtual TRegister *Find(size_t addr)
@@ -135,6 +135,17 @@ public:
       if (r->Address() == addr)
         return r;
     return nullptr;
+  }
+  void Write(TVariable &var, const VT &value) {
+    for (auto &reg : registers) {
+      if (reg.find_variable(var->Name()) != nullptr) {
+        device.Write(reg, var.Set(reg(), value));
+        return;
+      }
+    }
+  }
+  void Write(const TRegister &reg, TVariable &var, const VT &value) {
+    device.Write(reg, var.Set((*this)(reg), value));
   }
 };
 

@@ -52,7 +52,7 @@ REGISTER_TABLE(SPIRIT1, RegisterTable, uint8_t, uint8_t,
   REG(SYNTH_CONFIG_0, "SYNTH_CONFIG[0]", 0x9F, RW,                        "",
     VAR(SYNTH_CONFIG_0, SEL_TSPLIT, "SEL_TSPLIT", 0x80, RW,               "");
   );
-  REG(SYNTH_CONFIG_1, "SYNTH_CONFIG[0]", 0x9E, RW,                        "",
+  REG(SYNTH_CONFIG_1, "SYNTH_CONFIG[1]", 0x9E, RW,                        "",
     VAR(SYNTH_CONFIG_1, REFDIV, "REFDIV", 0x80, RW,                       "");
     VAR(SYNTH_CONFIG_1, VCO_L_SEL, "VCO_L_SEL", 0x04, RW,                 "");
     VAR(SYNTH_CONFIG_1, VCO_H_SEL, "VCO_H_SEL", 0x02, RW,                 "");
@@ -127,8 +127,15 @@ REGISTER_TABLE(SPIRIT1, RegisterTable, uint8_t, uint8_t,
     VAR(MOD0, MOD_TYPE_1_0, "MOD_TYPE[1:0]", 0x30, RW,                    "");
     VAR(MOD0, DATARATE_E, "DATARATE_E", 0x0F, RW,                         "");
   );
-  REG(FDEV0, "FDEV0", 0x1C, RW,                                           "",);
-  REG(CHFLT, "CHFLT", 0x1D, RW,                                           "",);
+  REG(FDEV0, "FDEV0", 0x1C, RW,                                           "",
+    VAR(FDEV0, FDEV_E, "FDEV_E", 0xF0, RW,                                "");
+    VAR(FDEV0, CLOCK_REC_ALGO_SEL, "CLOCK_REC_ALGO_SEL", 0x08, RW,        "");
+    VAR(FDEV0, FDEV_M, "FDEV_M", 0x07, RW,                                "");
+  );
+  REG(CHFLT, "CHFLT", 0x1D, RW,                                           "",
+    VAR(CHFLT, CHFLT_M_3_0, "CHFLT_M[3:0]", 0xF0, RW,                     "");
+    VAR(CHFLT, CHFLT_E_3_0, "CHFLT_E[3:0]", 0x0F, RW,                     "");
+  );
   REG(AFC2, "AFC2", 0x1E, RW,                                             "",);
   REG(AFC1, "AFC1", 0x1F, RW,                                             "",);
   REG(AFC0, "AFC0", 0x20, RW,                                             "",);
@@ -142,12 +149,28 @@ REGISTER_TABLE(SPIRIT1, RegisterTable, uint8_t, uint8_t,
 
 
   // Packet/protocol configuration
-  REG(PKTCTRL4, "PKTCTRL4", 0x30, RW,                                     "",);
-  REG(PKTCTRL3, "PKTCTRL4", 0x31, RW,                                     "",);
-  REG(PKTCTRL2, "PKTCTRL2", 0x32, RW,                                     "",);
-  REG(PKTCTRL1, "PKTCTRL1", 0x33, RW,                                     "",);
-  REG(PKTLEN1, "PKTCTRL4", 0x34, RW,                                      "",);
-  REG(PKTLEN0, "PKTLEN0", 0x35, RW,                                       "",);
+  REG(PKTCTRL4, "PKTCTRL4", 0x30, RW,                                     "",
+    VAR(PKTCTRL4, ADDRESS_LEN_1_0, "ADDRESS_LEN[1:0]", 0x18, RW,          "");
+    VAR(PKTCTRL4, CONTROL_LEN, "CONTROL_LEN", 0x07, RW,                   "");
+  );
+  REG(PKTCTRL3, "PKTCTRL3", 0x31, RW,                                     "",
+    VAR(PKTCTRL3, PCKT_FRMT_1_0, "PCKT_FRMT[1:0]", 0xC0, RW,              "");
+    VAR(PKTCTRL3, RX_MODE_1_0, "RX_MODE[1:0]", 0x30, RW,                  "");
+    VAR(PKTCTRL3, LEN_WID, "LEN_WID", 0x0F, RW,                           "");
+  );
+  REG(PKTCTRL2, "PKTCTRL2", 0x32, RW,                                     "",
+    VAR(PKTCTRL2, PREAMBLE_LENGTH_4_0, "PREAMBLE_LENGTH[4:0]", 0xF8, RW,  "");
+    VAR(PKTCTRL2, SYNC_LENGTH_1_0, "SYNC_LENGTH[1:0]", 0x06, RW,          "");
+    VAR(PKTCTRL2, FIX_VAR_LEN, "FIX_VAR_LEN", 0x01, RW,                   "");
+  );
+  REG(PKTCTRL1, "PKTCTRL1", 0x33, RW,                                     "",
+    VAR(PKTCTRL1, CRC_MODE_2_0, "CRC_MODE[2:0]", 0xE0, RW,                "");
+    VAR(PKTCTRL1, WHIT_EN_0, "WHIT_EN[0]", 0x10, RW,                      "");
+    VAR(PKTCTRL1, TXSOURCE_1_0, "TXSOURCE[1:0]", 0x0C, RW,                "");
+    VAR(PKTCTRL1, FEC_EN, "FEC_EN", 0x01, RW,                             "");
+  );
+  REG(PCKTLEN1, "PCKTLEN1", 0x34, RW,                                      "",);
+  REG(PCKTLEN0, "PCKTLEN0", 0x35, RW,                                       "",);
   REG(SYNC4, "SYNC4", 0x36, RW,                                           "",);
   REG(SYNC3, "SYNC3", 0x37, RW,                                           "",);
   REG(SYNC2, "SYNC2", 0x38, RW,                                           "",);
@@ -249,8 +272,16 @@ REGISTER_TABLE(SPIRIT1, RegisterTable, uint8_t, uint8_t,
 
   REG(DEM_CONFIG, "DEM_CONFIG", 0xA3, RW,                                 "",);
   REG(PM_CONFIG, "PM_CONFIG", 0xA4, RW,                                   "",);
-  REG(MC_STATE_1, "MC_STATE[1]", 0xC0, RO,                                "",);
-  REG(MC_STATE_0, "MC_STATE[0]", 0xC1, RO,                                "",);
+  REG(MC_STATE_1, "MC_STATE[1]", 0xC0, RO,                                "",
+    VAR(MC_STATE_1, ANT_SELECT, "ANT_SELECT", 0x08, RW,                   "");
+    VAR(MC_STATE_1, TX_FIFO_FULL, "TX_FIFO_FULL", 0x04, RW,               "");
+    VAR(MC_STATE_1, RX_FIFO_EMPTY, "RX_FIFO_EMPTY", 0x02, RW,             "");
+    VAR(MC_STATE_1, ERROR_LOCK, "ERROR_LOCK", 0x01, RW,                   "");
+  );
+  REG(MC_STATE_0, "MC_STATE[0]", 0xC1, RO,                                "",
+    VAR(MC_STATE_0, STATE_6_0, "STATE[6:0]", 0xFE, RW,                    "");
+    VAR(MC_STATE_0, XO_ON, "XO_ON", 0x01, RW,                             "");
+  );
   REG(TX_PCKT_INFO, "TX_PCKT_INFO", 0xC2, RO,                             "",);
   REG(RX_PCKT_INFO, "RX_PCKT_INFO", 0xC3, RO,                             "",);
   REG(AFC_CORR, "AFC_CORR", 0xC4, RO,                                     "",);

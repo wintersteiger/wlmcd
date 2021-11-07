@@ -274,6 +274,41 @@ void UI::Layout()
   }
 }
 
+void UI::SkippingLayout(size_t skip)
+{
+  size_t h, w, widest = 0;
+  size_t r = 1, c = 30;
+  getmaxyx(statusp, h, w);
+
+  int last_r = -1;
+  int last_c = -1;
+  for (size_t i=skip; i < fields.size(); i++) {
+    FieldBase *f = fields[i];
+    int this_c = c;
+
+    if (f->Row() == last_r) {
+      this_c += f->Col() - last_c;
+      r--;
+    }
+    else {
+      last_c = f->Col();
+      last_r = f->Row();
+    }
+
+    f->Move(r++, this_c);
+
+    size_t w = f->Width();
+    if (w > widest)
+      widest = w;
+
+    if (r >= (unsigned)h) {
+      r = 1;
+      c += widest + 1;
+      widest = 0;
+    }
+  }
+}
+
 void UI::First()
 {
   if (active_field_index < fields.size()) {

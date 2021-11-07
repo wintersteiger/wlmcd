@@ -100,14 +100,14 @@ int main(void)
     GPIOButton reset_button("/dev/gpiochip0", 6);
 
     auto rfm69 = std::make_shared<RFM69>(1, 2, "rfm69-evohome.cfg");
-    auto rfm69_ui = std::make_shared<RFM69UI>(*rfm69, &reset_button);
-    auto rfm69_ui_raw = std::make_shared<RFM69UIRaw>(*rfm69);
+    auto rfm69_ui = std::make_shared<RFM69UI>(rfm69, &reset_button);
+    auto rfm69_ui_raw = std::make_shared<RFM69UIRaw>(rfm69);
 
     auto evohome_decoder = std::make_shared<Evohome::Decoder>();
     auto evohome_ui = std::make_shared<EvohomeUI>(evohome_decoder->state);
 
     std::vector<GPIOWatcher<RFM69>*> gpio_watchers;
-    gpio_watchers.push_back(new GPIOWatcher<RFM69>("/dev/gpiochip0", 26, "WLMCD-RFM69", rfm69,
+    gpio_watchers.push_back(new GPIOWatcher<RFM69>("/dev/gpiochip0", 26, "WLMCD-RFM69", rfm69, true,
       [&evohome_decoder](int, unsigned, const timespec*, std::shared_ptr<RFM69> rfm69) {
         return RFM69_fRX(rfm69, evohome_decoder);
       }));

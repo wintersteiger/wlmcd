@@ -69,7 +69,7 @@ static int rxlog(double rssi, double lqi, const std::vector<uint8_t> &raw_packet
 static bool fRX(std::shared_ptr<Radio> radio)
 {
   std::vector<std::vector<uint8_t>> packets;
-
+  UI::Log("RX");
   {
     const std::lock_guard<std::mutex> lock(radio_mtx);
 
@@ -126,6 +126,8 @@ static bool fRX(std::shared_ptr<Radio> radio)
 
 static void fTX(std::shared_ptr<Radio> radio, const std::vector<uint8_t> &packet)
 {
+  UI::Log("TX: %s", bytes_to_hex(packet).c_str());
+
   const std::lock_guard<std::mutex> lock(radio_mtx);
   try {
     radio->Transmit(packet);
@@ -159,8 +161,9 @@ int main()
     // auto radio_ui = std::make_shared<CC1101UI>(*radio);
     // auto radio_ui_raw = make_cc1101_raw_ui(radio);
 
-    auto radio = std::make_shared<SPIRIT1>(0, 0);
     auto reset_button = std::make_shared<GPIOButton>("/dev/gpiochip0", 5);
+    auto radio = std::make_shared<SPIRIT1>(0, 0, "spirit1.cfg");
+    auto radio_ui = std::make_shared<SPIRIT1UI>(radio);
     auto radio_ui_raw = make_spirit1_raw_ui(radio, reset_button);
 
     radio_test_tracker = std::make_shared<RadioTestTracker>(
@@ -170,7 +173,7 @@ int main()
     auto radio_test_ui = std::make_shared<RadioTestUI>(radio_devs, radio_test_tracker);
 
     std::vector<GPIOWatcher<Radio>*> gpio_watchers;
-    gpio_watchers.push_back(new GPIOWatcher<Radio>("/dev/gpiochip0", 25, "WLMCD-CC1101", radio,
+    gpio_watchers.push_back(new GPIOWatcher<Radio>("/dev/gpiochip0", 25, "WLMCD-CC1101", radio, false,
       [](int, unsigned, const timespec*, std::shared_ptr<Radio> radio) {
         return fRX(radio);
       }));
@@ -192,9 +195,9 @@ int main()
       }
     });
 
-    // shell->controller->AddSystem(radio_test_ui);
-    // shell->controller->AddSystem(radio_ui);
+    shell->controller->AddSystem(radio_ui);
     shell->controller->AddSystem(radio_ui_raw);
+    shell->controller->AddSystem(radio_test_ui);
     shell->controller->AddBackgroundDevice(radio_test_tracker);
 
     shell->controller->Run();

@@ -35,9 +35,9 @@ EnOceanUI::EnOceanUI(const std::unique_ptr<EnOcean::Gateway>& gateway,
     auto s = std::dynamic_pointer_cast<EnOcean::A5_20_06::DeviceState>(dev.state);
     auto c = std::dynamic_pointer_cast<EnOcean::A5_20_06::DeviceConfiguration>(dev.configuration);
 
-    Add(new LWarningIndicator(UI::statusp, row, col, 0, "HVST",
+    Add(new LWarningIndicator(UI::statusp, row, col, "HVST",
       [s]() { return !s->last_telegram.harvesting(); }));
-    Add(new LWarningIndicator(UI::statusp, row++, col + 5, 10, "CHRG",
+    Add(new LWarningIndicator(UI::statusp, row++, col + 5, "CHRG",
       [s]() { return !s->last_telegram.charged(); }));
 
     Add(new LField<float>(UI::statusp, row++, col, 10, "Valve position", "%",
@@ -76,7 +76,7 @@ EnOceanUI::EnOceanUI(const std::unique_ptr<EnOcean::Gateway>& gateway,
 
     fields.push_back(new Empty(row++, col));
 
-    Add(new LEnabledIndicator(UI::statusp, row++, col, 0, "DTY", [c](){ return c->dirty; }));
+    Add(new LEnabledIndicator(UI::statusp, row++, col, "DTY", [c](){ return c->dirty; }));
     Add(new LField<const char*>(UI::statusp, row++, col, 10, "S/P selection", "",
       [c]() {
         auto t = EnOcean::A5_20_06::DeviceConfiguration::SetpointSelection::TEMPERATURE;

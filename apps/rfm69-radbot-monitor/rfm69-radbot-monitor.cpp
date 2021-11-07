@@ -113,14 +113,14 @@ int main(void)
     auto radbot_decoder = std::make_shared<Radbot::Decoder>(radbot_id, radbot_key);
     auto radbot_encoder = std::make_shared<Radbot::Encoder>(radbot_id, radbot_key);
 
-    auto rfm69_ui = std::make_shared<RFM69UI>(*rfm69, &reset_button);
-    auto rfm69_ui_raw = std::make_shared<RFM69UIRaw>(*rfm69);
+    auto rfm69_ui = std::make_shared<RFM69UI>(rfm69, &reset_button);
+    auto rfm69_ui_raw = std::make_shared<RFM69UIRaw>(rfm69);
 
     std::vector<std::shared_ptr<DeviceBase>> devs = {rfm69};
     auto radbot_ui = std::make_shared<RadbotUI>(radbot_decoder->state, devs);
 
     std::vector<GPIOWatcher<RFM69>*> gpio_watchers;
-    gpio_watchers.push_back(new GPIOWatcher<RFM69>("/dev/gpiochip0", 26, "WLMCD-RFM69", rfm69,
+    gpio_watchers.push_back(new GPIOWatcher<RFM69>("/dev/gpiochip0", 26, "WLMCD-RFM69", rfm69, true,
       [&radbot_decoder](int, unsigned, const timespec*, std::shared_ptr<RFM69> rfm69) {
         return RFM69_fRX(rfm69, radbot_decoder);
       }));
