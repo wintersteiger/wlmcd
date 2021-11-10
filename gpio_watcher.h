@@ -26,7 +26,7 @@ public:
                                       NULL /* poll callback */,
                                       EventCallback,
                                       this) != 0)
-        throw("could not start GPIO event monitor thread");
+        throw std::runtime_error("could not start GPIO event monitor thread");
       keep_running = running = false;
     });
   }
