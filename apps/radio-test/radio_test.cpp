@@ -181,10 +181,8 @@ int main(int argc, const char **argv)
       auto reset_button = std::make_shared<GPIOButton>("/dev/gpiochip0", 5);
       radio_ui_raw = make_spirit1_raw_ui(spirit1, reset_button);
     }
-    else {
-      std::cout << "Unknown radio `" << argv[1] << "`" << std::endl;
-      return 1;
-    }
+    else
+      throw std::runtime_error(std::string("Unknown radio `") + argv[1] + "`");
 
     radio_test_tracker = std::make_shared<RadioTestTracker>(
       [radio](const std::vector<uint8_t> &packet){ fTX(radio, packet); });
