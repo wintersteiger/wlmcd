@@ -192,13 +192,13 @@ int main(int argc, const char **argv)
 
     std::vector<GPIOWatcher<Radio>*> gpio_watchers;
     if (argv[1] == "cc1101") {
-      gpio_watchers.push_back(new GPIOWatcher<Radio>("/dev/gpiochip0", 25, "WLMCD-CC1101", radio, false,
+      gpio_watchers.push_back(new GPIOWatcher<Radio>("/dev/gpiochip0", 25, "WLMCD-CC1101", radio, true,
         [](int, unsigned, const timespec*, std::shared_ptr<Radio> radio) {
           return fRX(radio);
         }));
     }
     else {
-      gpio_watchers.push_back(new GPIOWatcher<Radio>("/dev/gpiochip0", 25, "WLMCD-CC1101", radio, false,
+      gpio_watchers.push_back(new GPIOWatcher<Radio>("/dev/gpiochip0", 25, "WLMCD-SPIRIT1", radio, false,
         [](int, unsigned, const timespec*, std::shared_ptr<Radio> radio) {
           return fIRQ(radio);
         }));
