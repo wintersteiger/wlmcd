@@ -67,6 +67,10 @@ public:
     Write(r.Address(), values);
   }
 
+  void Write(const Register<uint8_t, uint8_t> &r, const Variable<uint8_t> &v, const uint8_t &val) {
+    return Write(r, v.Set(Device::Read(r), val));
+  }
+
 protected:
   std::vector<Decoder*> decoders;
 };

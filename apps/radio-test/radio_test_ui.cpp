@@ -4,7 +4,7 @@
 #include "radio_test_tracker.h"
 #include "radio_test_ui.h"
 
-RadioTestUI::RadioTestUI(const std::vector<std::shared_ptr<DeviceBase>> radio_devices, std::shared_ptr<RadioTestTracker> tracker) :
+RadioTestUI::RadioTestUI(const std::vector<std::shared_ptr<Radio>> radio_devices, std::shared_ptr<RadioTestTracker> tracker) :
   UI(),
   row(0),
   col(0),

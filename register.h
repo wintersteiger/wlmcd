@@ -13,6 +13,7 @@ typedef struct {
   bool writeable;
 } ReadWriteSpec;
 
+static const ReadWriteSpec NN = { .readable=false, .writeable=false };
 static const ReadWriteSpec RO = { .readable=true, .writeable=false };
 static const ReadWriteSpec RW = { .readable=true, .writeable=true };
 static const ReadWriteSpec WO = { .readable=false, .writeable=true };

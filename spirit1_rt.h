@@ -323,10 +323,10 @@ REGISTER_TABLE(SPIRIT1, RegisterTable, uint8_t, uint8_t,
   REG(LINEAR_FIFO_STATUS_1, "LINEAR_FIFO_STATUS[1]", 0xE6, RO,            "",);
   REG(LINEAR_FIFO_STATUS_0, "LINEAR_FIFO_STATUS[0]", 0xE7, RO,            "",);
 
-  REG(IRQ_STATUS_3, "IRQ_STATUS[3]", 0xFA, RO,                            "",);
-  REG(IRQ_STATUS_2, "IRQ_STATUS[2]", 0xFB, RO,                            "",);
-  REG(IRQ_STATUS_1, "IRQ_STATUS[1]", 0xFC, RO,                            "",);
-  REG(IRQ_STATUS_0, "IRQ_STATUS[0]", 0xFD, RO,                            "",);
+  REG(IRQ_STATUS_3, "IRQ_STATUS[3]", 0xFA, NN,                            "",);
+  REG(IRQ_STATUS_2, "IRQ_STATUS[2]", 0xFB, NN,                            "",);
+  REG(IRQ_STATUS_1, "IRQ_STATUS[1]", 0xFC, NN,                            "",);
+  REG(IRQ_STATUS_0, "IRQ_STATUS[0]", 0xFD, NN,                            "",);
 
 
   // General information

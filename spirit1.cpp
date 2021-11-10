@@ -9,13 +9,17 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
+#include "sleep.h"
 #include "spirit1.h"
 #include "spirit1_rt.h"
 
 SPIRIT1::SPIRIT1(unsigned spi_bus, unsigned spi_channel, const std::string &config_file, double f_xo) :
   SPIDev(spi_bus, spi_channel, 10000000),
   RT(new RegisterTable(*this)),
-  f_xo(f_xo)
+  f_xo(f_xo),
+  responsive(false),
+  tx_done(true),
+  irq_mask(0)
 {
   FindAddressBlocks();
   Reset();
@@ -37,7 +41,8 @@ void SPIRIT1::FindAddressBlocks()
   {
     bool used_addrs[256] = {false};
     for (const auto &r : *RT)
-      used_addrs[r->Address()] = true;
+      if (r->Readable())
+        used_addrs[r->Address()] = true;
     size_t start = SIZE_MAX;
     for (size_t i=0; i < 256; i++)
     {
@@ -60,11 +65,11 @@ void SPIRIT1::Reset()
   cmd[1] = 0x70;
   SPIDev::Transfer(cmd);
 
-  if (F_xo() > 26e6) {
-    uint8_t rv = Read(RT->_rSYNTH_CONFIG_1.Address());
-    rv = RT->_vREFDIV.Set(rv, 1);
-    Write(RT->_rSYNTH_CONFIG_1.Address(), rv);
-  }
+  // if (F_xo() > 26e6) {
+  //   uint8_t rv = Read(RT->_rSYNTH_CONFIG_1.Address());
+  //   rv = RT->_vREFDIV.Set(rv, 1);
+  //   Write(RT->_rSYNTH_CONFIG_1.Address(), rv);
+  // }
 }
 
 uint8_t SPIRIT1::Read(const uint8_t &addr)
@@ -101,6 +106,8 @@ void SPIRIT1::Write(const uint8_t &addr, const uint8_t &value)
   b[1] = addr;
   b[2] = value;
   SPIDev::Transfer(b);
+  status_bytes[0] = b[0];
+  status_bytes[1] = b[1];
 }
 
 void SPIRIT1::Write(const uint8_t &addr, const std::vector<uint8_t> &values)
@@ -112,17 +119,94 @@ void SPIRIT1::Write(const uint8_t &addr, const std::vector<uint8_t> &values)
   b[1] = addr;
   memcpy(&b[2], values.data(), n);
   SPIDev::Transfer(b);
+  status_bytes[0] = b[0];
+  status_bytes[1] = b[1];
 }
 
-void SPIRIT1::Execute(SPIRIT1::Command cmd)
+void SPIRIT1::Strobe(SPIRIT1::Command cmd, size_t delay_us)
 {
   const std::lock_guard<std::mutex> lock(mtx);
   std::vector<uint8_t> b = { 0x80, static_cast<uint8_t>(cmd) };
   SPIDev::Transfer(b);
 }
 
+void SPIRIT1::StrobeFor(SPIRIT1::Command cmd, SPIRIT1::State st, size_t delay_us)
+{
+  Strobe(cmd, delay_us);
+
+  State nst;
+  size_t cnt = 0;
+  responsive = true;
+  do {
+    nst = static_cast<State>(Read(RT->_rMC_STATE_0) >> 1);
+
+    if (delay_us)
+      sleep_us(delay_us);
+
+    if (++cnt > 50) {
+      responsive = false;
+      break;
+    }
+  } while (nst != st);
+}
+
+void SPIRIT1::Goto(Radio::State state)
+{
+  switch (state) {
+    case Radio::State::Idle: StrobeFor(Command::READY, State::READY, 10); break;
+    case Radio::State::RX: StrobeFor(Command::RX, State::RX, 10); break;
+    default:
+      throw std::runtime_error("unhandled radio state");
+  }
+}
+
 void SPIRIT1::Receive(std::vector<uint8_t> &pkt) {}
-void SPIRIT1::Transmit(const std::vector<uint8_t> &pkt) {}
+
+uint32_t SPIRIT1::GetIRQs()
+{
+  return (Read(RT->_rIRQ_STATUS_3) << 24) |
+         (Read(RT->_rIRQ_STATUS_2) << 16) |
+         (Read(RT->_rIRQ_STATUS_1) << 8) |
+          Read(RT->_rIRQ_STATUS_0);
+}
+
+void SPIRIT1::EnableIRQs()
+{
+  Write(RT->_rIRQ_STATUS_3, (irq_mask >> 24) & 0xFF);
+  Write(RT->_rIRQ_STATUS_2, (irq_mask >> 16) & 0xFF);
+  Write(RT->_rIRQ_STATUS_1, (irq_mask >> 8) & 0xFF);
+  Write(RT->_rIRQ_STATUS_0, (irq_mask) & 0xFF);
+}
+
+void SPIRIT1::DisableIRQs()
+{
+  irq_mask = GetIRQs();
+  Write(RT->_rIRQ_STATUS_3, 0);
+  Write(RT->_rIRQ_STATUS_2, 0);
+  Write(RT->_rIRQ_STATUS_1, 0);
+  Write(RT->_rIRQ_STATUS_0, 0);
+}
+
+void SPIRIT1::Transmit(const std::vector<uint8_t> &pkt)
+{
+  Strobe(Command::SABORT);
+  StrobeFor(Command::READY, State::READY, 100);
+
+  DisableIRQs();
+
+  Strobe(Command::FLUSHTXFIFO);
+  Write(0xFF, pkt);
+
+  tx_done = false;
+  EnableIRQs();
+  Strobe(Command::TX);
+
+  size_t retries = 25;
+  while (!tx_done && retries-- != 0)
+    sleep_us(2);
+
+  tx_done = true;
+}
 
 void SPIRIT1::UpdateFrequent() { RT->Refresh(true); }
 void SPIRIT1::UpdateInfrequent() { RT->Refresh(false); }
@@ -145,7 +229,7 @@ double SPIRIT1::rFrequency() const
   return Q * (SYNT/pow(2, 18));
 }
 
-void SPIRIT1::setFrequency(double f)
+void SPIRIT1::wFrequency(double f)
 {
   double B = 1.0;
   switch (RT->BS()) {
@@ -157,20 +241,30 @@ void SPIRIT1::setFrequency(double f)
   double D = RT->REFDIV() == 0x00 ? 1.0 :  2.0;
   double Q = F_xo() / ((B*D)/2.0);
   uint32_t SYNT = (f * pow(2, 18)) / Q;
-  RT->Write(RT->_rSYNT0, RT->_vSYNT_4_0, SYNT & 0x1F);
-  RT->Write(RT->_rSYNT1, RT->_vSYNT_12_5, (SYNT >> 5) & 0xFF);
-  RT->Write(RT->_rSYNT2, RT->_vSYNT_20_13, (SYNT >> 13) & 0xFF);
-  RT->Write(RT->_rSYNT3, RT->_vSYNT_25_21, (SYNT >> 21) & 0x1F);
+  Write(RT->_rSYNT0, RT->_vSYNT_4_0, SYNT & 0x1F);
+  Write(RT->_rSYNT1, RT->_vSYNT_12_5, (SYNT >> 5) & 0xFF);
+  Write(RT->_rSYNT2, RT->_vSYNT_20_13, (SYNT >> 13) & 0xFF);
+  Write(RT->_rSYNT3, RT->_vSYNT_25_21, (SYNT >> 21) & 0x1F);
 }
 
 double SPIRIT1::rDeviation() const
 {
-  return (F_xo() * ((8 + RT->FDEV_M()) << (RT->FDEV_E() - 1))) / pow(2, 18);
+  return (f_xo * ((8 + RT->FDEV_M()) << (RT->FDEV_E() - 1))) / pow(2, 18);
 }
 
 double SPIRIT1::rDatarate() const
 {
-  return (F_clk() * ((256 + RT->DATARATE_M()) << RT->DATARATE_E())) / pow(2, 28);
+  return (f_clk * ((256 + RT->DATARATE_M()) << RT->DATARATE_E())) / pow(2, 28);
+}
+
+void SPIRIT1::wDatarate(double f)
+{
+  uint8_t drate_e = log2(f * pow(2, 20) / f_clk);
+  uint8_t drate_m = ((f * pow(2, 28)) / (f_clk * pow(2, drate_e))) - 256;
+  if (drate_m == 0)
+    drate_e++;
+  Write(RT->_rMOD1, RT->_vDATARATE_M, drate_m);
+  Write(RT->_rMOD0, RT->_vDATARATE_E, drate_e);
 }
 
 static float filter_bandwidths_24[9][10] = {
@@ -188,6 +282,14 @@ static float filter_bandwidths_24[9][10] = {
 double SPIRIT1::rFilterBandwidth() const
 {
   return filter_bandwidths_24[RT->CHFLT_M_3_0()][RT->CHFLT_E_3_0()] * (F_clk()/24e6);
+}
+
+uint64_t SPIRIT1::IRQHandler()
+{
+  uint32_t irqs = GetIRQs();
+  if (irqs & 0x00000004)
+    tx_done = true;
+  return irqs;
 }
 
 void SPIRIT1::RegisterTable::Refresh(bool frequent)

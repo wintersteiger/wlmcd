@@ -134,10 +134,12 @@ std::shared_ptr<UI> make_raw_ui(std::shared_ptr<D> &device, RegisterTable<AT, VT
 
   int row = 1, col = 1;
   for (auto reg : rt) {
-    ui->Add(new RF(row++, reg, rt));
-    for (auto var : *reg)
-      ui->Add(new RF(row++, reg, var, rt));
-    ui->Add(new Empty(row++, col));
+    if (reg->Readable()) {
+      ui->Add(new RF(row++, reg, rt));
+      for (auto var : *reg)
+        ui->Add(new RF(row++, reg, var, rt));
+      ui->Add(new Empty(row++, col));
+    }
   }
 
   return ui;
@@ -154,10 +156,12 @@ std::shared_ptr<UI> make_raw_ui(std::shared_ptr<D> &device, RegisterTableSparse<
 
   int row = 1, col = 1;
   for (auto reg : rt) {
-    ui->Add(new RF(row++, reg, rt));
-    for (auto var : *reg)
-      ui->Add(new RF(row++, reg, var, rt));
-    ui->Add(new Empty(row++, col));
+    if (reg->Readable()) {
+      ui->Add(new RF(row++, reg, rt));
+      for (auto var : *reg)
+        ui->Add(new RF(row++, reg, var, rt));
+      ui->Add(new Empty(row++, col));
+    }
   }
 
   return ui;
@@ -174,10 +178,12 @@ std::shared_ptr<UI> make_raw_ui(std::shared_ptr<D> &device, RegisterTableSparseV
 
   int row = 1, col = 1;
   for (auto reg : rt) {
-    ui->Add(new RF(row++, reg, rt));
-    for (auto var : *reg)
-      ui->Add(new RF(row++, reg, var, rt));
-    ui->Add(new Empty(row++, col));
+    if (reg->Readable()) {
+      ui->Add(new RF(row++, reg, rt));
+      for (auto var : *reg)
+        ui->Add(new RF(row++, reg, var, rt));
+      ui->Add(new Empty(row++, col));
+    }
   }
 
   return ui;

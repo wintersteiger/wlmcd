@@ -13,9 +13,10 @@
 #include "device.h"
 #include "register.h"
 #include "spidev.h"
+#include "radio.h"
 #include "gpio_watcher.h"
 
-class CC1101 : public Device<uint8_t, uint8_t>, SPIDev
+class CC1101 : public Device<uint8_t, uint8_t>, public SPIDev, public Radio
 {
 public:
   class RegisterTable;
@@ -189,9 +190,9 @@ public:
 
   void Setup(const std::vector<uint8_t> &config, const std::vector<uint8_t> &patable = { 0xC6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
 
-  void Receive(std::vector<uint8_t> &pkt);
-  void Transmit(const std::vector<uint8_t> &pkt);
-  virtual void Test(const std::vector<uint8_t> &data) override;
+  virtual void Goto(Radio::State state) override;
+  virtual void Receive(std::vector<uint8_t> &pkt) override;
+  virtual void Transmit(const std::vector<uint8_t> &pkt) override;
 
   virtual void UpdateFrequent() override;
   virtual void UpdateInfrequent() override;
@@ -207,7 +208,9 @@ public:
   double rLQI() const;
   static double rLQI(uint8_t value);
   double rFrequency() const;
+  void wFrequency(double f);
   double rDataRate() const;
+  void wDatarate(double f);
   double rDeviation() const;
   double rFilterBW() const;
   double rIFFrequency() const;

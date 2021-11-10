@@ -13,7 +13,7 @@ class GPIOButton;
 
 class SPIRIT1UI : public UI {
 public:
-  SPIRIT1UI(std::shared_ptr<SPIRIT1> spirit1);
+  SPIRIT1UI(std::shared_ptr<SPIRIT1> spirit1, const uint64_t &irqs = 0);
   virtual ~SPIRIT1UI();
 
   virtual std::string Name() const override { return "SPIRIT1"; }

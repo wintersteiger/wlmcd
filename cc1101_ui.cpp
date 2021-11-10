@@ -454,16 +454,10 @@ CC1101UI::CC1101UI(std::shared_ptr<CC1101> cc1101) :
 
   Add(new Label(UI::statusp, row++, col, "Radio"));
   Add(new LField<double>(UI::statusp, row++, col, 8, "Frequency", "MHz",
-  [&cc1101](){ return cc1101->rFrequency()/1e6; },
-  [&cc1101](const char *v){
-    double vd = atof(v);
-    uint32_t vi = static_cast<uint32_t>(vd / (cc1101->F_XOSC() / pow(2, 16)));
-    cc1101->Write(cc1101->RT->_rFREQ2, (vi >> 16) & 0xFF);
-    cc1101->Write(cc1101->RT->_rFREQ1, (vi >> 8) & 0xFF);
-    cc1101->Write(cc1101->RT->_rFREQ0, vi & 0xFF);
-  },
-  [&cc1101](){ cc1101->dec_frequency(); },
-  [&cc1101](){ cc1101->inc_frequency(); }));
+    [cc1101](){ return cc1101->rFrequency()/1e6; },
+    [cc1101](const char *v) { cc1101->wFrequency(atof(v)); },
+    [cc1101](){ cc1101->dec_frequency(); },
+    [cc1101](){ cc1101->inc_frequency(); }));
   Add(new DeviationField(row++, col, cc1101));
   Add(new ModulationField(row++, col, cc1101));
   Add(new FOCPreKField(row++, col, cc1101));
@@ -476,10 +470,10 @@ CC1101UI::CC1101UI(std::shared_ptr<CC1101> cc1101) :
   Add(new FilterBWField(row++, col, cc1101));
 
   Add(new LField<double>(UI::statusp, row++, col, 8, "Data rate", "kBd",
-    [&cc1101](){ return cc1101->rDataRate()/1e3; },
-    [&cc1101](const char *v){},
-    [&cc1101](){ cc1101->dec_datarate(); },
-    [&cc1101](){ cc1101->inc_datarate(); }
+    [cc1101](){ return cc1101->rDataRate()/1e3; },
+    [cc1101](const char *v){ cc1101->wDatarate(atof(v)); },
+    [cc1101](){ cc1101->dec_datarate(); },
+    [cc1101](){ cc1101->inc_datarate(); }
   ));
 
   Add(new SyncModeField(row++, col, cc1101));

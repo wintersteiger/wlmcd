@@ -9,7 +9,7 @@
 #include <set>
 
 #include <ui.h>
-#include <device.h>
+#include <radio.h>
 
 #include "radio_test_tracker.h"
 
@@ -17,7 +17,7 @@
 class RadioTestUI : public UI
 {
 public:
-  RadioTestUI(const std::vector<std::shared_ptr<DeviceBase>> radio_devices, std::shared_ptr<RadioTestTracker> tracker);
+  RadioTestUI(const std::vector<std::shared_ptr<Radio>> radio_devices, std::shared_ptr<RadioTestTracker> tracker);
   virtual ~RadioTestUI();
 
   void Update(bool full);

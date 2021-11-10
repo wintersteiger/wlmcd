@@ -3,6 +3,7 @@
 
 #include <memory>
 
+#include "field_types.h"
 #include "raw_ui.h"
 #include "spirit1.h"
 #include "spirit1_rt.h"
@@ -13,7 +14,7 @@
 
 #define EMPTY() fields.push_back(new Empty(row++, col));
 
-SPIRIT1UI::SPIRIT1UI(std::shared_ptr<SPIRIT1> spirit1)
+SPIRIT1UI::SPIRIT1UI(std::shared_ptr<SPIRIT1> spirit1, const uint64_t &irqs)
 {
   WINDOW *w = UI::statusp;
   int row = 1, col = 1;
@@ -33,18 +34,57 @@ SPIRIT1UI::SPIRIT1UI(std::shared_ptr<SPIRIT1> spirit1)
   Add(new LWarningIndicator(w, row, col + 7, "RXFIFO", [sb](){ return (sb[0] & 0x02) == 0; }));
   Add(new LWarningIndicator(w, row, col + 14, "ERR", [sb](){ return sb[0] & 0x01; }));
   Add(new LEnabledIndicator(w, row++, col + 18, "XO", [sb](){ return sb[1] & 0x01; }));
+  EMPTY();
+
   Add(new LField<const char*>(w, row++, col, 8, "State", "",
-    [sb](){ switch (sb[1] >> 1) {
-      case 0x40: return "Standby";
-      case 0x36: return "Sleep";
-      case 0x03: return "Ready";
-      case 0x0F: return "Lock";
-      case 0x33: return "RX";
-      case 0x5F: return "TX";
-      default: return "?";
+    [sb](){
+      switch (sb[1] >> 1) {
+        case 0x40: return "Standby";
+        case 0x36: return "Sleep";
+        case 0x03: return "Ready";
+        case 0x0F: return "Lock";
+        case 0x33: return "RX";
+        case 0x5F: return "TX";
+        default: return "?";
     }}
   ));
   Add(new LField<uint8_t>(w, row++, col, 8, "Antenna", "", [sb](){ return sb[0] & 0x08; }));
+  EMPTY();
+
+  Add(new Label(w, row, col, "RX:"));
+  Add(new LEnabledIndicator(w, row, col + 4, "DAT", [&irqs](){ return irqs  & 1 << 0; }));
+  Add(new LEnabledIndicator(w, row, col + 8, "DIS", [&irqs](){ return irqs  & 1 << 1; }));
+  Add(new LEnabledIndicator(w, row, col + 12, "U/F", [&irqs](){ return irqs & 1 << 6; }));
+  Add(new LEnabledIndicator(w, row, col + 16, "A/F", [&irqs](){ return irqs & 1 << 9; }));
+  Add(new LEnabledIndicator(w, row++, col + 20, "A/E", [&irqs](){ return irqs & 1 << 10; }));
+
+  Add(new Label(w, row, col, "TX:"));
+  Add(new LEnabledIndicator(w, row, col + 4, "DAT", [&irqs](){ return irqs  & 1 << 2; }));
+  Add(new LEnabledIndicator(w, row, col + 8, "MAX", [&irqs](){ return irqs  & 1 << 3; }));
+  Add(new LEnabledIndicator(w, row, col + 12, "O/F", [&irqs](){ return irqs  & 1 << 5; }));
+  Add(new LEnabledIndicator(w, row, col + 16, "A/F", [&irqs](){ return irqs & 1 << 7; }));
+  Add(new LEnabledIndicator(w, row++, col + 20, "A/F", [&irqs](){ return irqs & 1 << 8; }));
+
+  Add(new Label(w, row, col, "SG:"));
+  Add(new LEnabledIndicator(w, row, col + 4, "BCK", [&irqs](){ return irqs & 1 << 11; }));
+  Add(new LEnabledIndicator(w, row, col + 8, "PRE", [&irqs](){ return irqs & 1 << 12; }));
+  Add(new LEnabledIndicator(w, row, col + 12, "SYN", [&irqs](){ return irqs & 1 << 13; }));
+  Add(new LEnabledIndicator(w, row++, col + 16, "CS", [&irqs](){ return irqs & 1 << 14; }));
+
+  Add(new Label(w, row, col, "ST:"));
+  Add(new LEnabledIndicator(w, row, col + 4, "WKE", [&irqs](){ return irqs & 1 << 15; }));
+  Add(new LEnabledIndicator(w, row, col + 8, "RDY", [&irqs](){ return irqs & 1 << 16; }));
+  Add(new LEnabledIndicator(w, row, col + 12, "SBY", [&irqs](){ return irqs & 1 << 17; }));
+  Add(new LEnabledIndicator(w, row++, col + 16, "BAT", [&irqs](){ return irqs & 1 << 18; }));
+  Add(new LEnabledIndicator(w, row, col + 4, "POR", [&irqs](){ return irqs & 1 << 19; }));
+  Add(new LEnabledIndicator(w, row, col + 8, "BWN", [&irqs](){ return irqs & 1 << 20; }));
+  Add(new LEnabledIndicator(w, row++, col + 12, "LCK", [&irqs](){ return irqs & 1 << 21; }));
+
+  Add(new LEnabledIndicator(w, row, col + 4, "CRC", [&irqs](){ return irqs & 1 << 4; }));
+  Add(new LEnabledIndicator(w, row, col + 8, "TMR", [&irqs](){ return irqs & 1 << 29; }));
+  Add(new LEnabledIndicator(w, row++, col + 12, "AES", [&irqs](){ return irqs & 1 << 30; }));
+
+
 
   row = 0; col += 26;
   static const char *gpio_modes[] = { "analog", "digital in", "digital low", "digital high" };
@@ -67,7 +107,7 @@ SPIRIT1UI::SPIRIT1UI(std::shared_ptr<SPIRIT1> spirit1)
   Add(new Label(w, row++, col, "Radio"));
   Add(new LField<double>(w, row++, col, 8, "Frequency", "MHz",
     [sp](){ return sp->rFrequency() / 1e6; },
-    [sp](const char *v){ return sp->setFrequency(atof(v)); }
+    [sp](const char *v){ return sp->wFrequency(atof(v)); }
   ));
   Add(new LField<double>(w, row++, col, 8, "Deviation", "kHz", [sp](){ return sp->rDeviation() / 1e3; }));
   Add(new LField<const char*>(w, row++, col, 8, "Modulation", "", [rt](){
@@ -77,7 +117,9 @@ SPIRIT1UI::SPIRIT1UI(std::shared_ptr<SPIRIT1> spirit1)
   EMPTY();
 
   Add(new Label(w, row++, col, "Modem"));
-  Add(new LField<double>(w, row++, col, 8, "Data rate", "kBd", [sp](){ return sp->rDatarate() / 1e3; }));
+  Add(new LField<double>(w, row++, col, 8, "Data rate", "kBd",
+    [sp](){ return sp->rDatarate() / 1e3; },
+    [sp](const char *v){ return sp->wDatarate(atof(v)); }));
   EMPTY();
 
   Add(new Label(w, row++, col, "Packet control"));
@@ -89,6 +131,11 @@ SPIRIT1UI::SPIRIT1UI(std::shared_ptr<SPIRIT1> spirit1)
     return values[rt->FIX_VAR_LEN()]; }));
   Add(new LField<uint8_t>(w, row++, col, 8, "# preamble", "b", [rt](){ return 1 + rt->PREAMBLE_LENGTH_4_0(); }));
   Add(new LField<uint8_t>(w, row++, col, 8, "# sync", "b", [rt](){ return 1 + rt->SYNC_LENGTH_1_0(); }));
+  Add(new LField<std::string>(w, row++, col, 8, "sync word", "",
+    [rt](){
+      std::array<uint8_t, 4> sw = { rt->SYNC1(), rt->SYNC2(), rt->SYNC3(), rt->SYNC4() };
+      return bytes_to_hex(sw);
+  }));
   Add(new LField<const char*>(w, row++, col, 8, "CRC mode", "", [rt](){
     static const char *values[] = { "None", "0x07", "0x8005", "0x1021", "0x864CBF" };
     return values[rt->CRC_MODE_2_0()]; }));
@@ -109,7 +156,7 @@ SPIRIT1UI::~SPIRIT1UI() {}
 
 void SPIRIT1UI::Layout()
 {
-  SkippingLayout(9);
+  SkippingLayout(39);
 };
 
 

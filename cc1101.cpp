@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cinttypes>
 #include <cmath>
+#include <stdexcept>
 #include <unistd.h>
 #include <thread>
 
@@ -141,21 +142,42 @@ double CC1101::rLQI(uint8_t value)
   return 100.0 * (ilqi / 128.0);
 }
 
-double CC1101::rFrequency() const {
+double CC1101::rFrequency() const
+{
   uint32_t fr = (RT->FREQ2() << 16) | (RT->FREQ1() << 8) | RT->FREQ0();
   double inc = f_xosc / 65536.0;
   double f = inc * fr;
   return f;
 }
 
-double CC1101::rDataRate() const {
+void CC1101::wFrequency(double f)
+{
+  uint32_t vi = static_cast<uint32_t>(f / (F_XOSC() / pow(2, 16)));
+  Write(RT->_rFREQ2, (vi >> 16) & 0xFF);
+  Write(RT->_rFREQ1, (vi >> 8) & 0xFF);
+  Write(RT->_rFREQ0, vi & 0xFF);
+}
+
+double CC1101::rDataRate() const
+{
   uint32_t drate_m = RT->MDMCFG3();
   uint32_t drate_e = RT->MDMCFG4() & 0x0F;
   double m = (256 + drate_m) * pow(2, drate_e);
   return (m / pow(2, 28)) * f_xosc;
 }
 
-double CC1101::rDeviation() const {
+void CC1101::wDatarate(double f)
+{
+  uint8_t drate_e = log2(f * pow(2, 20) / f_xosc);
+  uint8_t drate_m = ((f * pow(2, 28)) / (f_xosc * pow(2, drate_e))) - 256;
+  if (drate_m == 0)
+    drate_e++;
+  Write(RT->_rMDMCFG3, drate_m);
+  Write(RT->_rMDMCFG4, RT->_vDRATE_E_3_0, drate_e);
+}
+
+double CC1101::rDeviation() const
+{
   uint8_t d = RT->DEVIATN();
   uint32_t deviatn_m = d & 0x07;
   uint32_t deviatn_e = (d & 0x70) >> 4;
@@ -317,6 +339,16 @@ void CC1101::Setup(const std::vector<uint8_t> &config, const std::vector<uint8_t
   Write(RT->_rPATABLE.Address(), pa_gentle);
 }
 
+void CC1101::Goto(Radio::State state)
+{
+  switch (state) {
+    case Radio::State::Idle: StrobeFor(CommandStrobe::SIDLE, State::IDLE, 10); break;
+    case Radio::State::RX: StrobeFor(CommandStrobe::SRX, State::RX, 10); break;
+    default:
+      throw std::runtime_error("unhandled radio state");
+  }
+}
+
 void CC1101::Receive(std::vector<uint8_t> &packet)
 {
   uint8_t pktctrl0 = RT->PKTCTRL0();
@@ -436,11 +468,6 @@ void CC1101::Transmit(const std::vector<uint8_t> &pkt)
 
   if (sent != pkt.size())
     throw std::runtime_error("partial tx: " + std::to_string(sent) + "/" + std::to_string(pkt.size()));
-}
-
-void CC1101::Test(const std::vector<uint8_t> &data)
-{
-  Transmit(data);
 }
 
 void CC1101::UpdateFrequent()

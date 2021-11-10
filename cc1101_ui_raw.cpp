@@ -11,7 +11,7 @@ std::shared_ptr<UI> make_cc1101_raw_ui(std::shared_ptr<CC1101> &cc1101)
 {
   auto ui = std::make_shared<UI>();
 
-  ui->Add(cc1101);
+  ui->Add(std::static_pointer_cast<DeviceBase>(cc1101));
 
   typedef RawField<RegisterTable<uint8_t, uint8_t, CC1101>, uint8_t, CC1101> RF;
 

@@ -12,14 +12,15 @@
 #include "device.h"
 #include "register.h"
 #include "spidev.h"
+#include "radio.h"
 
-class SPIRIT1 : public Device<uint8_t, uint8_t>, SPIDev
+class SPIRIT1 : public Device<uint8_t, uint8_t>, public SPIDev, public Radio
 {
 public:
   class RegisterTable;
   RegisterTable *RT;
 
-  SPIRIT1(unsigned spi_bus, unsigned spi_channel, const std::string &config_file, double f_xo = 52.0*1e6);
+  SPIRIT1(unsigned spi_bus, unsigned spi_channel, const std::string &config_file, double f_xo = 50.0*1e6);
   virtual ~SPIRIT1();
 
   enum class Command {
@@ -28,28 +29,35 @@ public:
     AES_DEC = 0x6C, AES_KEYDEC = 0x6D, SRES = 0x70, FLUSHRXFIFO = 0x71, FLUSHTXFIFO = 0x72
   };
 
-  virtual const char* Name() const { return "SPIRIT1"; }
+  enum class State {
+    STANDBY = 0x40, SLEEP = 0x36, READY = 0x03, LOCK = 0x0F, RX = 0x33, TX = 0x5F
+  };
+
+  virtual const char* Name() const override { return "SPIRIT1"; }
 
   const double& F_xo() const { return f_xo; }
   const double& F_clk() const { return f_clk; }
 
-  void Reset();
+  virtual void Reset() override;
 
-  void Execute(Command cmd);
-  void Receive(std::vector<uint8_t> &pkt);
-  void Transmit(const std::vector<uint8_t> &pkt);
+  void Strobe(Command cmd, size_t delay_us = 0);
+  void StrobeFor(Command cmd, State st, size_t delay_us = 0);
+
+  virtual void Goto(Radio::State state) override;
+  virtual void Receive(std::vector<uint8_t> &pkt) override;
+  virtual void Transmit(const std::vector<uint8_t> &pkt) override;
 
   using Device::Read;
   using Device::Write;
 
-  virtual uint8_t Read(const uint8_t &addr);
-  virtual std::vector<uint8_t> Read(const uint8_t &addr, size_t length);
+  virtual uint8_t Read(const uint8_t &addr) override;
+  virtual std::vector<uint8_t> Read(const uint8_t &addr, size_t length) override;
 
-  virtual void Write(const uint8_t &addr, const uint8_t &value);
-  virtual void Write(const uint8_t &addr, const std::vector<uint8_t> &values);
+  virtual void Write(const uint8_t &addr, const uint8_t &value) override;
+  virtual void Write(const uint8_t &addr, const std::vector<uint8_t> &values) override;
 
-  uint8_t Read(const Register<uint8_t, uint8_t> &r) { return Device::Read(r); }
-  void Write(const Register<uint8_t, uint8_t> &r, const uint8_t &v) { Device::Write(r, v); }
+  uint8_t Read(const Register<uint8_t, uint8_t> &r) override { return Device::Read(r); }
+  void Write(const Register<uint8_t, uint8_t> &r, const uint8_t &v) override { Device::Write(r, v); }
 
   uint8_t Read(const Register<uint8_t, uint8_t> &r, const Variable<uint8_t> &v) {
     return v(Device::Read(r));
@@ -58,28 +66,40 @@ public:
     return Device::Write(r, v.Set(Device::Read(r), val));
   }
 
-  virtual void UpdateFrequent();
-  virtual void UpdateInfrequent();
+  virtual void UpdateFrequent() override;
+  virtual void UpdateInfrequent() override;
 
-  virtual void Write(std::ostream &os);
-  virtual void Read(std::istream &is);
+  virtual void Write(std::ostream &os) override;
+  virtual void Read(std::istream &is) override;
 
   const uint8_t* StatusBytes() const { return &status_bytes[0]; }
 
   double rFrequency() const;
+  void wFrequency(double f);
+
   double rDeviation() const;
+
   double rDatarate() const;
+  void wDatarate(double f);
+
   double rFilterBandwidth() const;
 
-  void setFrequency(double f);
+  virtual uint64_t IRQHandler() override;
 
 protected:
   std::mutex mtx;
   double f_xo, f_clk;
   std::vector<std::pair<uint8_t, uint8_t>> address_blocks;
   uint8_t status_bytes[2];
+  bool responsive;
+  bool tx_done;
 
   void FindAddressBlocks();
+
+  uint32_t irq_mask;
+  uint32_t GetIRQs();
+  void EnableIRQs();
+  void DisableIRQs();
 };
 
 #endif // _SPIRIT1_H_
