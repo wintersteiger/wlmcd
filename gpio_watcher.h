@@ -1,8 +1,11 @@
 #ifndef _GPIO_WATCHER_H_
 #define _GPIO_WATCHER_H_
 
+#include <cstring>
 #include <functional>
 #include <thread>
+
+#include <errno.h>
 
 #include <gpiod.h>
 
@@ -26,7 +29,9 @@ public:
                                       NULL /* poll callback */,
                                       EventCallback,
                                       this) != 0)
-        throw std::runtime_error("could not start GPIO event monitor thread");
+      {
+        throw std::runtime_error(std::string("could not start GPIO event monitor thread: ") + strerror(errno));
+      }
       keep_running = running = false;
     });
   }

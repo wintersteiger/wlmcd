@@ -30,7 +30,8 @@ RadioTestTracker::RadioTestTracker(std::function<void(const std::vector<uint8_t>
   num_replies_rx(0),
   num_replies_tx(0),
   num_crc_errors(0),
-  randomize(true)
+  randomize(true),
+  running(false)
 {
   std::random_device rd;
   std::mt19937 gen(rd());
@@ -181,6 +182,8 @@ void RadioTestTracker::ping()
   send(packet);
 }
 
-void RadioTestTracker::UpdateTimed() {
-  ping();
+void RadioTestTracker::UpdateTimed()
+{
+  if (running)
+    ping();
 }

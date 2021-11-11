@@ -30,6 +30,8 @@ public:
   void receive(const std::vector<uint8_t> &packet);
   void send(const std::vector<uint8_t> &packet);
   void ping();
+  void run() { running = true; }
+  void stop() { running = false; };
 
   ID id;
   uint64_t num_rx;
@@ -52,6 +54,7 @@ protected:
   std::function<void(const std::vector<uint8_t>&)> transmit;
   static const ID broadcast;
   bool randomize;
+  bool running;
 };
 
 #endif // _RADIO_TEST_TRACKER_

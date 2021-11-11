@@ -221,6 +221,9 @@ int main(int argc, const char **argv)
       }
     });
 
+    shell->controller->AddCommand("run", [](auto) { radio_test_tracker->run(); });
+    shell->controller->AddCommand("stop", [](auto) { radio_test_tracker->stop(); });
+
     shell->controller->AddSystem(radio_ui);
     shell->controller->AddSystem(radio_ui_raw);
     shell->controller->AddSystem(radio_test_ui);
