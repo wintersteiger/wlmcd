@@ -167,14 +167,15 @@ int main(int argc, const char **argv)
 
     std::shared_ptr<Radio> radio;
     std::shared_ptr<UI> radio_ui, radio_ui_raw;
+    std::string radio_name = argv[1];
 
-    if (strcmp(argv[1], "cc1101") == 0) {
+    if (radio_name == "cc1101") {
       auto cc1101 = std::make_shared<CC1101>(0, 0, "cc1101.cfg");
       radio = std::static_pointer_cast<Radio>(cc1101);
       radio_ui = std::make_shared<CC1101UI>(cc1101);
       radio_ui_raw = make_cc1101_raw_ui(cc1101);
     }
-    else if (strcmp(argv[1], "spirit1") == 0) {
+    else if (radio_name == "spirit1") {
       auto spirit1 = std::make_shared<SPIRIT1>(0, 0, "spirit1.cfg");
       radio = std::static_pointer_cast<Radio>(spirit1);
       radio_ui = std::make_shared<SPIRIT1UI>(spirit1, irqs);
@@ -191,7 +192,7 @@ int main(int argc, const char **argv)
     auto radio_test_ui = std::make_shared<RadioTestUI>(radio_devs, radio_test_tracker);
 
     std::vector<GPIOWatcher<Radio>*> gpio_watchers;
-    if (argv[1] == "cc1101") {
+    if (radio_name == "cc1101") {
       gpio_watchers.push_back(new GPIOWatcher<Radio>("/dev/gpiochip0", 25, "WLMCD-CC1101", radio, true,
         [](int, unsigned, const timespec*, std::shared_ptr<Radio> radio) {
           return fRX(radio);

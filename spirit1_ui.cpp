@@ -37,18 +37,27 @@ SPIRIT1UI::SPIRIT1UI(std::shared_ptr<SPIRIT1> spirit1, const uint64_t &irqs)
   EMPTY();
 
   Add(new LField<const char*>(w, row++, col, 8, "State", "",
-    [sb](){
-      switch (sb[1] >> 1) {
-        case 0x40: return "Standby";
-        case 0x36: return "Sleep";
-        case 0x03: return "Ready";
-        case 0x0F: return "Lock";
-        case 0x33: return "RX";
-        case 0x5F: return "TX";
-        default: return "?";
-    }}
-  ));
+    [sp, sb](){
+      if (sp->Responsive()) {
+        switch (sb[1] >> 1) {
+          case 0x40: return "Standby";
+          case 0x36: return "Sleep";
+          case 0x03: return "Ready";
+          case 0x0F: return "Lock";
+          case 0x33: return "RX";
+          case 0x5F: return "TX";
+          default: return "?";
+        }
+      } else {
+        return "* N/C *";
+      };
+  }));
   Add(new LField<uint8_t>(w, row++, col, 8, "Antenna", "", [sb](){ return sb[0] & 0x08; }));
+  Add(new LField<std::string>(w, row++, col, 8, "FIFO TX/RX",  "B", [rt](){
+    auto tx = rt->ELEM_TXFIFO();
+    auto rx = rt->ELEM_RXFIFO();
+    return std::to_string(tx) + "/" + std::to_string(rx);
+  }));
   EMPTY();
 
   Add(new Label(w, row, col, "RX:"));
@@ -156,7 +165,7 @@ SPIRIT1UI::~SPIRIT1UI() {}
 
 void SPIRIT1UI::Layout()
 {
-  SkippingLayout(39);
+  SkippingLayout(40);
 };
 
 

@@ -14,10 +14,10 @@ using json = nlohmann::json;
 #include "spirit1_rt.h"
 
 SPIRIT1::SPIRIT1(unsigned spi_bus, unsigned spi_channel, const std::string &config_file, double f_xo) :
+  Device<uint8_t, uint8_t>(),
   SPIDev(spi_bus, spi_channel, 10000000),
   RT(new RegisterTable(*this)),
   f_xo(f_xo),
-  responsive(false),
   tx_done(true),
   irq_mask(0)
 {
@@ -160,7 +160,22 @@ void SPIRIT1::Goto(Radio::State state)
   }
 }
 
-void SPIRIT1::Receive(std::vector<uint8_t> &pkt) {}
+void SPIRIT1::Receive(std::vector<uint8_t> &pkt)
+{
+  pkt.clear();
+
+  DisableIRQs();
+
+  do
+  {
+    uint8_t num_available = Read(RT->_rLINEAR_FIFO_STATUS_0);
+    auto t = Read(0xFF, num_available);
+    pkt.insert(pkt.end(), t.begin(), t.end());
+  }
+  while ((status_bytes[1] & 0x02) == 0);
+
+  EnableIRQs();
+}
 
 uint32_t SPIRIT1::GetIRQs()
 {

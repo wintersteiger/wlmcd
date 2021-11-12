@@ -320,8 +320,12 @@ REGISTER_TABLE(SPIRIT1, RegisterTable, uint8_t, uint8_t,
 
   REG(RCO_VCO_CALIBR_OUT_1, "RCO_VCO_CALIBR_OUT[1]", 0xE4, RO,            "",);
   REG(RCO_VCO_CALIBR_OUT_0, "RCO_VCO_CALIBR_OUT[0]", 0xE5, RO,            "",);
-  REG(LINEAR_FIFO_STATUS_1, "LINEAR_FIFO_STATUS[1]", 0xE6, RO,            "",);
-  REG(LINEAR_FIFO_STATUS_0, "LINEAR_FIFO_STATUS[0]", 0xE7, RO,            "",);
+  REG(LINEAR_FIFO_STATUS_1, "LINEAR_FIFO_STATUS[1]", 0xE6, RO,            "",
+    VAR(LINEAR_FIFO_STATUS_1, ELEM_TXFIFO, "ELEM_TXFIFO", 0x7F, RO,       "");
+  );
+  REG(LINEAR_FIFO_STATUS_0, "LINEAR_FIFO_STATUS[0]", 0xE7, RO,            "",
+    VAR(LINEAR_FIFO_STATUS_0, ELEM_RXFIFO, "ELEM_RXFIFO", 0x7F, RO,       "");
+  );
 
   REG(IRQ_STATUS_3, "IRQ_STATUS[3]", 0xFA, NN,                            "",);
   REG(IRQ_STATUS_2, "IRQ_STATUS[2]", 0xFB, NN,                            "",);

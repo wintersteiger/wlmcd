@@ -91,7 +91,6 @@ protected:
   double f_xo, f_clk;
   std::vector<std::pair<uint8_t, uint8_t>> address_blocks;
   uint8_t status_bytes[2];
-  bool responsive;
   bool tx_done;
 
   void FindAddressBlocks();
