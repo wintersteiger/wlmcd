@@ -216,9 +216,9 @@ void SPIRIT1::Transmit(const std::vector<uint8_t> &pkt)
   EnableIRQs();
   Strobe(Command::TX);
 
-  size_t retries = 25;
+  size_t retries = 100;
   while (!tx_done && retries-- != 0)
-    sleep_us(2);
+    sleep_us(100);
 
   tx_done = true;
 }

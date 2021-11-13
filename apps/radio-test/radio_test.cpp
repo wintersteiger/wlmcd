@@ -13,7 +13,6 @@
 
 #include <shell.h>
 #include <ui.h>
-#include <sleep.h>
 #include <gpio_watcher.h>
 #include <cc1101.h>
 #include <cc1101_ui.h>
@@ -63,7 +62,7 @@ static int rxlog(double rssi, double lqi, const std::vector<uint8_t> &raw_packet
 static bool fRX(std::shared_ptr<Radio> radio)
 {
   std::vector<std::vector<uint8_t>> packets;
-  UI::Log("RX");
+
   {
     const std::lock_guard<std::mutex> lock(radio_mtx);
 
@@ -114,6 +113,8 @@ static bool fRX(std::shared_ptr<Radio> radio)
 
   for (const auto &packet : packets)
     radio_test_tracker->receive(packet);
+
+  radio->Goto(Radio::State::RX);
 
   return true;
 }

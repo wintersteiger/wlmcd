@@ -101,7 +101,7 @@ void RadioTestTracker::receive(const std::vector<uint8_t> &packet)
           auto pit = parties.find(source);
           if (pit == parties.end()) {
             if (crc_ok)
-              parties[source] = { seq_no, 1u, 0u, crc_ok ? 0u : 1u, 0u };
+              parties[source] = { seq_no, 0u, 1u, 0u, crc_ok ? 0u : 1u, 0u };
           }
           else {
             if (!crc_ok) pit->second.num_crc_errors++;
@@ -127,7 +127,7 @@ void RadioTestTracker::receive(const std::vector<uint8_t> &packet)
           auto pit = parties.find(source);
           if (pit == parties.end()) {
             if (crc_ok)
-              parties[source] = { seq_no, 0u, 1u, crc_ok ? 0u : 1u, 0u };
+              parties[source] = { seq_no, 0u, 0u, 1u, crc_ok ? 0u : 1u, 0u };
           }
           else {
             pit->second.num_replies_tx++;
@@ -180,6 +180,8 @@ void RadioTestTracker::ping()
     packet.push_back(b);
   packet.push_back(crc8(packet));
   send(packet);
+  for (auto &p : parties)
+    p.second.num_pings_tx++;
 }
 
 void RadioTestTracker::UpdateTimed()

@@ -18,6 +18,7 @@ public:
 
   struct PartyStatistics {
     uint64_t last_seq_no;
+    uint64_t num_pings_tx;
     uint64_t num_replies_rx;
     uint64_t num_replies_tx;
     uint64_t num_crc_errors;

@@ -564,7 +564,7 @@ void CC1101::RegisterTable::Write(std::ostream &os)
   dev["name"] = device.Name();
   j["device"] = dev;
   for (const auto reg : registers) {
-    if (reg->Address() == _rFIFO.Address())
+    if (!reg->Writeable() || reg->Address() == _rFIFO.Address())
       continue;
     if (reg == &device.RT->_rPATABLE)
     {
@@ -596,7 +596,7 @@ void CC1101::RegisterTable::Read(std::istream &is)
       throw std::runtime_error(std::string("invalid value length for '" + e.key() + "'"));
     bool found = false;
     for (const auto reg : registers)
-      if (reg->Name() == e.key() && reg != &device.RT->_rFIFO) {
+      if (reg->Name() == e.key() && reg != &device.RT->_rFIFO && reg->Writeable()) {
         uint8_t val;
         if (reg == &device.RT->_rPATABLE)
         {

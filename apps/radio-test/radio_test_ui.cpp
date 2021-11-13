@@ -61,7 +61,7 @@ void RadioTestUI::Update(bool full)
       Add(new LField<uint64_t>(UI::statusp, row++, col, 8, "# out of order", "",
         [&p]() { return p.num_out_of_order; }));
       Add(new LField<double>(UI::statusp, row++, col, 8, "Frame loss", "%",
-        [&p, t = this->tracker]() { return 100.0 * (1.0 - p.num_replies_rx/(double)t->num_pings_tx); }));
+        [&p, t = this->tracker]() { return 100.0 * (1.0 - p.num_replies_rx/(double)p.num_pings_tx); }));
 
       tracker_ids.insert(id);
       changed = true;

@@ -271,7 +271,6 @@ REGISTER_TABLE(SPIRIT1, RegisterTable, uint8_t, uint8_t,
   REG(IRQ_MASK_0, "IRQ_MASK[0]", 0x93, RW,                                "",);
 
   REG(DEM_CONFIG, "DEM_CONFIG", 0xA3, RW,                                 "",);
-  REG(PM_CONFIG, "PM_CONFIG", 0xA4, RW,                                   "",);
   REG(MC_STATE_1, "MC_STATE[1]", 0xC0, RO,                                "",
     VAR(MC_STATE_1, ANT_SELECT, "ANT_SELECT", 0x08, RW,                   "");
     VAR(MC_STATE_1, TX_FIFO_FULL, "TX_FIFO_FULL", 0x04, RW,               "");
