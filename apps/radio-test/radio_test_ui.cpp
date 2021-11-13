@@ -52,6 +52,8 @@ void RadioTestUI::Update(bool full)
         [id]() { return bytes_to_hex(id); }));
       Add(new LField<uint64_t>(UI::statusp, row++, col, 8, "Last seq no", "",
         [&p]() { return p.last_seq_no; }));
+      Add(new LField<uint64_t>(UI::statusp, row++, col, 8, "# pings TX", "",
+        [&p]() { return p.num_pings_tx; }));
       Add(new LField<uint64_t>(UI::statusp, row++, col, 8, "# replies RX", "",
         [&p]() { return p.num_replies_rx; }));
       Add(new LField<uint64_t>(UI::statusp, row++, col, 8, "# replies TX", "",
