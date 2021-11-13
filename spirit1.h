@@ -86,6 +86,9 @@ public:
 
   virtual uint64_t IRQHandler() override;
 
+  virtual double RSSI() override;
+  virtual double LQI() override;
+
 protected:
   std::mutex mtx;
   double f_xo, f_clk;

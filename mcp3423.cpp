@@ -45,11 +45,6 @@ const std::vector<double>& MCP3423::Readings()
   return last_readings;
 }
 
-const std::vector<int32_t>& MCP3423::RawReadings()
-{
-  return last_raw_readings;
-}
-
 void MCP3423::Write(const uint8_t &config)
 {
   const std::lock_guard<std::mutex> lock(mtx);

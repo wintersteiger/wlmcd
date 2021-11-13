@@ -74,7 +74,7 @@ protected:
   const double f_xosc;
   uint8_t *recv_buf;
   size_t recv_buf_sz, recv_buf_begin, recv_buf_pos;
-  std::mutex mtx;
+  mutable std::mutex mtx;
 
   inline size_t recv_buf_held() const {
     return recv_buf_begin <= recv_buf_pos ?
@@ -222,6 +222,9 @@ public:
   void dec_frequency();
   void inc_datarate();
   void dec_datarate();
+
+  virtual double RSSI() override { return rRSSI(); }
+  virtual double LQI() override { return rLQI(); }
 };
 
 #endif

@@ -32,7 +32,7 @@ public:
   virtual void Write(std::ostream &os) override;
   virtual void Read(std::istream &is) override;
 
-  virtual void Test(const std::vector<uint8_t> &data) override;
+  virtual void Test(const std::vector<uint8_t> &data);
 
 protected:
   void Measure();

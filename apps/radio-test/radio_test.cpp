@@ -66,21 +66,10 @@ static bool fRX(std::shared_ptr<Radio> radio)
   {
     const std::lock_guard<std::mutex> lock(radio_mtx);
 
-    double rssi = 0.0, lqi = 0.0;
+    double rssi = radio->RSSI();
+    double lqi = radio->LQI();
     std::vector<uint8_t> packet;
     radio->Receive(packet);
-
-    if (packet.size() > 2) {
-      // rssi = CC1101::rRSSI(packet.back());
-      // packet.pop_back();
-      // lqi = CC1101::rLQI(packet.back());
-      // packet.pop_back();
-    }
-
-    // if (radio->GetState() != CC1101::State::RX) {
-    //   UI::Log("RX failed, restarting.");
-    //   radio->StrobeFor(CC1101::SRX, CC1101::State::RX, 10);
-    // }
 
     char lbuf[1024];
     char *p = &lbuf[0];

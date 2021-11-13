@@ -160,6 +160,18 @@ void SPIRIT1::Goto(Radio::State state)
   }
 }
 
+double SPIRIT1::RSSI()
+{
+  uint8_t rl = Read(RT->_rRSSI_LEVEL);
+  return (rl/2.0) - 130.0;
+}
+
+double SPIRIT1::LQI()
+{
+  uint8_t sqi = Read(RT->_rLINK_QUALIF_1) & 0x7F;
+  return 100.0 * sqi / 255.0;
+}
+
 void SPIRIT1::Receive(std::vector<uint8_t> &pkt)
 {
   pkt.clear();
@@ -173,6 +185,9 @@ void SPIRIT1::Receive(std::vector<uint8_t> &pkt)
     pkt.insert(pkt.end(), t.begin(), t.end());
   }
   while ((status_bytes[1] & 0x02) == 0);
+
+  pkt.push_back(Read(RT->_rRSSI_LEVEL));
+
 
   EnableIRQs();
 }

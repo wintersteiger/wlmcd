@@ -32,7 +32,7 @@ public:
   const std::vector<double>& Readings();
   const std::vector<int32_t>& RawReadings();
   double Reading() const { return last_reading; }
-  int32_t RawReading() const {return last_raw_reading; }
+  int32_t RawReading() const { return last_raw_reading; }
   void Write(const uint8_t &config);
 
   virtual void UpdateInfrequent() override;

@@ -22,6 +22,9 @@ public:
   virtual void Transmit(const std::vector<uint8_t> &packet) = 0;
 
   virtual uint64_t IRQHandler() { return 0; }
+
+  virtual double RSSI() = 0;
+  virtual double LQI() = 0;
 };
 
 #endif // _RADIO_H_

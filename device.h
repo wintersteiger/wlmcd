@@ -29,8 +29,6 @@ public:
 
   bool Responsive() const { return responsive; }
 
-  virtual void Test(const std::vector<uint8_t> &data) {}
-
 protected:
   bool responsive;
 };

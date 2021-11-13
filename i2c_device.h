@@ -29,7 +29,7 @@ public:
   virtual void GeneralCall(uint8_t);
 
 protected:
-  std::mutex mtx;
+  mutable std::mutex mtx;
   int fd;
   std::string bus;
   uint8_t device_address;
