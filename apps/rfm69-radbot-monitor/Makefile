@@ -15,12 +15,12 @@ CXXFLAGS+=-g -I ${WLMCD_ROOT} -Wno-psabi
 all: rfm69-radbot-monitor rfm69-radbot-monitor-shared
 
 # Static libwlmcd
-LDFLAGS_STATIC=${LDFLAGS} ${WLMCD_ROOT}/libwlmcd-dev.a ${WLMCD_ROOT}/libwlmcd-ui.a -lwiringPi -lpthread -lrt -lncurses -lcrypto -lgpiod
+LDFLAGS_STATIC=${LDFLAGS} ${WLMCD_ROOT}/libwlmcd-dev.a ${WLMCD_ROOT}/libwlmcd-ui.a -lpthread -lrt -lncurses -lcrypto -lgpiod
 rfm69-radbot-monitor: rfm69-radbot-monitor.o ${WLMCD_ROOT}/libwlmcd-dev.a ${WLMCD_ROOT}/libwlmcd-ui.a
 	${CXX} -o $@ $< ${LDFLAGS_STATIC}
 
 # Dynamic libwlmcd
-LDFLAGS_SHARED=${LDFLAGS} -L ${WLMCD_ROOT} -lwlmcd-dev -lwlmcd-ui -lwiringPi -lpthread -lrt -lncurses -lcrypto -lgpiod
+LDFLAGS_SHARED=${LDFLAGS} -L ${WLMCD_ROOT} -lwlmcd-dev -lwlmcd-ui -lpthread -lrt -lncurses -lcrypto -lgpiod
 rfm69-radbot-monitor-shared: rfm69-radbot-monitor.o
 	${CXX} -o $@ $^ ${LDFLAGS_SHARED}
 

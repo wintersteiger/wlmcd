@@ -4,7 +4,7 @@
 
 ## Requirements
 
-`sudo apt install build-essential libncurses-dev libssl-dev libgpiod-dev wiringpi libdbus-1-dev libdbus-cpp-dev`
+`sudo apt install build-essential libncurses-dev libssl-dev libgpiod-dev libdbus-1-dev libdbus-c++-dev`
 
 ## Build
 
@@ -18,6 +18,6 @@ See `apps/*/Makefile` for examples.
 ### Warranty: None
 ### Support: None
 
-### Contributions/PRs: 
+### Contributions/PRs:
 
 Welcome, but never without prior agreement. Nothing that @wintersteiger can't maintain himself. Expect multi-month PR review cycles.

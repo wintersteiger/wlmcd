@@ -17,7 +17,7 @@ all: cc1101-enocean-monitor cc1101-enocean-monitor-shared enocean-test
 SRC = enocean.cpp enocean_telegrams.cpp enocean_ui.cpp enocean_gateway.cpp cc1101-enocean-monitor.cpp
 OBJ = $(subst .cpp,.o,$(SRC))
 
-LDFLAGS_STATIC=${LDFLAGS} ${WLMCD_ROOT}/libwlmcd-dev.a ${WLMCD_ROOT}/libwlmcd-ui.a -lwiringPi -lpthread -lrt -lncurses -lcrypto -lgpiod
+LDFLAGS_STATIC=${LDFLAGS} ${WLMCD_ROOT}/libwlmcd-dev.a ${WLMCD_ROOT}/libwlmcd-ui.a -lpthread -lrt -lncurses -lcrypto -lgpiod
 cc1101-enocean-monitor: ${OBJ} ${WLMCD_ROOT}/libwlmcd-dev.a ${WLMCD_ROOT}/libwlmcd-ui.a
 	${CXX} -o $@ ${OBJ} ${LDFLAGS_STATIC}
 

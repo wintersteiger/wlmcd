@@ -17,7 +17,7 @@ all: radio-test
 SRC = radio_test.cpp radio_test_tracker.cpp radio_test_ui.cpp
 OBJ = $(subst .cpp,.o,$(SRC))
 
-LDFLAGS_STATIC=${LDFLAGS} ${WLMCD_ROOT}/libwlmcd-dev.a ${WLMCD_ROOT}/libwlmcd-ui.a -lwiringPi -lpthread -lrt -lncurses -lcrypto -lgpiod
+LDFLAGS_STATIC=${LDFLAGS} ${WLMCD_ROOT}/libwlmcd-dev.a ${WLMCD_ROOT}/libwlmcd-ui.a -lpthread -lrt -lncurses -lcrypto -lgpiod
 radio-test: ${OBJ} ${WLMCD_ROOT}/libwlmcd-dev.a ${WLMCD_ROOT}/libwlmcd-ui.a
 	${CXX} -o $@ ${OBJ} ${LDFLAGS_STATIC}
 

@@ -8,7 +8,7 @@ CXXFLAGS+=-I .
 CXXFLAGS+=-Wno-psabi
 CXXFLAGS+=$(shell pkg-config dbus-1 --cflags)
 
-LDFLAGS=-lrt -lcrypto -lwiringPi -lgpiod -lpthread -lgpiod
+LDFLAGS=-lrt -lcrypto -lgpiod -lpthread -lgpiod
 
 # CXX=clang++-8
 # CXXFLAGS+=-g -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG
@@ -23,17 +23,13 @@ SRC = errors.cpp integrity.cpp \
 	spidev.cpp i2c_device.cpp\
 	evohome.cpp radbot.cpp \
 	cc1101.cpp \
-	sx1278.cpp \
 	gpio_device.cpp \
 	gpio_button.cpp \
-	si4463.cpp si4463_rt.cpp \
 	rfm69.cpp \
-	ble100.cpp \
 	relay_device.cpp \
 	ina219.cpp \
 	ds18b20.cpp \
 	rfm69.cpp \
-	dht22.cpp \
 	mcp9808.cpp \
 	es9018k2m.cpp es9018k2m_rt.cpp \
 	es9028pro.cpp es9028pro_rt.cpp \
@@ -41,19 +37,19 @@ SRC = errors.cpp integrity.cpp \
 	mcp3423.cpp \
 	ccs811.cpp \
 	spirit1.cpp
+	# sx1278.cpp
+	# si4463.cpp si4463_rt.cpp
+	# dht22.cpp
 
 UI_SRC = field.cpp ui.cpp basic_ui.cpp raw_ui.cpp controller.cpp shell.cpp \
 	cc1101_ui.cpp cc1101_ui_raw.cpp \
 	radbot_ui.cpp evohome_ui.cpp \
-	sx1278_ui_raw.cpp sx1278_ui.cpp \
 	gpio_ui.cpp \
 	gpio_button_field.cpp \
-	si4463_ui_raw.cpp \
 	rfm69_ui_raw.cpp \
 	relay_ui.cpp \
 	ina219_ui.cpp \
 	rfm69_ui.cpp \
-	dht22_ui.cpp \
 	mcp9808_ui.cpp \
 	es9018k2m_ui.cpp \
 	es9028pro_ui.cpp \
@@ -61,6 +57,9 @@ UI_SRC = field.cpp ui.cpp basic_ui.cpp raw_ui.cpp controller.cpp shell.cpp \
 	mcp3423_ui.cpp \
 	ccs811_ui.cpp \
 	spirit1_ui.cpp
+	# sx1278_ui_raw.cpp sx1278_ui.cpp
+	# si4463_ui_raw.cpp
+	# dht22_ui.cpp
 
 OBJ = $(subst .cpp,.o,$(SRC))
 UI_OBJ = $(subst .cpp,.o,$(UI_SRC))
