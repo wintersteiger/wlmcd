@@ -13,16 +13,17 @@
 #include <cc1101.h>
 #include <cc1101_ui.h>
 #include <cc1101_ui_raw.h>
+#include <spirit1.h>
+#include <spirit1_ui.h>
 #include <ui.h>
 #include <sleep.h>
 #include <integrity.h>
+#include <gpio_button.h>
 
 #include "enocean.h"
 #include "enocean_telegrams.h"
 #include "enocean_ui.h"
 #include "enocean_gateway.h"
-
-typedef CC1101 Radio;
 
 static volatile int rx_cnt = 0;
 static FILE *logfile = NULL;
@@ -30,6 +31,7 @@ static std::mutex mtx, log_mtx;
 
 static std::unique_ptr<EnOcean::Gateway> gateway;
 static std::shared_ptr<EnOceanUI> enocean_ui;
+uint64_t irqs = 0;
 
 static int flog(const char *label, double rssi, double lqi, const std::vector<uint8_t> &raw_packet, const std::string &msg, const std::string &err)
 {
@@ -71,21 +73,10 @@ static bool fRX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Decoder> 
   {
     const std::lock_guard<std::mutex> lock(mtx);
 
-    double rssi = 0.0, lqi = 0.0;
+    double rssi = radio->RSSI();
+    double lqi = radio->LQI();
     std::vector<uint8_t> packet;
     radio->Receive(packet);
-
-    if (packet.size() > 2) {
-      rssi = CC1101::rRSSI(packet.back());
-      packet.pop_back();
-      lqi = CC1101::rLQI(packet.back());
-      packet.pop_back();
-    }
-
-    if (radio->GetState() != CC1101::State::RX) {
-      UI::Log("RX failed, restarting.");
-      radio->StrobeFor(CC1101::SRX, CC1101::State::RX, 10);
-    }
 
     char lbuf[1024];
     char *p = &lbuf[0];
@@ -110,13 +101,13 @@ static bool fRX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Decoder> 
         err_str = err.what();
         p += sprintf(p, " ERROR: %s", err.what());
       }
-
-      // flog("RX", rssi, lqi, packet, "", err_str);
     }
 
     UI::Log(lbuf);
     rx_cnt++;
   }
+
+  radio->Goto(Radio::State::RX);
 
   for (auto &f : frames)
     if (f.crc_ok())
@@ -136,7 +127,16 @@ static void fTX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Encoder> 
   radio->Transmit(encoded);
   sleep_ms(20);
   radio->Transmit(encoded);
-  radio->Strobe(CC1101::CommandStrobe::SRX);
+
+  radio->Goto(Radio::State::RX);
+}
+
+static bool fIRQ(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Decoder> decoder, std::shared_ptr<EnOcean::Encoder> encoder)
+{
+  irqs = radio->IRQHandler();
+  if (irqs & 0x01)
+    return fRX(radio, decoder, encoder);
+  return true;
 }
 
 static void manualTX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Encoder> encoder, const std::string &args, bool encapsulate)
@@ -171,9 +171,16 @@ int main()
     auto decoder = std::make_shared<EnOcean::Decoder>();
     auto encoder = std::make_shared<EnOcean::Encoder>();
 
-    auto radio = std::make_shared<CC1101>(0, 0, "cc1101-enocean.cfg");
+#ifdef USE_C1101
+    auto radio = std::make_shared<CC1101>(0, 0, "cc1101.cfg");
     auto radio_ui = std::make_shared<CC1101UI>(radio);
     auto radio_ui_raw = make_cc1101_raw_ui(radio);
+#else
+    auto radio = std::make_shared<SPIRIT1>(0, 0, "spirit1.cfg");
+    auto radio_ui = std::make_shared<SPIRIT1UI>(radio, irqs);
+    auto reset_button = std::make_shared<GPIOButton>("/dev/gpiochip0", 5);
+    auto radio_ui_raw = make_spirit1_raw_ui(radio, reset_button);
+#endif
 
     gateway = std::make_unique<EnOcean::Gateway>(
       [radio, encoder](const EnOcean::Frame &f){ fTX(radio, encoder, f); });
@@ -182,10 +189,17 @@ int main()
     enocean_ui = std::make_shared<EnOceanUI>(gateway, radio_devs);
 
     std::vector<GPIOWatcher<Radio>*> gpio_watchers;
+#ifdef USE_C1101
     gpio_watchers.push_back(new GPIOWatcher<Radio>("/dev/gpiochip0", 25, "WLMCD-CC1101", radio, true,
-      [&decoder, &encoder](int, unsigned, const timespec*, std::shared_ptr<Radio> radio) {
+      [encoder, decoder](int, unsigned, const timespec*, std::shared_ptr<Radio> radio) {
         return fRX(radio, decoder, encoder);
       }));
+#else
+    gpio_watchers.push_back(new GPIOWatcher<Radio>("/dev/gpiochip0", 25, "WLMCD-SPIRIT1", radio, false,
+      [encoder, decoder](int, unsigned, const timespec*, std::shared_ptr<Radio> radio) {
+        return fIRQ(radio, decoder, encoder);
+      }));
+#endif
 
     auto tf = [radio, encoder](const std::string &args) { manualTX(radio, encoder, args, false); };
     shell->controller->AddCommand("t", tf);
@@ -209,9 +223,14 @@ int main()
       UI::Info("crc8 is %02x", x);
     });
 
+    shell->controller->AddCommand("run", [radio](const std::string &args){
+      radio->Goto(Radio::State::RX);
+    });
+
     shell->controller->AddSystem(enocean_ui);
     shell->controller->AddSystem(radio_ui);
     shell->controller->AddSystem(radio_ui_raw);
+
     shell->controller->Run();
     return shell->exit_code;
   }

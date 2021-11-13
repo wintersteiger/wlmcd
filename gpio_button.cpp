@@ -49,7 +49,8 @@ void GPIOButton::Reset()
   Write(false);
 }
 
-bool GPIOButton::Read() {
+bool GPIOButton::Read()
+{
   std::lock_guard<std::mutex> lock(mtx);
   if ((buffer = gpiod_line_get_value(line)) == -1)
     throw std::runtime_error("gpiod_line_get_value failed\n");
