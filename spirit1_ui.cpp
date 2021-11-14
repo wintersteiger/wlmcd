@@ -119,13 +119,17 @@ SPIRIT1UI::SPIRIT1UI(std::shared_ptr<SPIRIT1> spirit1, const uint64_t &irqs)
     [sp](const char *v){ return sp->wFrequency(atof(v)); }
   ));
   Add(new LField<double>(w, row++, col, 8, "Deviation", "kHz", [sp](){ return sp->rDeviation() / 1e3; }));
-  Add(new LField<const char*>(w, row++, col, 8, "Modulation", "", [rt](){
-    static const char *values[] = { "2-FSK", "GFSK", "ASK/OOK", "MSK" };
-    return values[rt->MOD_TYPE_1_0()]; }));
   Add(new LField<double>(w, row++, col, 8, "Filter B/W", "kHz", [sp](){ return sp->rFilterBandwidth(); }));
+  Add(new LField<double>(w, row++, col, 8, "RSSI T/H", "dB", [sp](){ return sp->rRSSIThreshold(); }));
   EMPTY();
 
   Add(new Label(w, row++, col, "Modem"));
+  Add(new LField<const char*>(w, row++, col, 8, "Modulation", "", [rt](){
+    static const char *values[] = { "2-FSK", "GFSK", "OOK", "MSK" };
+    auto mi = rt->MOD_TYPE_1_0();
+    if (mi == 2 && rt->PA_RAMP_ENABLE()) return "ASK";
+    else return values[mi];
+  }));
   Add(new LField<double>(w, row++, col, 8, "Data rate", "kBd",
     [sp](){ return sp->rDatarate() / 1e3; },
     [sp](const char *v){ return sp->wDatarate(atof(v)); }));

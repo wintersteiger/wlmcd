@@ -145,22 +145,22 @@ namespace EnOcean
                     auto cfg = std::dynamic_pointer_cast<A5_20_06::DeviceConfiguration>(dit->second.configuration);
                     if (cfg->setpoint_selection == A5_20_06::DeviceConfiguration::SetpointSelection::TEMPERATURE)
                     {
-                      auto setpoint = cfg->setpoint;
+                      uint8_t their_setpoint = 42;
+                      auto local_offset = s->last_telegram.local_offset();
+                      if (s->last_telegram.local_offset_absolute())
+                        their_setpoint = local_offset;
+                      else
+                        their_setpoint = cfg->setpoint + (local_offset > 0x40 ? (local_offset | 0x80) : local_offset);
+
                       if (!cfg->dirty)
-                      {
-                        auto local_offset = s->last_telegram.local_offset();
-                        if (s->last_telegram.local_offset_absolute())
-                          setpoint = local_offset;
-                        else
-                          setpoint += local_offset > 0x40 ? (local_offset | 0x80) : local_offset;
-                        cfg->setpoint = setpoint;
-                      }
+                        cfg->setpoint = their_setpoint;
+                      else if (their_setpoint == cfg->setpoint)
+                        cfg->dirty = false;
                       Frame fo = cfg->mk_update(txid(), f.txid(), 0);
                       send(fo);
                     }
                     else
                       UI::Log("Valve position setpoint not implemented yet");
-                    cfg->dirty = false;
                     break;
                   }
                   default:

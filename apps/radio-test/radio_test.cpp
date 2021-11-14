@@ -166,10 +166,10 @@ int main(int argc, const char **argv)
       radio_ui_raw = make_cc1101_raw_ui(cc1101);
     }
     else if (radio_name == "spirit1") {
+      auto reset_button = std::make_shared<GPIOButton>("/dev/gpiochip0", 5);
       auto spirit1 = std::make_shared<SPIRIT1>(0, 0, "spirit1.cfg");
       radio = std::static_pointer_cast<Radio>(spirit1);
       radio_ui = std::make_shared<SPIRIT1UI>(spirit1, irqs);
-      auto reset_button = std::make_shared<GPIOButton>("/dev/gpiochip0", 5);
       radio_ui_raw = make_spirit1_raw_ui(spirit1, reset_button);
     }
     else

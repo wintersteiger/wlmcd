@@ -83,11 +83,12 @@ public:
   void wDatarate(double f);
 
   double rFilterBandwidth() const;
-
-  virtual uint64_t IRQHandler() override;
+  double rRSSIThreshold() const;
 
   virtual double RSSI() override;
   virtual double LQI() override;
+
+  virtual uint64_t IRQHandler() override;
 
 protected:
   std::mutex mtx;

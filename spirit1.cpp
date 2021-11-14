@@ -314,6 +314,11 @@ double SPIRIT1::rFilterBandwidth() const
   return filter_bandwidths_24[RT->CHFLT_M_3_0()][RT->CHFLT_E_3_0()] * (F_clk()/24e6);
 }
 
+double SPIRIT1::rRSSIThreshold() const
+{
+  return (RT->RSSI_TH() / 2.0) - 130.0;
+}
+
 uint64_t SPIRIT1::IRQHandler()
 {
   uint32_t irqs = GetIRQs();

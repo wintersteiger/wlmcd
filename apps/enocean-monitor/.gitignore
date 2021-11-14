@@ -1,8 +1,7 @@
 *.o
 *.d
 
-cc1101-enocean-monitor
-cc1101-enocean-monitor-shared
+enocean-monitor
 enocean-test
 usb300
 log.csv

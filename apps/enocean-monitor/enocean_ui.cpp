@@ -94,9 +94,9 @@ EnOceanUI::EnOceanUI(const std::unique_ptr<EnOcean::Gateway>& gateway,
       [c]() { c->rcu_temperature = std::max(c->rcu_temperature - 1, 0); },
       [c]() { c->rcu_temperature = std::min(c->rcu_temperature + 1, 160); }
     ));
-    Add(new LField<uint8_t>(UI::statusp, row++, col, 10, "Com interval", "min",
+    Add(new LField<const char*>(UI::statusp, row++, col, 10, "Com interval", "min",
       [c]() {
-        static uint8_t values[] = {0, 2, 5, 10, 20, 30, 60, 120};
+        static const char *values[] = { "auto", "2", "5", "10", "20", "30", "60", "120" };
         return values[c->communication_interval]; },
       [c](const char* value) {},
       [c]() { c->communication_interval = std::max(c->communication_interval - 1, 0); },

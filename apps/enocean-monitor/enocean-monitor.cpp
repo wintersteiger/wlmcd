@@ -122,6 +122,7 @@ static void fTX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Encoder> 
   UI::Log("TX: %s", msg.c_str());
   flog("TX", 0.0, 0.0, f, f.describe().c_str(), "TX");
   auto encoded = encoder->Encode(f);
+  // UI::Log("TX: %s ~ %s", msg.c_str(), bytes_to_hex(encoded).c_str());
   radio->Transmit(encoded);
   sleep_ms(5);
   radio->Transmit(encoded);
@@ -176,9 +177,9 @@ int main()
     auto radio_ui = std::make_shared<CC1101UI>(radio);
     auto radio_ui_raw = make_cc1101_raw_ui(radio);
 #else
+    auto reset_button = std::make_shared<GPIOButton>("/dev/gpiochip0", 5);
     auto radio = std::make_shared<SPIRIT1>(0, 0, "spirit1.cfg");
     auto radio_ui = std::make_shared<SPIRIT1UI>(radio, irqs);
-    auto reset_button = std::make_shared<GPIOButton>("/dev/gpiochip0", 5);
     auto radio_ui_raw = make_spirit1_raw_ui(radio, reset_button);
 #endif
 
@@ -227,9 +228,15 @@ int main()
       radio->Goto(Radio::State::RX);
     });
 
+    shell->controller->AddCommand("rx", [radio, decoder, encoder](const std::string &args){
+      return fRX(radio, decoder, encoder);
+    });
+
     shell->controller->AddSystem(enocean_ui);
     shell->controller->AddSystem(radio_ui);
     shell->controller->AddSystem(radio_ui_raw);
+
+    radio->Goto(Radio::State::RX);
 
     shell->controller->Run();
     return shell->exit_code;
