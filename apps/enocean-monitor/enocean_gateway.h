@@ -7,6 +7,7 @@
 #include <memory>
 #include <functional>
 #include <mutex>
+#include <set>
 
 #include <json.hpp>
 using json = nlohmann::json;
@@ -65,6 +66,14 @@ namespace EnOcean
     };
 
     Configuration config;
+
+    struct Telegram_SYS_EX_ERP1_CMP {
+       bool operator()(const Telegram_SYS_EX_ERP1 &lhs, const Telegram_SYS_EX_ERP1 &rhs) const {
+         return lhs.IDX() < rhs.IDX();
+       }
+    };
+
+    std::map<TXID, std::set<Telegram_SYS_EX_ERP1, Telegram_SYS_EX_ERP1_CMP>> sys_ex_store;
   };
 }
 

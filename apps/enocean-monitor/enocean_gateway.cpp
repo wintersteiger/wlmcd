@@ -113,7 +113,7 @@ namespace EnOcean
             if (t.is_teach_in()) {
               if (learning_enabled) {
                 Telegram_LEARN_4BS_3 tti(f);
-                UI::Log("Learn txid=%08x eep=%06x manufacturer=%06x", f.txid(), tti.eep(), tti.mid());
+                UI::Log("Learn txid=%08x eep=%06x manufacturer=%03x", f.txid(), tti.eep(), tti.mid());
 
                 devices[f.txid()] = {  tti.eep(), tti.mid(),
                                        std::make_shared<A5_20_06::DeviceState>(),
@@ -176,6 +176,52 @@ namespace EnOcean
             UI::Log("ignoring telegram not addressed to us");
           else
             UI::Log("addressed telegrams not implemented yet");
+          break;
+        }
+        case 0xC5: {
+          Telegram_SYS_EX_ERP1 t(f);
+          UI::Log("SYS_EX from %08x, SEQ=%u, IDX=%u", f.txid(), t.SEQ(), t.IDX());
+          if (t.SEQ() == 0) {
+            UI::Log("invalid SEQ, aborting");
+          } else {
+            auto &tset = sys_ex_store[f.txid()];
+
+            if (!tset.empty() && tset.begin()->SEQ() != t.SEQ()) {
+              UI::Log("SYS_EX sequence interrupted, discarding %u", tset.begin()->SEQ());
+              tset.clear();
+            }
+
+            tset.insert(t);
+            if (tset.begin()->IDX() == 0)
+            {
+              size_t idx = 0;
+              size_t bytes_expected = tset.begin()->data() >> 55;
+              size_t bytes_missing = bytes_expected;
+              if (bytes_missing != 0) {
+                for (const auto &cur : tset) {
+                  if (cur.IDX() != idx)
+                    break;
+                  bytes_missing -= idx == 0 ? 4 : 8;
+                }
+              }
+              if (bytes_missing == 0) {
+                std::vector<uint8_t> message;
+                if (bytes_expected > 0) {
+                  for (const auto &cur : tset) {
+                    size_t start = cur.IDX() == 0 ? 6 : 2;
+                    for (size_t i=start; i < 11; i++)
+                      message.push_back(cur.raw()[i]);
+                  }
+                }
+                MID mid = ((tset.begin()->data() >> 44) & 0x7FF);
+                uint8_t fn = ((tset.begin()->data() >> 32) & 0xFFF);
+                UI::Log("SYS_EX message: MID=%03x FN=%03x DATA=%s", mid, fn, bytes_to_hex(message).c_str());
+              }
+              else
+                UI::Log("SYS_EX message bytes missing: %u", bytes_missing);
+            }
+
+          }
           break;
         }
         default:

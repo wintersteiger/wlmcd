@@ -100,7 +100,11 @@ namespace EnOcean
 
   class Telegram_SYS_EX_ERP1 : public Telegram {
   public:
-    Telegram_SYS_EX_ERP1() : Telegram() {}
+    Telegram_SYS_EX_ERP1() : Telegram(Frame(std::vector<uint8_t>(16, 0))) {}
+    Telegram_SYS_EX_ERP1(const Frame &f) : Telegram(f) {
+      if (frame.rorg() != 0xC5 || frame.size() != 16)
+        throw std::runtime_error("not a SYS_EX telegram");
+    }
     virtual ~Telegram_SYS_EX_ERP1() {}
 
     uint16_t SEQ() const { return frame.data()[0] >> 6; }
