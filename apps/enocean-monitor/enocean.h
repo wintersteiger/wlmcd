@@ -38,7 +38,7 @@ namespace EnOcean
     size_t size() const { return buffer.size(); }
 
     enum class IntegrityMechanism { Checksum = 0, CRC8 = 1 };
-    IntegrityMechanism integrity_mechanism() const;
+    IntegrityMechanism integrity_mechanism(bool skip_last = true) const;
 
     std::string describe() const;
 

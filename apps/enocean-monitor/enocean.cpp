@@ -68,16 +68,17 @@ namespace EnOcean
 
   uint8_t Frame::hash() const { return buffer[buffer.size()-1]; }
 
-  size_t Frame::num_repeater_hops() const {
-    return status() & 0x0F;
+  size_t Frame::num_repeater_hops() const { return status() & 0x0F; }
+
+  Frame::IntegrityMechanism Frame::integrity_mechanism(bool skip_last) const {
+    size_t status_inx = skip_last ? buffer.size() - 2 : buffer.size() - 1;
+    if (status_inx >= buffer.size()) throw std::logic_error("invalid frame");
+    return (buffer[status_inx] & 0x80) != 0 ? IntegrityMechanism::CRC8 : IntegrityMechanism::Checksum;
   }
 
-  Frame::IntegrityMechanism Frame::integrity_mechanism() const {
-    return (buffer[6] & 0x80) != 0 ? IntegrityMechanism::CRC8 : IntegrityMechanism::Checksum;
-  }
-
-  bool Frame::crc_ok() const {
-    switch (integrity_mechanism())
+  bool Frame::crc_ok() const
+  {
+    switch (integrity_mechanism(true))
     {
       case IntegrityMechanism::CRC8:
         return crc8(buffer, 0x07, true) == buffer.back();
