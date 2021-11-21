@@ -42,6 +42,8 @@ public:
 
   void AddCommand(const std::string &verb, std::function<void(const std::string&)> f);
 
+  void Update(bool full);
+
 protected:
   bool running;
   size_t cur_frequent_interval, cur_infrequent_interval;

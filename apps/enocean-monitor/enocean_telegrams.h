@@ -32,44 +32,54 @@ namespace EnOcean
 
   class Telegram {
   public:
-    Telegram() : frame(std::move(Frame())) {}
+    Telegram() {}
+    Telegram(Frame &&f) : frame(std::move(f)) {}
     Telegram(const Frame &f) : frame(f) {}
     virtual ~Telegram() {}
 
     operator const std::vector<uint8_t>&() const { return frame; }
+    operator const Frame&() const { return frame; }
 
     TXID txid() const { return frame.txid(); }
 
   protected:
-    const Frame& frame;
+    Frame frame;
   };
 
   class AddressedTelegram : public Telegram {
   public:
+    AddressedTelegram(Frame &&f) : Telegram(std::move(f)) {
+      if (frame.rorg() != 0xA6)
+        throw std::runtime_error("not an addressed telegram");
+    }
     AddressedTelegram(const Frame &f) : Telegram(f) {
       if (frame.rorg() != 0xA6)
         throw std::runtime_error("not an addressed telegram");
     }
-    AddressedTelegram(const Telegram &t, TXID destination, Frame &f);
+    AddressedTelegram(const Telegram &t, TXID destination);
     virtual ~AddressedTelegram() {}
 
     TXID destination() const {
-      return  (frame.data()[frame.size() - 10] << 24) |
-              (frame.data()[frame.size() - 9] << 16) |
-              (frame.data()[frame.size() - 8] << 8) |
-              (frame.data()[frame.size() - 7]);
+      return  (frame.data()[frame.size() - 11] << 24) |
+              (frame.data()[frame.size() - 10] << 16) |
+              (frame.data()[frame.size() - 9] << 8) |
+              (frame.data()[frame.size() - 8]);
     }
   };
 
   class Telegram_4BS : public Telegram {
   public:
-    Telegram_4BS() : Telegram(Frame(std::vector<uint8_t>(11, 0))) {}
+    Telegram_4BS() : Telegram(Frame({ 0xA5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })) {}
+    Telegram_4BS(Frame &&f) : Telegram(std::move(f)) {
+      if (frame.rorg() != 0xA5 || frame.size() != 11)
+        throw std::runtime_error("not a 4BS telegram");
+    }
     Telegram_4BS(const Frame &f) : Telegram(f) {
       if (frame.rorg() != 0xA5 || frame.size() != 11)
         throw std::runtime_error("not a 4BS telegram");
     }
-    Telegram_4BS(const std::array<uint8_t, 4> &data, TXID source, uint8_t status, Frame &f);
-    Telegram_4BS(const std::array<uint8_t, 4> &data, TXID source, TXID destination, uint8_t status, Frame &f);
+    Telegram_4BS(const std::array<uint8_t, 4> &data, TXID source, uint8_t status);
+    Telegram_4BS(const std::array<uint8_t, 4> &data, TXID source, TXID destination, uint8_t status);
     virtual ~Telegram_4BS() {}
 
     bool is_teach_in() const { return (frame.data()[3] & 0x08) == 0; }
@@ -79,15 +89,14 @@ namespace EnOcean
   class Telegram_LEARN_4BS_3 : public Telegram_4BS {
   public:
     Telegram_LEARN_4BS_3() : Telegram_4BS() {}
+    Telegram_LEARN_4BS_3(Frame &&f) : Telegram_4BS(std::move(f)) {}
     Telegram_LEARN_4BS_3(const Frame &f) : Telegram_4BS(f) {}
     Telegram_LEARN_4BS_3(
       uint8_t func, uint8_t type, MID mid, TXID source,
-      Frame &f,
       bool learn_status = true, bool learn_eep_supported = true, bool learn_result = true,
       uint8_t status = 0);
     Telegram_LEARN_4BS_3(
       uint8_t func, uint8_t type, MID mid, TXID source, TXID destination,
-      Frame &f,
       bool learn_status = true, bool learn_eep_supported = true, bool learn_result = true,
       uint8_t status = 0);
     virtual ~Telegram_LEARN_4BS_3() {}
@@ -95,16 +104,21 @@ namespace EnOcean
     uint8_t func() const { return frame.data()[0] >> 2; }
     uint8_t type() const { return ((frame.data()[0] & 0x03) << 5) | (frame.data()[1] >> 3); }
     MID mid() const { return (frame.data()[1] & 0x07 << 8) | frame.data()[2]; }
-    EEP eep() const { return (rorg() << 16) | (func() << 8) | type(); }
+    EEP eep() const { return { rorg(), func(), type() }; }
   };
 
   class Telegram_SYS_EX_ERP1 : public Telegram {
   public:
     Telegram_SYS_EX_ERP1() : Telegram(Frame(std::vector<uint8_t>(16, 0))) {}
+    Telegram_SYS_EX_ERP1(Frame &&f) : Telegram(std::move(f)) {
+      if (frame.rorg() != 0xC5 || frame.size() != 16)
+        throw std::runtime_error("not a SYS_EX telegram");
+    }
     Telegram_SYS_EX_ERP1(const Frame &f) : Telegram(f) {
       if (frame.rorg() != 0xC5 || frame.size() != 16)
         throw std::runtime_error("not a SYS_EX telegram");
     }
+    Telegram_SYS_EX_ERP1(uint8_t SEQ, uint8_t IDX, MID mid, uint16_t fn, const std::vector<uint8_t> &payload, TXID source, uint8_t status);
     virtual ~Telegram_SYS_EX_ERP1() {}
 
     uint16_t SEQ() const { return frame.data()[0] >> 6; }
@@ -124,6 +138,7 @@ namespace EnOcean
     class ACT2RCU : public Telegram_4BS {
     public:
       ACT2RCU() : Telegram_4BS() {}
+      ACT2RCU(Frame &&f) : Telegram_4BS(std::move(f)) {}
       ACT2RCU(const Frame &f) : Telegram_4BS(f) {}
       virtual ~ACT2RCU() {}
 
@@ -145,7 +160,7 @@ namespace EnOcean
 
     class RCU2ACT : public Telegram_4BS {
     public:
-      RCU2ACT(const Frame &f) : Telegram_4BS(f) {}
+      RCU2ACT(Frame &&f) : Telegram_4BS(std::move(f)) {}
       virtual ~RCU2ACT() {}
 
       uint8_t valve_position() const { return frame.data()[0]; }
@@ -164,19 +179,15 @@ namespace EnOcean
 
     class DeviceState : public EnOcean::DeviceState {
     public:
-      DeviceState() :
-        last_frame({0xA5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}),
-        last_telegram(last_frame)
-      {}
+      DeviceState() {}
       virtual ~DeviceState() {}
 
       void Update(const EnOcean::Frame& frame) {
         last_frame_time = time(NULL);
-        last_frame = frame;
+        last_telegram = ACT2RCU(frame);
       }
 
       time_t last_frame_time = 0;
-      Frame last_frame;
       ACT2RCU last_telegram;
     };
 

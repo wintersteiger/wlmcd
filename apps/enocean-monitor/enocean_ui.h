@@ -13,6 +13,7 @@
 #include "enocean.h"
 
 class DeviceBase;
+class BME280;
 
 namespace EnOcean {
   class Gateway;
@@ -21,7 +22,8 @@ namespace EnOcean {
 class EnOceanUI : public UI {
 public:
   EnOceanUI(const std::unique_ptr<EnOcean::Gateway>& gateway,
-            const std::vector<std::shared_ptr<DeviceBase>> radio_devices);
+            const std::vector<std::shared_ptr<DeviceBase>> radio_devices,
+            std::shared_ptr<BME280> bme280);
   virtual ~EnOceanUI();
 
   void Update(bool full) { UI::Update(full); }

@@ -32,7 +32,7 @@ namespace EnOcean
             TXID txid = 0xAABBCCDD);
     virtual ~Gateway();
 
-    void receive(const Frame &frame);
+    void receive(const Frame &frame, double rssi);
     void send(const Frame &frame);
 
     EEP eep() const { return config.eep; }
@@ -56,8 +56,8 @@ namespace EnOcean
       virtual ~Configuration() {}
 
       TXID txid = 0xAABBCCDD;
-      MID mid = 0x7FF;
-      EEP eep = 0xA53808;
+      MID mid = 0x00B;
+      EEP eep = { 0xA5, 0x38, 0x08 };
 
       std::map<TXID, DeviceConfiguration> devices;
 
@@ -74,6 +74,8 @@ namespace EnOcean
     };
 
     std::map<TXID, std::set<Telegram_SYS_EX_ERP1, Telegram_SYS_EX_ERP1_CMP>> sys_ex_store;
+
+    void handle_sys_ex(TXID sender, MID mid, uint8_t fn, const std::vector<uint8_t> &data, double rssi);
   };
 }
 

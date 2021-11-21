@@ -5,8 +5,8 @@
 
 namespace EnOcean
 {
-  AddressedTelegram::AddressedTelegram(const Telegram &t, TXID destination, Frame &f) :
-    Telegram(f)
+  AddressedTelegram::AddressedTelegram(const Telegram &t, TXID destination) :
+    Telegram()
   {
     std::vector<uint8_t> bytes = t;
     if (bytes.size() < 6)
@@ -17,15 +17,15 @@ namespace EnOcean
     bytes.push_back((destination >> 16) & 0xFF);
     bytes.push_back((destination >> 8) & 0xFF);
     bytes.push_back(destination & 0xFF);
-    f = Frame(0xA6, bytes, t.txid(), status);
+    frame = Frame(0xA6, bytes, t.txid(), status);
   }
 
-  Telegram_4BS::Telegram_4BS(const std::array<uint8_t, 4> &data, TXID source, uint8_t status, Frame &f)
+  Telegram_4BS::Telegram_4BS(const std::array<uint8_t, 4> &data, TXID source, uint8_t status)
   {
-    f = Frame(0xA5, {data.begin(), data.end()}, source, status);
+    frame = Frame(0xA5, {data.begin(), data.end()}, source, status);
   }
 
-  Telegram_4BS::Telegram_4BS(const std::array<uint8_t, 4> &data, TXID source, TXID destination, uint8_t status, Frame &f)
+  Telegram_4BS::Telegram_4BS(const std::array<uint8_t, 4> &data, TXID source, TXID destination, uint8_t status)
   {
     std::vector<uint8_t> bytes(1 + 4 + 4, 0);
     bytes[0] = 0xA5;
@@ -37,11 +37,11 @@ namespace EnOcean
     bytes[6] = (destination >> 16) & 0xFF;
     bytes[7] = (destination >> 8) & 0xFF;
     bytes[8] = destination & 0xFF;
-    f = Frame(0xA6, bytes, source, status);
+    frame = Frame(0xA6, bytes, source, status);
   }
 
   Telegram_LEARN_4BS_3::Telegram_LEARN_4BS_3(
-    uint8_t func, uint8_t type, MID mid, TXID source, Frame &f,
+    uint8_t func, uint8_t type, MID mid, TXID source,
     bool learn_status, bool learn_eep_supported, bool learn_result,
     uint8_t status)
   {
@@ -56,12 +56,11 @@ namespace EnOcean
                   (learn_result ? 0x01 : 0x00) << 5 |
                   (learn_status ? 0x01 : 0x00) << 4 |
                   (learn_bit ? 0x01 : 0x00 << 3);
-    f = Frame(0xA5, payload, source, status);
+    frame = Frame(0xA5, payload, source, status);
   }
 
   Telegram_LEARN_4BS_3::Telegram_LEARN_4BS_3(
       uint8_t func, uint8_t type, MID mid, TXID source, TXID destination,
-      Frame &f,
       bool learn_status, bool learn_eep_supported, bool learn_result,
       uint8_t status)
   {
@@ -81,7 +80,7 @@ namespace EnOcean
     payload[6] = (destination >> 16) & 0xFF;
     payload[7] = (destination >> 8) & 0xFF;
     payload[8] = destination & 0xFF;
-    f = Frame(0xA6, payload, source, status);
+    frame = Frame(0xA6, payload, source, status);
   }
 
   Frame A5_20_06::DeviceConfiguration::mk_update(TXID source, TXID destination, uint8_t status)
@@ -102,5 +101,41 @@ namespace EnOcean
     payload[7] = (destination >> 8) & 0xFF;
     payload[8] = destination & 0xFF;
     return Frame(0xA6, payload, source, status);
+  }
+
+  Telegram_SYS_EX_ERP1::Telegram_SYS_EX_ERP1(
+    uint8_t SEQ, uint8_t IDX,
+    MID mid, uint16_t fn, const std::vector<uint8_t> &payload,
+    TXID source, uint8_t status) :
+    Telegram()
+  {
+    std::vector<uint8_t> data(9);
+    data[0] = (SEQ << 6) | IDX;
+    if (IDX == 0)
+    {
+      if (SEQ > 3)
+        throw std::runtime_error("SYS_EX SEQ size too large");
+      if (IDX >= (2 << 6))
+        throw std::runtime_error("SYS_EX IDX size too large");
+      if (payload.size() >= (2 << 9))
+        throw std::runtime_error("SYS_EX payload size too large");
+
+      size_t data_length = payload.size();
+      data[1] = (data_length >> 1) & 0x0FF;
+      data[2] = ((data_length & 0x01) << 7) | ((mid & 0x7FF) >> 4);
+      data[3] = ((mid & 0x00F) << 4) | ((fn & 0xFFF) >> 8);
+      data[4] = fn & 0xFF;
+      for (size_t i = 0; i < 4; i++)
+        data[5 + i] = i < payload.size() ? payload[i] : 0;
+    }
+    else
+    {
+      size_t start = 4 + 8*(IDX-1);
+      for (size_t i = 0; i < 8; i++) {
+        size_t di = start + i;
+        data[1 + i] = di < payload.size() ? payload[di] : 0;
+      }
+    }
+    frame = Frame(0xC5, data, source, status);
   }
 }

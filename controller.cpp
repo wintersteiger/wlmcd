@@ -221,7 +221,7 @@ Controller::Controller(
       }
       else if (verb == "R" || verb == "reset") {
         for (auto device : ui->Devices())
-            device->Reset();
+          device->Reset();
       }
       else {
         auto cit = ctrl->commands.find(verb);
@@ -465,4 +465,10 @@ void Controller::ResumeTimer()
 void Controller::AddCommand(const std::string &verb, std::function<void(const std::string&)> f)
 {
   commands[verb] = f;
+}
+
+void Controller::Update(bool full)
+{
+ if (ui_inx < uis.size())
+    uis[ui_inx]->Update(full);
 }

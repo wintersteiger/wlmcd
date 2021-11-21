@@ -5,13 +5,15 @@
 #include <memory>
 
 #include <device.h>
+#include <bme280.h>
 
 #include "enocean_gateway.h"
 #include "enocean_ui.h"
 #include "enocean_telegrams.h"
 
 EnOceanUI::EnOceanUI(const std::unique_ptr<EnOcean::Gateway>& gateway,
-                     const std::vector<std::shared_ptr<DeviceBase>> radio_devices) :
+                     const std::vector<std::shared_ptr<DeviceBase>> radio_devices,
+                     std::shared_ptr<BME280> bme280) :
   UI()
 {
   size_t row = 1, col = 1;
@@ -20,12 +22,18 @@ EnOceanUI::EnOceanUI(const std::unique_ptr<EnOcean::Gateway>& gateway,
   Add(new Label(UI::statusp, row++, col + 18, Name()));
   fields.push_back(new Empty(row++, col));
 
+  Add(new Label(UI::statusp, row++, col, "Gateway Room"));
+  Add(new LField<float>(UI::statusp, row++, col, 10, "Temperature", "°C", [bme280](){ return bme280->Temperature(); }));
+  Add(new LField<float>(UI::statusp, row++, col, 10, "Humidity", "%", [bme280](){ return bme280->Humidity(); }));
+  Add(new LField<float>(UI::statusp, row++, col, 10, "Pressure", "hPa", [bme280](){ return bme280->Pressure() / 100.0f; }));
+  fields.push_back(new Empty(row++, col));
+
   for (auto &kv : gateway->device_map())
   {
     auto &txid = kv.first;
     auto &dev = kv.second;
 
-    if (dev.eep != 0xA52006)
+    if (dev.eep.rorg != 0xA5 || dev.eep.func != 0x20 || dev.eep.type != 0x06)
       throw std::runtime_error("unsupported EEP");
 
     char tmp[32];

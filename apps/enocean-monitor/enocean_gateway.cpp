@@ -16,15 +16,15 @@ namespace EnOcean
   enum class TeachInMethod { RPS, LEARN_1BS, LEARN_4BS_1, LEARN_4BS_2, LEARN_4BS_3, SMART, UTE };
 
   static const std::map<EEP, TeachInMethod> teach_in_methods = {
-    { 0x052006, TeachInMethod::LEARN_4BS_3 }
+    { { 0x05, 0x20, 0x06 }, TeachInMethod::LEARN_4BS_3 }
   };
 
   EEP eep_from_hex(const std::string &k) {
-    EEP r = 0;
+    EEP r = { 0, 0, 0 };
     auto bs = from_hex(k);
-    for (auto b : bs)
-      r = r << 8 | b;
-    return r;
+    if (bs.size() != 3)
+      return r;
+    return { bs[0], bs[1], bs[2] };
   }
 
   MID mid_from_hex(const std::string &k) {
@@ -88,7 +88,7 @@ namespace EnOcean
     //   }
     // }
     devices[0x0580CC3A] = {
-      0xA52006,
+      { 0xA5, 0x20, 0x06 },
       0x0049,
       std::make_shared<A5_20_06::DeviceState>(),
       std::make_shared<A5_20_06::DeviceConfiguration>() };
@@ -101,7 +101,7 @@ namespace EnOcean
     // o << j << std::endl;
   }
 
-  void Gateway::receive(const Frame &f)
+  void Gateway::receive(const Frame &f, double rssi)
   {
     const std::lock_guard<std::mutex> lock(mtx);
 
@@ -121,10 +121,8 @@ namespace EnOcean
 
                 switch (tti.eep()) {
                   case 0xA52006: {
-                    // Bi-directional 4BS teach-in
-                    Frame fo;
-                    Telegram_LEARN_4BS_3 reply((tti.eep() & 0xFF00) >> 8, (tti.eep() & 0x00FF), tti.mid(), config.txid, f.txid(), fo);
-                    send(fo);
+                    Telegram_LEARN_4BS_3 reply(tti.eep().func, tti.eep().type, tti.mid(), config.txid, f.txid());
+                    send(reply);
                     break;
                   }
                   default: break;
@@ -156,8 +154,7 @@ namespace EnOcean
                         cfg->setpoint = their_setpoint;
                       else if (their_setpoint == cfg->setpoint)
                         cfg->dirty = false;
-                      Frame fo = cfg->mk_update(txid(), f.txid(), 0);
-                      send(fo);
+                      send(cfg->mk_update(txid(), f.txid(), 0));
                     }
                     else
                       UI::Log("Valve position setpoint not implemented yet");
@@ -174,8 +171,11 @@ namespace EnOcean
           AddressedTelegram t(f);
           if (t.destination() != config.txid)
             UI::Log("ignoring telegram not addressed to us");
-          else
+          else {
+            const std::vector<uint8_t>& bs = t;
+            std::vector<uint8_t> b(bs.begin()+1, bs.end());
             UI::Log("addressed telegrams not implemented yet");
+          }
           break;
         }
         case 0xC5: {
@@ -185,6 +185,7 @@ namespace EnOcean
             UI::Log("invalid SEQ, aborting");
           } else {
             auto &tset = sys_ex_store[f.txid()];
+            // frame in tset-element is lost?
 
             if (!tset.empty() && tset.begin()->SEQ() != t.SEQ()) {
               UI::Log("SYS_EX sequence interrupted, discarding %u", tset.begin()->SEQ());
@@ -205,17 +206,18 @@ namespace EnOcean
                 }
               }
               if (bytes_missing == 0) {
-                std::vector<uint8_t> message;
+                std::vector<uint8_t> data;
                 if (bytes_expected > 0) {
                   for (const auto &cur : tset) {
                     size_t start = cur.IDX() == 0 ? 6 : 2;
                     for (size_t i=start; i < 11; i++)
-                      message.push_back(cur.raw()[i]);
+                      data.push_back(cur.raw()[i]);
                   }
                 }
                 MID mid = ((tset.begin()->data() >> 44) & 0x7FF);
                 uint8_t fn = ((tset.begin()->data() >> 32) & 0xFFF);
-                UI::Log("SYS_EX message: MID=%03x FN=%03x DATA=%s", mid, fn, bytes_to_hex(message).c_str());
+                handle_sys_ex(f.txid(), mid, fn, data, rssi);
+                sys_ex_store.erase(f.txid());
               }
               else
                 UI::Log("SYS_EX message bytes missing: %u", bytes_missing);
@@ -238,6 +240,27 @@ namespace EnOcean
 
   void Gateway::send(const Frame &frame)
   {
-    if (transmit) transmit(frame);
+    if (transmit)
+      transmit(frame);
+  }
+
+  void Gateway::handle_sys_ex(TXID sender, MID mid, uint8_t fn, const std::vector<uint8_t> &data, double rssi)
+  {
+    UI::Log("SYS_EX message: MID=%03x FN=%03x DATA=%s", mid, fn, bytes_to_hex(data).c_str());
+    switch (fn) {
+      case 0x06: {
+        std::vector<uint8_t> payload(4);
+        bool eep_v3 = eep().func > 0x3F || eep().type >	0x7F;
+        payload[0] = eep_v3 ? 0 : eep().rorg;
+        payload[1] = eep_v3 ? 0 : ((eep().func << 2) | (eep().type >> 5));
+        payload[2] = eep_v3 ? 0 : eep().type << 3;
+        payload[3] = rssi > 0.0 ? 0x00 : rssi < -255.0 ? 0xFF : -rssi;
+        Telegram_SYS_EX_ERP1 t(0x01, 0x00, this->mid(), 0x606, payload, txid(), 0x00);
+        send(AddressedTelegram(t, sender));
+        break;
+      }
+      default:
+        UI::Log("Unhandled SYS_EX function %u", fn);
+    }
   }
 }

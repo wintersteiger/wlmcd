@@ -174,9 +174,8 @@ double SPIRIT1::LQI()
 
 void SPIRIT1::Receive(std::vector<uint8_t> &pkt)
 {
-  pkt.clear();
-
   DisableIRQs();
+  pkt.clear();
 
   do
   {
@@ -186,8 +185,8 @@ void SPIRIT1::Receive(std::vector<uint8_t> &pkt)
   }
   while ((status_bytes[1] & 0x02) == 0);
 
-  pkt.push_back(Read(RT->_rRSSI_LEVEL));
-
+  if (RT->RX_MODE_1_0() == 0x01)
+    Strobe(Command::SABORT);
 
   EnableIRQs();
 }
@@ -324,6 +323,10 @@ uint64_t SPIRIT1::IRQHandler()
   uint32_t irqs = GetIRQs();
   if (irqs & 0x00000004)
     tx_done = true;
+  if (irqs & 0x00000002) {
+    Strobe(Command::FLUSHRXFIFO);
+    irqs = irqs & ~0x00000002;
+  }
   return irqs;
 }
 

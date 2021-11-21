@@ -61,16 +61,16 @@ SPIRIT1UI::SPIRIT1UI(std::shared_ptr<SPIRIT1> spirit1, const uint64_t &irqs)
   EMPTY();
 
   Add(new Label(w, row, col, "RX:"));
-  Add(new LEnabledIndicator(w, row, col + 4, "DAT", [&irqs](){ return irqs  & 1 << 0; }));
-  Add(new LEnabledIndicator(w, row, col + 8, "DIS", [&irqs](){ return irqs  & 1 << 1; }));
+  Add(new LEnabledIndicator(w, row, col + 4, "DAT", [&irqs](){ return irqs & 1 << 0; }));
+  Add(new LEnabledIndicator(w, row, col + 8, "DIS", [&irqs](){ return irqs & 1 << 1; }));
   Add(new LEnabledIndicator(w, row, col + 12, "U/F", [&irqs](){ return irqs & 1 << 6; }));
   Add(new LEnabledIndicator(w, row, col + 16, "A/F", [&irqs](){ return irqs & 1 << 9; }));
   Add(new LEnabledIndicator(w, row++, col + 20, "A/E", [&irqs](){ return irqs & 1 << 10; }));
 
   Add(new Label(w, row, col, "TX:"));
-  Add(new LEnabledIndicator(w, row, col + 4, "DAT", [&irqs](){ return irqs  & 1 << 2; }));
-  Add(new LEnabledIndicator(w, row, col + 8, "MAX", [&irqs](){ return irqs  & 1 << 3; }));
-  Add(new LEnabledIndicator(w, row, col + 12, "O/F", [&irqs](){ return irqs  & 1 << 5; }));
+  Add(new LEnabledIndicator(w, row, col + 4, "DAT", [&irqs](){ return irqs & 1 << 2; }));
+  Add(new LEnabledIndicator(w, row, col + 8, "MAX", [&irqs](){ return irqs & 1 << 3; }));
+  Add(new LEnabledIndicator(w, row, col + 12, "O/F", [&irqs](){ return irqs & 1 << 5; }));
   Add(new LEnabledIndicator(w, row, col + 16, "A/F", [&irqs](){ return irqs & 1 << 7; }));
   Add(new LEnabledIndicator(w, row++, col + 20, "A/F", [&irqs](){ return irqs & 1 << 8; }));
 

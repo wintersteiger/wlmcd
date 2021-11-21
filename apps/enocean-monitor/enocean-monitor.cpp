@@ -19,6 +19,8 @@
 #include <sleep.h>
 #include <integrity.h>
 #include <gpio_button.h>
+#include <bme280.h>
+#include <bme280_ui.h>
 
 #include "enocean.h"
 #include "enocean_telegrams.h"
@@ -28,9 +30,8 @@
 static volatile int rx_cnt = 0;
 static FILE *logfile = NULL;
 static std::mutex mtx, log_mtx;
-
+static std::shared_ptr<Shell> shell;
 static std::unique_ptr<EnOcean::Gateway> gateway;
-static std::shared_ptr<EnOceanUI> enocean_ui;
 uint64_t irqs = 0;
 
 static int flog(const char *label, double rssi, double lqi, const std::vector<uint8_t> &raw_packet, const std::string &msg, const std::string &err)
@@ -69,14 +70,17 @@ static bool fRX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Decoder> 
   }
 
   std::vector<EnOcean::Frame> frames;
+  double rssi = 0.0;
+  double lqi = 0.0;
 
   {
     const std::lock_guard<std::mutex> lock(mtx);
 
-    double rssi = radio->RSSI();
-    double lqi = radio->LQI();
     std::vector<uint8_t> packet;
     radio->Receive(packet);
+
+    rssi = radio->RSSI();
+    lqi = radio->LQI();
 
     char lbuf[1024];
     char *p = &lbuf[0];
@@ -109,15 +113,18 @@ static bool fRX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Decoder> 
 
   radio->Goto(Radio::State::RX);
 
-  for (auto &f : frames)
-    if (f.crc_ok())
-      gateway->receive(f);
+  for (size_t i=0; i < frames.size(); i++) {
+    const EnOcean::Frame &f = frames[i];
+    if (f.crc_ok() && (i == 0 || f != frames[i-1]))
+      gateway->receive(f, rssi);
+  }
 
   return true;
 }
 
-static void fTX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Encoder> encoder, const EnOcean::Frame &f)
+static void fTX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Encoder> encoder, const EnOcean::Telegram &t)
 {
+  const EnOcean::Frame &f = t;
   std::string msg = bytes_to_hex(f);
   UI::Log("TX: %s", msg.c_str());
   flog("TX", 0.0, 0.0, f, f.describe().c_str(), "TX");
@@ -135,7 +142,9 @@ static void fTX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Encoder> 
 static bool fIRQ(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Decoder> decoder, std::shared_ptr<EnOcean::Encoder> encoder)
 {
   irqs = radio->IRQHandler();
-  if (irqs & 0x01)
+  if (shell)
+    shell->controller->Update(false);
+  if (irqs & 0x00000201)
     return fRX(radio, decoder, encoder);
   return true;
 }
@@ -151,22 +160,19 @@ static void manualTX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Enco
 
   auto rorg = argbytes[0];
   auto payload = std::vector<uint8_t>(argbytes.begin() + 1, argbytes.end());
-  EnOcean::Frame ft(argbytes[0], payload, gateway->txid(), 0x8F);
-  EnOcean::Telegram t(ft);
+  EnOcean::Telegram t(EnOcean::Frame(argbytes[0], payload, gateway->txid(), 0x8F));
+  // EnOcean::Telegram t(EnOcean::Frame(argbytes[0], payload, 0x00, 0x8F));
 
   if (!encapsulate)
-    fTX(radio, encoder, ft);
-  else {
-    EnOcean::Frame fa;
-    EnOcean::AddressedTelegram at(t, 0x0580CC3A, fa);
-    fTX(radio, encoder, fa);
-  }
+    fTX(radio, encoder, t);
+  else
+    fTX(radio, encoder, EnOcean::AddressedTelegram(t, 0x0580CC3A));
 }
 
 int main()
 {
   try {
-    auto shell = get_shell(0);
+    shell = get_shell(0);
     logfile = fopen("log.csv", "a");
 
     auto decoder = std::make_shared<EnOcean::Decoder>();
@@ -178,6 +184,10 @@ int main()
     auto radio_ui_raw = make_cc1101_raw_ui(radio);
 #else
     auto reset_button = std::make_shared<GPIOButton>("/dev/gpiochip0", 5);
+    reset_button->Write(true);
+    sleep_ms(2);
+    reset_button->Write(false);
+    sleep_ms(2);
     auto radio = std::make_shared<SPIRIT1>(0, 0, "spirit1.cfg");
     auto radio_ui = std::make_shared<SPIRIT1UI>(radio, irqs);
     auto radio_ui_raw = make_spirit1_raw_ui(radio, reset_button);
@@ -186,8 +196,10 @@ int main()
     gateway = std::make_unique<EnOcean::Gateway>(
       [radio, encoder](const EnOcean::Frame &f){ fTX(radio, encoder, f); });
 
+
     std::vector<std::shared_ptr<DeviceBase>> radio_devs = {radio};
-    enocean_ui = std::make_shared<EnOceanUI>(gateway, radio_devs);
+    auto bme280 = std::make_shared<BME280>();
+    auto enocean_ui = std::make_shared<EnOceanUI>(gateway, radio_devs, bme280);
 
     std::vector<GPIOWatcher<Radio>*> gpio_watchers;
 #ifdef USE_C1101
@@ -235,6 +247,7 @@ int main()
     shell->controller->AddSystem(enocean_ui);
     shell->controller->AddSystem(radio_ui);
     shell->controller->AddSystem(radio_ui_raw);
+    shell->controller->AddSystem(make_bme280_raw_ui(bme280));
 
     radio->Goto(Radio::State::RX);
 

@@ -169,13 +169,18 @@ REGISTER_TABLE(SPIRIT1, RegisterTable, uint8_t, uint8_t,
     VAR(PKTCTRL1, TXSOURCE_1_0, "TXSOURCE[1:0]", 0x0C, RW,                "");
     VAR(PKTCTRL1, FEC_EN, "FEC_EN", 0x01, RW,                             "");
   );
-  REG(PCKTLEN1, "PCKTLEN1", 0x34, RW,                                      "",);
-  REG(PCKTLEN0, "PCKTLEN0", 0x35, RW,                                       "",);
+  REG(PCKTLEN1, "PCKTLEN1", 0x34, RW,                                     "",);
+  REG(PCKTLEN0, "PCKTLEN0", 0x35, RW,                                     "",);
   REG(SYNC4, "SYNC4", 0x36, RW,                                           "",);
   REG(SYNC3, "SYNC3", 0x37, RW,                                           "",);
   REG(SYNC2, "SYNC2", 0x38, RW,                                           "",);
   REG(SYNC1, "SYNC1", 0x39, RW,                                           "",);
-  REG(QI, "QI", 0x3A, RW,                                                 "",);
+  REG(QI, "QI", 0x3A, RW,                                                 "",
+    VAR(QI, SQI_TH_1_0, "SQI_TH[1:0]", 0xC0, RW,                          "");
+    VAR(QI, PQI_TH_3_0, "PQI_TH[3:0]", 0x3C, RW,                          "");
+    VAR(QI, SQI_EN, "SQI_EN", 0x02, RW,                                   "");
+    VAR(QI, PQI_EN, "PQI_EN", 0x01, RW,                                   "");
+  );
   REG(MBUS_PRMBL, "MBUS_PRMBL", 0x3B, RW,                                 "",);
   REG(MBUS_PSTMBL, "MBUS_PSTMBL", 0x3C, RW,                               "",);
   REG(MBUS_CTRL, "MBUS_CTRL", 0x3D, RW,                                   "",);
@@ -197,15 +202,41 @@ REGISTER_TABLE(SPIRIT1, RegisterTable, uint8_t, uint8_t,
   REG(PCKT_FLT_GOALS_1, "PCKT_FLT_GOALS[1]", 0x4D, RW,                    "",);
   REG(PCKT_FLT_GOALS_0, "PCKT_FLT_GOALS[0]", 0x4E, RW,                    "",);
 
-  REG(PCKT_FLT_OPTIONS, "PCKT_FLT_OPTIONS", 0x4F, RW,                     "",);
-  REG(PROTOCOL_2, "PROTOCOL[2]", 0x50, RW,                                "",);
+  REG(PCKT_FLT_OPTIONS, "PCKT_FLT_OPTIONS", 0x4F, RW,                     "",
+    VAR(PCKT_FLT_OPTIONS, RX_TIMEOUT_AND_OR_SELECT, "RX_TIMEOUT_AND_OR_SELECT", 0x40, RW, "");
+    VAR(PCKT_FLT_OPTIONS, CONTROL_FILTERING, "CONTROL_FILTERING", 0x20, RW, "");
+    VAR(PCKT_FLT_OPTIONS, SOURCE_FILTERING, "SOURCE_FILTERING", 0x10, RW, "");
+    VAR(PCKT_FLT_OPTIONS, DEST_VS_SOURCE_ADDR, "DEST_VS_SOURCE_ADDR", 0x08, RW, "");
+    VAR(PCKT_FLT_OPTIONS, DEST_VS_MULTICAST_ADDR, "DEST_VS_MULTICAST_ADDR", 0x04, RW, "");
+    VAR(PCKT_FLT_OPTIONS, DEST_VS_BROADCAST_ADDR, "DEST_VS_BROADCAST_ADDR", 0x02, RW, "");
+    VAR(PCKT_FLT_OPTIONS, CRC_CHECK, "CRC_CHECK", 0x01, RW, "");
+  );
+  REG(PROTOCOL_2, "PROTOCOL[2]", 0x50, RW,                                "",
+    VAR(PROTOCOL_2, CS_TIMEOUT_MASK, "CS_TIMEOUT_MASK", 0x80, RW, "");
+    VAR(PROTOCOL_2, SQI_TIMEOUT_MASK, "SQI_TIMEOUT_MASK", 0x40, RW, "");
+    VAR(PROTOCOL_2, PQI_TIMEOUT_MASK, "PQI_TIMEOUT_MASK", 0x20, RW, "");
+    VAR(PROTOCOL_2, TX_SEQ_NUM_RELOAD_1_0, "TX_SEQ_NUM_RELOAD[1:0]", 0x18, RW, "");
+    VAR(PROTOCOL_2, RCO_CALIBRATION, "RCO_CALIBRATION", 0x04, RW, "");
+    VAR(PROTOCOL_2, VCO_CALIBRATION, "VCO_CALIBRATION", 0x02, RW, "");
+    VAR(PROTOCOL_2, LDC_MODE, "LDC_MODE", 0x01, RW, "");
+  );
   REG(PROTOCOL_1, "PROTOCOL[1]", 0x51, RW,                                "",);
   REG(PROTOCOL_0, "PROTOCOL[0]", 0x52, RW,                                "",);
-  REG(TIMERS_5, "TIMERS[5]", 0x53, RW,                                    "",);
-  REG(TIMERS_4, "TIMERS[4]", 0x54, RW,                                    "",);
-  REG(TIMERS_3, "TIMERS[3]", 0x55, RW,                                    "",);
-  REG(TIMERS_2, "TIMERS[2]", 0x56, RW,                                    "",);
-  REG(TIMERS_1, "TIMERS[1]", 0x57, RW,                                    "",);
+  REG(TIMERS_5, "TIMERS[5]", 0x53, RW,                                    "",
+    VAR(TIMERS_5, RX_TIMEOUT_PRESCALER_7_0, "RX_TIMEOUT_PRESCALER[7:0]", 0xFF, RW, "");
+  );
+  REG(TIMERS_4, "TIMERS[4]", 0x54, RW,                                    "",
+    VAR(TIMERS_4, RX_TIMEOUT_COUNTER_7_0, "RX_TIMEOUT_COUNTER[7:0]", 0xFF, RW, "");
+  );
+  REG(TIMERS_3, "TIMERS[3]", 0x55, RW,                                    "",
+    VAR(TIMERS_3, LDC_PRESCALER_7_0, "LDC_PRESCALER[7:0]", 0xFF, RW, "");
+  );
+  REG(TIMERS_2, "TIMERS[2]", 0x56, RW,                                    "",
+    VAR(TIMERS_2, LDC_COUNTER_7_0, "LDC_COUNTER[7:0]", 0xFF, RW, "");
+  );
+  REG(TIMERS_1, "TIMERS[1]", 0x57, RW,                                    "",
+    VAR(TIMERS_1, LDC_RELOAD_PRESCALER_7_0, "LDC_RELOAD_PRESCALER[7:0]", 0xFF, RW, "");
+  );
   REG(TIMERS_0, "TIMERS[0]", 0x58, RW,                                    "",);
   REG(CSMA_CONFIG_3, "CSMA_CONFIG[3]", 0x64, RW,                          "",);
   REG(CSMA_CONFIG_2, "CSMA_CONFIG[2]", 0x65, RW,                          "",);

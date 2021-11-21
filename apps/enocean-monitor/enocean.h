@@ -15,7 +15,14 @@
 
 namespace EnOcean
 {
-  using EEP = uint32_t;
+  struct EEP {
+    uint8_t rorg;
+    uint8_t func;
+    uint8_t type;
+
+    operator uint32_t() const { return rorg << 16 | func << 8 | type; }
+  };
+
   using TXID = uint32_t;
   using MID = uint16_t;
 
@@ -43,6 +50,8 @@ namespace EnOcean
     std::string describe() const;
 
     operator const std::vector<uint8_t>&() const { return buffer; }
+    bool operator==(const Frame &other) const { return buffer == other.buffer; }
+    bool operator!=(const Frame &other) const { return buffer != other.buffer; }
 
   protected:
     std::vector<uint8_t> buffer;
