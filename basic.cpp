@@ -1,4 +1,4 @@
-// Copyright (c) Open Enclave SDK contributors.
+// Copyright (c) Christoph M. Wintersteiger
 // Licensed under the MIT License.
 
 #include <vector>
