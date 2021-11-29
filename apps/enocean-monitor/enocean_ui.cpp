@@ -16,18 +16,21 @@ EnOceanUI::EnOceanUI(const std::unique_ptr<EnOcean::Gateway>& gateway,
                      std::shared_ptr<BME280> bme280) :
   UI()
 {
-  devices.insert(bme280);
-
   size_t row = 1, col = 1;
 
   Add(new TimeField(UI::statusp, row, col));
   Add(new Label(UI::statusp, row++, col + 18, Name()));
   fields.push_back(new Empty(row++, col));
 
-  Add(new Label(UI::statusp, row++, col, "Gateway Room"));
-  Add(new LField<float>(UI::statusp, row++, col, 10, "Temperature", "°C", [bme280](){ return bme280->Temperature(); }));
-  Add(new LField<float>(UI::statusp, row++, col, 10, "Humidity", "%", [bme280](){ return bme280->Humidity(); }));
-  Add(new LField<float>(UI::statusp, row++, col, 10, "Pressure", "hPa", [bme280](){ return bme280->Pressure() / 100.0f; }));
+  if (bme280)
+  {
+    devices.insert(bme280);
+
+    Add(new Label(UI::statusp, row++, col, "Gateway Room"));
+    Add(new LField<float>(UI::statusp, row++, col, 10, "Temperature", "°C", [bme280](){ return bme280->Temperature(); }));
+    Add(new LField<float>(UI::statusp, row++, col, 10, "Humidity", "%", [bme280](){ return bme280->Humidity(); }));
+    Add(new LField<float>(UI::statusp, row++, col, 10, "Pressure", "hPa", [bme280](){ return bme280->Pressure() / 100.0f; }));
+  }
 
   for (auto &kv : gateway->device_map())
   {
