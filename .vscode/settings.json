@@ -64,5 +64,7 @@
     "thread": "cpp",
     "typeinfo": "cpp",
     "valarray": "cpp"
-  }
+  },
+  "C_Cpp.intelliSenseEngine": "Disabled",
+  "cmake.configureOnOpen": false
 }

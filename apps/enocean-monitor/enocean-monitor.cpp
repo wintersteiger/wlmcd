@@ -254,6 +254,10 @@ int main()
       return gateway->save(gateway_config);
     });
 
+    shell->controller->AddCommand("p", [&gateway_config](const std::string &args){
+      return gateway->ping();
+    });
+
     shell->controller->AddSystem(enocean_ui);
     shell->controller->AddSystem(radio_ui);
     shell->controller->AddSystem(radio_ui_raw);

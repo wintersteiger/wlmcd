@@ -275,9 +275,9 @@ namespace EnOcean
     }
   }
 
-  void Gateway::send(const Frame &frame)
+  void Gateway::send(const Frame &frame, bool force)
   {
-    if (config.acting && transmit)
+    if ((config.acting || force) && transmit)
       transmit(frame);
   }
 
@@ -293,7 +293,7 @@ namespace EnOcean
         payload[2] = eep_v3 ? 0 : eep().type << 3;
         payload[3] = rssi > 0.0 ? 0x00 : rssi < -255.0 ? 0xFF : -rssi;
         Telegram_SYS_EX_ERP1 t(0x01, 0x00, this->mid(), 0x606, payload, txid(), 0x00);
-        send(AddressedTelegram(t, sender));
+        send(AddressedTelegram(t, sender), true);
         break;
       }
       default:
@@ -311,5 +311,10 @@ namespace EnOcean
 
     std::ofstream of(filename);
     of << j << std::endl;
+  }
+
+  void Gateway::ping()
+  {
+    send(Telegram_SYS_EX_ERP1(0x01, 0x00, 0x7FF, 0x06, {}, txid(), 0x00), true);
   }
 }
