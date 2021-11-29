@@ -7,9 +7,6 @@
 
 // #include <openssl/evp.h>
 
-#include <json.hpp>
-using json = nlohmann::json;
-
 #include <integrity.h>
 
 #include "enocean.h"

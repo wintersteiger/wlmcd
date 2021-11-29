@@ -83,6 +83,28 @@ namespace EnOcean
     frame = Frame(0xA6, payload, source, status);
   }
 
+  Frame A5_20_01::DeviceConfiguration::mk_update(TXID source, TXID destination, uint8_t status)
+  {
+    std::vector<uint8_t> payload(1 + 4 + 4, 0);
+    payload[0] = 0xA5;
+    payload[1] = setpoint;
+    payload[2] = rcu_temperature;
+    payload[3] = (reference_run ? 0x01 : 0x00) << 7 |
+                 (lift_set ? 0x01 : 0x00) << 6 |
+                 (valve_open ? 0x01 : 0x00) << 5 |
+                 (valve_closed ? 0x01 : 0x00) << 4 |
+                 (summer_mode ? 0x01 : 0x00) << 3 |
+                 (setpoint_selection == SetpointSelection::TEMPERATURE ? 0x01 : 0x00) << 2 |
+                 (setpoint_inverse ? 0x01 : 0x00) << 1 |
+                 (select_function ? 0x01 : 0x00);
+    payload[4] = 0x08;
+    payload[5] = (destination >> 24) & 0xFF;
+    payload[6] = (destination >> 16) & 0xFF;
+    payload[7] = (destination >> 8) & 0xFF;
+    payload[8] = destination & 0xFF;
+    return Frame(0xA6, payload, source, status);
+  }
+
   Frame A5_20_06::DeviceConfiguration::mk_update(TXID source, TXID destination, uint8_t status)
   {
     std::vector<uint8_t> payload(1 + 4 + 4, 0);

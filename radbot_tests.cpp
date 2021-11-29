@@ -5,6 +5,7 @@
 #include <iostream>
 #include <vector>
 
+#include "serialization.h"
 #include "radbot.h"
 #include "radbot_tests.h"
 

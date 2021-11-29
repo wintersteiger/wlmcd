@@ -15,9 +15,10 @@ public:
   Radio() {}
   virtual ~Radio() {}
 
-  enum class State { Idle = 0, RX = 1 };
+  enum class State { Idle = 0, RX = 1 , TX = 2 };
 
   virtual void Goto(State state) = 0;
+  virtual Radio::State GetState() const = 0;
   virtual void Receive(std::vector<uint8_t> &packet) = 0;
   virtual void Transmit(const std::vector<uint8_t> &packet) = 0;
 

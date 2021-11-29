@@ -10,6 +10,7 @@
 #include <map>
 
 #include <shell.h>
+#include <serialization.h>
 #include <cc1101.h>
 #include <cc1101_ui.h>
 #include <cc1101_ui_raw.h>
@@ -172,8 +173,9 @@ static void manualTX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Enco
 int main()
 {
   try {
-    shell = get_shell(0);
+    shell = get_shell(1.0);
     logfile = fopen("log.csv", "a");
+    std::string gateway_config = "enocean-gateway.json";
 
     auto decoder = std::make_shared<EnOcean::Decoder>();
     auto encoder = std::make_shared<EnOcean::Encoder>();
@@ -196,7 +198,6 @@ int main()
     gateway = std::make_unique<EnOcean::Gateway>(
       [radio, encoder](const EnOcean::Frame &f){ fTX(radio, encoder, f); });
 
-
     std::vector<std::shared_ptr<DeviceBase>> radio_devs = {radio};
     auto bme280 = std::make_shared<BME280>();
     auto enocean_ui = std::make_shared<EnOceanUI>(gateway, radio_devs, bme280);
@@ -213,6 +214,11 @@ int main()
         return fIRQ(radio, decoder, encoder);
       }));
 #endif
+
+    shell->controller->AddBackgroundDevice(std::make_shared<BackgroundTask>([&radio]() {
+      const std::lock_guard<std::mutex> lock(mtx);
+      radio->Goto(Radio::State::RX);
+    }));
 
     auto tf = [radio, encoder](const std::string &args) { manualTX(radio, encoder, args, false); };
     shell->controller->AddCommand("t", tf);
@@ -244,9 +250,14 @@ int main()
       return fRX(radio, decoder, encoder);
     });
 
+    shell->controller->AddCommand("s", [&gateway_config](const std::string &args){
+      return gateway->save(gateway_config);
+    });
+
     shell->controller->AddSystem(enocean_ui);
     shell->controller->AddSystem(radio_ui);
     shell->controller->AddSystem(radio_ui_raw);
+    shell->controller->AddSystem(std::make_shared<BME280UI>(bme280));
     shell->controller->AddSystem(make_bme280_raw_ui(bme280));
 
     radio->Goto(Radio::State::RX);

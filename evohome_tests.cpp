@@ -7,6 +7,7 @@
 #include <cinttypes>
 #include <fstream>
 
+#include "serialization.h"
 #include "evohome.h"
 #include "evohome_tests.h"
 

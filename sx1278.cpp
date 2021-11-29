@@ -198,11 +198,6 @@ void SX1278::Transmit(const std::vector<uint8_t> &pkt)
   // Write(Normal._rOpMode, (mode & 0xF8) | from_mode);
 }
 
-void SX1278::Test(const std::vector<uint8_t> &data)
-{
-  Transmit(data);
-}
-
 void SX1278::NormalRegisterTable::Refresh(bool frequent)
 {
   NormalRegisterTable &rt = device.Normal;

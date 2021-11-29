@@ -3,6 +3,7 @@
 
 #include <memory>
 
+#include "serialization.h"
 #include "field_types.h"
 #include "raw_ui.h"
 #include "spirit1.h"

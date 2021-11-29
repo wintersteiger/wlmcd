@@ -228,11 +228,6 @@ void RFM69::Transmit(const std::vector<uint8_t> &pkt)
 {
 }
 
-void RFM69::Test(const std::vector<uint8_t> &data)
-{
-  Transmit(data);
-}
-
 double RFM69::rRSSI() const {
   return - (RT->RssiValue() / 2.0);
 }

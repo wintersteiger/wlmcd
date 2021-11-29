@@ -72,6 +72,15 @@ protected:
   void ThreadCleanup();
 };
 
-void Test(Controller *ctrl, UI *ui, Decoder *dec, Encoder *enc);
+class BackgroundTask : public DeviceBase {
+public:
+  BackgroundTask(std::function<void()> f) : DeviceBase(), f(f) {}
+  virtual ~BackgroundTask() {}
+  virtual const char* Name() const override { return ""; }
+  virtual void Write(std::ostream &os) override {};
+  virtual void Read(std::istream &os) override {};
+  virtual void UpdateTimed() override { f(); }
+  std::function<void()> f;
+};
 
 #endif // #ifndef _CONTROLLER_H_

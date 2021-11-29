@@ -4,12 +4,31 @@
 #include <fstream>
 
 #include <ui.h>
+#include <serialization.h>
 
-#include <json.hpp>
-using json = nlohmann::json;
-
+#include "enocean.h"
 #include "enocean_telegrams.h"
 #include "enocean_gateway.h"
+
+template <typename T>
+struct hex_scalar_serializer<std::shared_ptr<T>> {
+  template <typename BasicJsonType, typename U = T>
+  static void to_json(BasicJsonType& j, const std::shared_ptr<T>& ptr) noexcept {
+    if (ptr.get()) {
+      j = *ptr;
+    } else {
+      j = nullptr;
+    }
+  }
+
+  template <typename BasicJsonType, typename U = T>
+  static void from_json(const BasicJsonType& j, std::shared_ptr<T>& ptr)
+  {
+    T tmp;
+    nlohmann::from_json(j, tmp);
+    ptr = std::make_shared<T>(std::move(tmp));
+  }
+};
 
 namespace EnOcean
 {
@@ -19,86 +38,88 @@ namespace EnOcean
     { { 0x05, 0x20, 0x06 }, TeachInMethod::LEARN_4BS_3 }
   };
 
-  EEP eep_from_hex(const std::string &k) {
-    EEP r = { 0, 0, 0 };
-    auto bs = from_hex(k);
-    if (bs.size() != 3)
-      return r;
-    return { bs[0], bs[1], bs[2] };
-  }
-
-  MID mid_from_hex(const std::string &k) {
-    MID r = 0;
-    auto bs = from_hex(k);
-    for (auto b : bs)
-      r = r << 8 | b;
-    return r;
-  }
-
-  TXID txid_from_hex(const std::string &k) {
-    TXID r = 0;
-    auto bs = from_hex(k);
-    for (auto b : bs)
-      r = r << 8 | b;
-    return r;
-  }
-
   void Gateway::Configuration::to_json(json& j) const
   {
-    // j["txid"] = to_hex(txid);
-    // j["mid"] = to_hex(mid);
-    // j["eep"] = to_hex(eep);
-    // std::map<TXID, DeviceConfiguration> devices;
+    j["txid"] = txid;
+    j["mid"] = mid;
+    j["eep"] = eep;
+    j["acting"] = acting;
+    j["learning"] = learning;
+    j["num_devices"] = devices.size();
+    j["devices"] = devices;
   }
 
-  void Gateway::Configuration::from_json(const json& j) {}
+  void Gateway::Configuration::from_json(const json& j)
+  {
+    txid = j["txid"].get<TXID>();
+    mid = j["mid"].get<MID>();
+    eep = j["eep"].get<EEP>();
+    acting = j["acting"].get<bool>();
+    learning = j["learning"].get<bool>();
+    devices = j["devices"].get<std::map<TXID, std::shared_ptr<DeviceConfiguration>>>();
+
+    // for (const auto& kv : j["devices"].items())
+    // {
+    //   UI::Log("Device: %s", kv.key().c_str());
+    //   json jeep = kv.value()["eep"];
+    //   EEP eep = jeep.get<EEP>();
+    //   TXID txid;
+    //   hex_scalar_serializer<json>::from_json<json, TXID>(json(kv.key()), txid);
+    //   UI::Log("Device EEP: %u ID: %u", eep, txid);
+    //   switch (eep) {
+    //     case 0xA52006: {
+    //       auto dcfg = std::make_shared<A5_20_06::DeviceConfiguration>();
+    //       devices[txid] = dcfg;
+    //       // devices[txid] = { eep,
+    //       //                   kv.value()["mid"].get<MID>(),
+    //       //                   std::make_shared<A5_20_06::DeviceState>(),
+    //       //                   dcfg };
+    //         break;
+    //     }
+    //     default:
+    //       throw std::runtime_error("unsupported EEP");
+    //   }
+    // }
+  }
 
   Gateway::Gateway(
     std::function<void(const Frame&)> &&transmit,
     const std::string &config_file,
+    const std::string &cache_file,
     TXID txid) :
     transmit(transmit),
-    config_file(config_file),
-    learning_enabled(false)
+    config_file(config_file)
   {
     config.txid = txid;
 
-    // if (!config_file.empty()) {
+    // if (!config_file.empty())
+    // {
     //   json j;
     //   std::ifstream(config_file) >> j;
-
-    //   for (const auto& kv : j["devices"].items())
-    //   {
-    //     UI::Log("Device: %s", kv.key().c_str());
-    //     auto eep_str = kv.value()["eep"].get<std::string>();
-    //     auto eep = eep_from_hex(eep_str);
-    //     UI::End();
-    //     printf("eep: %s", eep_str);
-    //     switch (eep) {
-    //       case 0xA52006:
-    //         devices[txid_from_hex(kv.key())] = {
-    //           eep,
-    //           mid_from_hex(kv.value()["mid"]),
-    //           std::make_shared<A5_20_06::DeviceState>(),
-    //           std::make_shared<A5_20_06::DeviceConfiguration>() };
-    //           break;
-    //         default:
-    //           throw std::runtime_error("unsupported EEP");
-    //     }
-    //   }
+    //   config = j["controller"].get<Gateway::Configuration>();
     // }
+
+    auto dcfg = std::make_shared<A5_20_06::DeviceConfiguration>();
+    dcfg->eep = { 0xA5, 0x20, 0x06 };
+    dcfg->mid = 0x0049;
+    config.devices[0x0580CC3A] = dcfg;
     devices[0x0580CC3A] = {
-      { 0xA5, 0x20, 0x06 },
-      0x0049,
       std::make_shared<A5_20_06::DeviceState>(),
-      std::make_shared<A5_20_06::DeviceConfiguration>() };
+      dcfg};
+
+    auto dcfg2 = std::make_shared<A5_20_01::DeviceConfiguration>();
+    dcfg2->eep = { 0xA5, 0x20, 0x01 };
+    dcfg2->mid = 0x0049;
+    config.devices[0x0583AF74] = dcfg2;
+    devices[0x0583AF74] = {
+      std::make_shared<A5_20_01::DeviceState>(),
+      dcfg2};
   }
 
   Gateway::~Gateway()
   {
-    // std::ofstream o(config_file);
-    // json j = config;
-    // o << j << std::endl;
+    if (!config_file.empty())
+      save(config_file);
   }
 
   void Gateway::receive(const Frame &f, double rssi)
@@ -111,21 +132,26 @@ namespace EnOcean
         case 0xA5: {
             Telegram_4BS t(f);
             if (t.is_teach_in()) {
-              if (learning_enabled) {
+              if (config.learning) {
                 Telegram_LEARN_4BS_3 tti(f);
-                UI::Log("Learn txid=%08x eep=%06x manufacturer=%03x", f.txid(), tti.eep(), tti.mid());
+                if (tti.learn_type_with_eep()) {
+                  UI::Log("Learn txid=%08x eep=%06x manufacturer=%03x", f.txid(), tti.eep(), tti.mid());
 
-                devices[f.txid()] = {  tti.eep(), tti.mid(),
-                                       std::make_shared<A5_20_06::DeviceState>(),
-                                       std::make_shared<A5_20_06::DeviceConfiguration>()};
-
-                switch (tti.eep()) {
-                  case 0xA52006: {
-                    Telegram_LEARN_4BS_3 reply(tti.eep().func, tti.eep().type, tti.mid(), config.txid, f.txid());
-                    send(reply);
-                    break;
+                  auto dcfg = std::make_shared<A5_20_06::DeviceConfiguration>();
+                  config.devices[f.txid()] = dcfg;
+                  devices[f.txid()] = { std::make_shared<A5_20_06::DeviceState>(), dcfg };
+                  switch (tti.eep()) {
+                    case 0xA52001:
+                    case 0xA52006: {
+                      Telegram_LEARN_4BS_3 reply(tti.eep().func, tti.eep().type, tti.mid(), config.txid, f.txid());
+                      send(reply);
+                      break;
+                    }
+                    default: break;
                   }
-                  default: break;
+                }
+                else {
+                  UI::Log("Learn txid=%08x unknown EEP/MID", f.txid());
                 }
               }
             }
@@ -135,7 +161,7 @@ namespace EnOcean
                 UI::Log("unknown device: %08x", f.txid());
               }
               else {
-                switch (dit->second.eep) {
+                switch (dit->second.configuration->eep) {
                   case 0xA52006: {
                     A5_20_06::ACT2RCU td(f);
                     auto s = std::dynamic_pointer_cast<A5_20_06::DeviceState>(dit->second.state);
@@ -160,8 +186,19 @@ namespace EnOcean
                       UI::Log("Valve position setpoint not implemented yet");
                     break;
                   }
+                  case 0xA52001: {
+                    A5_20_01::ACT2RCU td(f);
+                    auto s = std::dynamic_pointer_cast<A5_20_01::DeviceState>(dit->second.state);
+                    s->Update(f);
+                    auto cfg = std::dynamic_pointer_cast<A5_20_01::DeviceConfiguration>(dit->second.configuration);
+                    if (cfg->setpoint_selection == A5_20_01::DeviceConfiguration::SetpointSelection::TEMPERATURE)
+                      send(cfg->mk_update(txid(), f.txid(), 0));
+                    else
+                      UI::Log("Valve position setpoint not implemented yet");
+                    break;
+                  }
                   default:
-                    UI::Log("Unsupported EEP %06x", dit->second);
+                    UI::Log("Unsupported EEP %06x", dit->second.configuration->eep);
                 }
               }
             }
@@ -240,7 +277,7 @@ namespace EnOcean
 
   void Gateway::send(const Frame &frame)
   {
-    if (transmit)
+    if (config.acting && transmit)
       transmit(frame);
   }
 
@@ -262,5 +299,17 @@ namespace EnOcean
       default:
         UI::Log("Unhandled SYS_EX function %u", fn);
     }
+  }
+
+  void Gateway::save(const std::string &filename) const
+  {
+    json j;
+    j["controller"] = config;
+
+    // for (const auto &s : devices)
+    //   j["state"][std::to_string(s.first)] = s.second.state;
+
+    std::ofstream of(filename);
+    of << j << std::endl;
   }
 }

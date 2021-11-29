@@ -69,12 +69,6 @@ void BME280::UpdateTimed()
   RT->Refresh(false);
 }
 
-void BME280::Test(const std::vector<uint8_t>&)
-{
-  Measure();
-  RT->Refresh(false);
-}
-
 float BME280::Temperature()
 {
   return RT->Temperature();

@@ -127,7 +127,7 @@ void Field<int64_t>::Update(bool full) {
 template<>
 void Field<float>::Update(bool full) {
   float val = Get();
-  snprintf(tmp, sizeof(tmp), "% 5.3f", val);
+  snprintf(tmp, sizeof(tmp), "% 5.2f", val);
   this->value = tmp;
   FieldBase::Update(full);
 };
@@ -135,7 +135,7 @@ void Field<float>::Update(bool full) {
 template<>
 void Field<double>::Update(bool full) {
   double val = Get();
-  snprintf(tmp, sizeof(tmp), "% 5.3f", val);
+  snprintf(tmp, sizeof(tmp), "% 5.2f", val);
   this->value = tmp;
   FieldBase::Update(full);
 };

@@ -44,6 +44,7 @@ public:
   void StrobeFor(Command cmd, State st, size_t delay_us = 0);
 
   virtual void Goto(Radio::State state) override;
+  virtual Radio::State GetState() const override;
   virtual void Receive(std::vector<uint8_t> &pkt) override;
   virtual void Transmit(const std::vector<uint8_t> &pkt) override;
 

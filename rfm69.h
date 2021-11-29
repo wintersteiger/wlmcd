@@ -77,8 +77,6 @@ public:
   virtual void Write(std::ostream &os);
   virtual void Read(std::istream &is);
 
-  virtual void Test(const std::vector<uint8_t> &data);
-
   double rRSSI() const;
   uint64_t rSyncWord() const;
   double rBitrate() const;

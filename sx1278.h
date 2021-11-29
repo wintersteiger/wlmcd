@@ -83,8 +83,6 @@ public:
 
   virtual void Write(std::ostream &os);
   virtual void Read(std::istream &is);
-
-  virtual void Test(const std::vector<uint8_t> &data);
 };
 
 #endif // _SX1278_H_

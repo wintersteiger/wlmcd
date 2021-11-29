@@ -74,12 +74,6 @@ void BME680::UpdateTimed()
   RT->Refresh(false);
 }
 
-void BME680::Test(const std::vector<uint8_t>&)
-{
-  Measure();
-  RT->Refresh(false);
-}
-
 void BME680::RegisterTable::Refresh(bool frequent)
 {
   for (auto reg : registers)

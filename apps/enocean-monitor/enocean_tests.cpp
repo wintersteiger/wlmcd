@@ -8,6 +8,8 @@
 #include <cinttypes>
 #include <fstream>
 
+#include <serialization.h>
+
 #include "enocean.h"
 #include "enocean_tests.h"
 

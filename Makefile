@@ -19,8 +19,8 @@ LDFLAGS=-lrt -lcrypto -lgpiod -lpthread -lgpiod
 	${CXX} ${CXXFLAGS} $< -c -o $@
 
 SRC = errors.cpp integrity.cpp \
-	decoder.cpp basic.cpp logfile.cpp \
-	spidev.cpp i2c_device.cpp\
+	decoder.cpp basic.cpp logfile.cpp serialization.cpp \
+	spidev.cpp i2c_device.cpp \
 	evohome.cpp radbot.cpp \
 	cc1101.cpp \
 	gpio_device.cpp \

@@ -9,18 +9,12 @@
 #include <mutex>
 #include <set>
 
-#include <json.hpp>
-using json = nlohmann::json;
-
 #include "enocean.h"
 #include "enocean_telegrams.h"
 
 namespace EnOcean
 {
   struct Device {
-    EEP eep;
-    MID mid;
-
     std::shared_ptr<DeviceState> state = nullptr;
     std::shared_ptr<DeviceConfiguration> configuration = nullptr;
   };
@@ -29,6 +23,7 @@ namespace EnOcean
   public:
     Gateway(std::function<void(const Frame&)> &&transmit,
             const std::string &config_file = "enocean-gateway.json",
+            const std::string &cache_file = "enocean-gateway.cache.json",
             TXID txid = 0xAABBCCDD);
     virtual ~Gateway();
 
@@ -41,14 +36,15 @@ namespace EnOcean
 
     const std::map<TXID, Device> device_map() { return this->devices; }
 
-    void set_learning(bool enabled) { learning_enabled = enabled; }
+    void set_learning(bool enabled) { config.learning = enabled; }
+
+    void save(const std::string &filename) const;
 
   protected:
     std::function<void(const Frame&)> transmit;
-    std::string config_file;
+    std::string config_file, cache_file;
     std::map<TXID, Device> devices;
     std::mutex mtx;
-    bool learning_enabled;
 
     class Configuration : public DeviceConfiguration {
     public:
@@ -59,7 +55,10 @@ namespace EnOcean
       MID mid = 0x00B;
       EEP eep = { 0xA5, 0x38, 0x08 };
 
-      std::map<TXID, DeviceConfiguration> devices;
+      bool learning = false;
+      bool acting = true;
+
+      std::map<TXID, std::shared_ptr<DeviceConfiguration>> devices;
 
       virtual void to_json(json& j) const override;
       virtual void from_json(const json& j) override;

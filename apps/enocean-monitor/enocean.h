@@ -8,6 +8,7 @@
 #include <vector>
 #include <map>
 
+#include <serialization.h>
 #include <decoder.h>
 #include <encoder.h>
 #include "state.h"
@@ -21,6 +22,8 @@ namespace EnOcean
     uint8_t type;
 
     operator uint32_t() const { return rorg << 16 | func << 8 | type; }
+    void to_json(json& j) const { j["rorg"] = rorg; j["func"] = func; j["type"] = type; }
+    void from_json(const json& j) { rorg = j["rorg"]; func = j["func"]; type = j["type"]; }
   };
 
   using TXID = uint32_t;
@@ -53,6 +56,9 @@ namespace EnOcean
     bool operator==(const Frame &other) const { return buffer == other.buffer; }
     bool operator!=(const Frame &other) const { return buffer != other.buffer; }
 
+    inline void to_json(json &j) const { }
+    inline void from_json(const json &j) { }
+
   protected:
     std::vector<uint8_t> buffer;
   };
@@ -77,5 +83,10 @@ namespace EnOcean
     virtual std::vector<uint8_t> Encode(const Frame& frame);
   };
 }
+
+inline void to_json(json &j, const EnOcean::EEP &v) { v.to_json(j); }
+inline void from_json(const json &j, EnOcean::EEP &v) { v.from_json(j); }
+inline void to_json(json &j, const EnOcean::Frame &v) { v.to_json(j); }
+inline void from_json(const json &j, EnOcean::Frame &v) { v.from_json(j); }
 
 #endif

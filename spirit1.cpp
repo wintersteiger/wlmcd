@@ -153,11 +153,31 @@ void SPIRIT1::StrobeFor(SPIRIT1::Command cmd, SPIRIT1::State st, size_t delay_us
 void SPIRIT1::Goto(Radio::State state)
 {
   switch (state) {
-    case Radio::State::Idle: StrobeFor(Command::READY, State::READY, 10); break;
-    case Radio::State::RX: StrobeFor(Command::RX, State::RX, 10); break;
+    case Radio::State::Idle:
+      StrobeFor(Command::READY, State::READY, 10);
+      break;
+    case Radio::State::RX:
+      if (GetState() != Radio::State::RX) {
+        if ((status_bytes[1] & 0x02) == 0)
+          Strobe(Command::FLUSHRXFIFO);
+        StrobeFor(Command::RX, State::RX, 10);
+      }
+      break;
+    case Radio::State::TX:
+      Strobe(Command::TX);
+      break;
     default:
       throw std::runtime_error("unhandled radio state");
   }
+}
+
+Radio::State SPIRIT1::GetState() const
+{
+  switch (status_bytes[0] >> 1) {
+    case 0x33: return Radio::State::RX;
+    case 0x5F: return Radio::State::TX;
+  }
+  return Radio::State::Idle;
 }
 
 double SPIRIT1::RSSI()
