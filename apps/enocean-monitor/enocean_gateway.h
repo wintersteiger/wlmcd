@@ -28,7 +28,7 @@ namespace EnOcean
     virtual ~Gateway();
 
     void receive(const Frame &frame, double rssi);
-    void send(const Frame &frame);
+    void send(const Frame &frame, bool force = false);
 
     EEP eep() const { return config.eep; }
     TXID txid() const { return config.txid; }
@@ -37,6 +37,7 @@ namespace EnOcean
     const std::map<TXID, Device> device_map() { return this->devices; }
 
     void set_learning(bool enabled) { config.learning = enabled; }
+    void ping();
 
     void save(const std::string &filename) const;
 
