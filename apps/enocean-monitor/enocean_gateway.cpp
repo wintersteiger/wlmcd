@@ -143,15 +143,18 @@ namespace EnOcean
                   switch (tti.eep()) {
                     case 0xA52001:
                     case 0xA52006: {
-                      Telegram_LEARN_4BS_3 reply(tti.eep().func, tti.eep().type, tti.mid(), config.txid, f.txid());
-                      send(reply);
+                      send(Telegram_LEARN_4BS_3(tti.eep().func, tti.eep().type, tti.mid(), config.txid, f.txid()));
                       break;
                     }
                     default: break;
                   }
                 }
                 else {
-                  UI::Log("Learn txid=%08x unknown EEP/MID", f.txid());
+                  auto dit = devices.find(f.txid());
+                  if (dit != devices.end())
+                    send(Telegram_LEARN_4BS_3(tti.eep().func, tti.eep().type, tti.mid(), config.txid, f.txid()));
+                  else
+                    UI::Log("Learn txid=%08x unknown EEP/MID", f.txid());
                 }
               }
             }
