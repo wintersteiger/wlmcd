@@ -87,7 +87,7 @@ namespace EnOcean
     Telegram_4BS(const std::array<uint8_t, 4> &data, TXID source, TXID destination, uint8_t status);
     virtual ~Telegram_4BS() {}
 
-    bool is_teach_in() const { return (frame.data()[3] & 0x08) == 0; }
+    bool is_teach_in() const { return (frame.data()[3] & 0x08) != 0; }
     uint8_t rorg() const { return frame.rorg(); }
   };
 
