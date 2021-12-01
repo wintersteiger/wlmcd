@@ -157,6 +157,8 @@ namespace EnOcean
                     UI::Log("Learn txid=%08x unknown EEP/MID", f.txid());
                 }
               }
+              else
+                UI::Log("Ignoring teach-in request from %08x.", f.txid());
             }
             else {
               auto dit = devices.find(f.txid());

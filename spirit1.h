@@ -47,6 +47,7 @@ public:
   virtual Radio::State GetState() const override;
   virtual void Receive(std::vector<uint8_t> &pkt) override;
   virtual void Transmit(const std::vector<uint8_t> &pkt) override;
+  virtual bool RXReady() const override;
 
   using Device::Read;
   using Device::Write;

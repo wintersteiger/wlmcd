@@ -160,7 +160,7 @@ void SPIRIT1::Goto(Radio::State state)
       if (GetState() != Radio::State::RX) {
         if ((status_bytes[1] & 0x02) == 0)
           Strobe(Command::FLUSHRXFIFO);
-        StrobeFor(Command::RX, State::RX, 10);
+        Strobe(Command::RX);
       }
       break;
     case Radio::State::TX:
@@ -178,6 +178,11 @@ Radio::State SPIRIT1::GetState() const
     case 0x5F: return Radio::State::TX;
   }
   return Radio::State::Idle;
+}
+
+bool SPIRIT1::RXReady() const
+{
+  return (status_bytes[1] & 0x02) == 0;
 }
 
 double SPIRIT1::RSSI()

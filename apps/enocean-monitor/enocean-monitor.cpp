@@ -87,24 +87,29 @@ static bool fRX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Decoder> 
     char *p = &lbuf[0];
 
     if (packet.size() > 0) {
-      p += sprintf(p, "RX rssi=%4.0fdBm lqi=%3.0f%% N=%d: %s", rssi, lqi, packet.size(), bytes_to_hex(packet).c_str());
+      p += sprintf(p, "RX rssi=%4.0fdBm lqi=%3.0f%% N=%d", rssi, lqi, packet.size());
 
       std::string err_str = "";
       bool decoded = false;
 
       try {
         frames = decoder->get_frames(packet);
-        if (!frames.empty())
-          p += sprintf(p, " Frames:");
-        for (auto& f : frames) {
-          auto d = f.describe();
-          p += sprintf(p, " %s", d.c_str());
-          flog("RX", rssi, lqi, packet, d.c_str(), "");
-        }
       }
       catch (const std::runtime_error &err) {
         err_str = err.what();
         p += sprintf(p, " ERROR: %s", err.what());
+      }
+    }
+
+    if (frames.empty())
+      p += sprintf(p, ": %s", bytes_to_hex(packet).c_str());
+    else
+    {
+      p += sprintf(p, " Frames:");
+      for (auto& f : frames) {
+        auto d = f.describe();
+        p += sprintf(p, " %s", d.c_str());
+        flog("RX", rssi, lqi, packet, d.c_str(), "");
       }
     }
 
@@ -215,9 +220,13 @@ int main()
       }));
 #endif
 
-    shell->controller->AddBackgroundDevice(std::make_shared<BackgroundTask>([&radio]() {
-      const std::lock_guard<std::mutex> lock(mtx);
-      radio->Goto(Radio::State::RX);
+    shell->controller->AddBackgroundDevice(std::make_shared<BackgroundTask>([&radio, encoder, decoder]() {
+      if (radio->RXReady())
+        fRX(radio, decoder, encoder);
+      {
+        const std::lock_guard<std::mutex> lock(mtx);
+        radio->Goto(Radio::State::RX);
+      }
     }));
 
     auto tf = [radio, encoder](const std::string &args) { manualTX(radio, encoder, args, false); };

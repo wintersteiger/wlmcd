@@ -21,6 +21,7 @@ public:
   virtual Radio::State GetState() const = 0;
   virtual void Receive(std::vector<uint8_t> &packet) = 0;
   virtual void Transmit(const std::vector<uint8_t> &packet) = 0;
+  virtual bool RXReady() const = 0;
 
   virtual uint64_t IRQHandler() { return 0; }
 
