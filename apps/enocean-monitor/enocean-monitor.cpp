@@ -33,7 +33,7 @@ static FILE *logfile = NULL;
 static std::mutex mtx, log_mtx;
 static std::shared_ptr<Shell> shell;
 static std::unique_ptr<EnOcean::Gateway> gateway;
-uint64_t irqs = 0;
+static uint64_t irqs = 0;
 
 static int flog(const char *label, double rssi, double lqi, const std::vector<uint8_t> &raw_packet, const std::string &msg, const std::string &err)
 {
@@ -225,6 +225,7 @@ int main()
     shell->controller->AddBackgroundDevice(std::make_shared<BackgroundTask>([radio, encoder, decoder]() {
       if (mtx.try_lock()) {
         if (radio->RXReady()) {
+          UI::Log("Manual pickup...");
           mtx.unlock();
           fRX(radio, decoder, encoder);
         }

@@ -210,8 +210,10 @@ void SPIRIT1::Receive(std::vector<uint8_t> &pkt)
   }
   while ((status_bytes[0] & 0x02) == 0 && pkt.size() < 255);
 
-  if (RT->RX_MODE_1_0() == 0x01)
+  if (RT->RX_MODE_1_0() == 0x01) {
     Strobe(Command::SABORT);
+    Strobe(Command::FLUSHRXFIFO);
+  }
 
   EnableIRQs();
 }
