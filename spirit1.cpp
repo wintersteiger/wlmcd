@@ -158,7 +158,7 @@ void SPIRIT1::Goto(Radio::State state)
       break;
     case Radio::State::RX:
       if (GetState() != Radio::State::RX) {
-        if ((status_bytes[1] & 0x02) == 0)
+        if ((status_bytes[0] & 0x02) == 0)
           Strobe(Command::FLUSHRXFIFO);
         Strobe(Command::RX);
       }
@@ -182,7 +182,7 @@ Radio::State SPIRIT1::GetState() const
 
 bool SPIRIT1::RXReady() const
 {
-  return (status_bytes[1] & 0x02) == 0;
+  return (status_bytes[0] & 0x02) == 0;
 }
 
 double SPIRIT1::RSSI()
@@ -208,7 +208,7 @@ void SPIRIT1::Receive(std::vector<uint8_t> &pkt)
     auto t = Read(0xFF, num_available);
     pkt.insert(pkt.end(), t.begin(), t.end());
   }
-  while ((status_bytes[1] & 0x02) == 0);
+  while ((status_bytes[0] & 0x02) == 0 && pkt.size() < 255);
 
   if (RT->RX_MODE_1_0() == 0x01)
     Strobe(Command::SABORT);

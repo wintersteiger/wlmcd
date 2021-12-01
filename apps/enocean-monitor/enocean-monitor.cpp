@@ -65,34 +65,30 @@ static int flog(const char *label, double rssi, double lqi, const std::vector<ui
 
 static bool fRX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Decoder> decoder, std::shared_ptr<EnOcean::Encoder> encoder)
 {
-  if (!decoder) {
-    UI::Log("no decoder");
-    return true;
-  }
+  const std::lock_guard<std::mutex> lock(mtx);
 
   std::vector<EnOcean::Frame> frames;
   double rssi = 0.0;
   double lqi = 0.0;
 
+  std::vector<uint8_t> packet;
+  radio->Receive(packet);
+
+  rssi = radio->RSSI();
+  lqi = radio->LQI();
+
+  char lbuf[1024];
+  char *p = &lbuf[0];
+
+  p += sprintf(p, "RX rssi=%4.0fdBm lqi=%3.0f%% N=%d", rssi, lqi, packet.size());
+
+  if (packet.size() > 0)
   {
-    const std::lock_guard<std::mutex> lock(mtx);
+    std::string err_str = "";
+    bool decoded = false;
 
-    std::vector<uint8_t> packet;
-    radio->Receive(packet);
-
-    rssi = radio->RSSI();
-    lqi = radio->LQI();
-
-    char lbuf[1024];
-    char *p = &lbuf[0];
-
-    p += sprintf(p, "RX rssi=%4.0fdBm lqi=%3.0f%% N=%d", rssi, lqi, packet.size());
-
-    if (packet.size() > 0)
+    if (decoder)
     {
-      std::string err_str = "";
-      bool decoded = false;
-
       try {
         frames = decoder->get_frames(packet);
       }
@@ -101,22 +97,27 @@ static bool fRX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Decoder> 
         p += sprintf(p, " ERROR: %s", err.what());
       }
     }
-
-    if (frames.empty())
-      p += sprintf(p, ": %s", bytes_to_hex(packet).c_str());
     else
-    {
-      p += sprintf(p, " Frames:");
-      for (auto& f : frames) {
-        auto d = f.describe();
-        p += sprintf(p, " %s", d.c_str());
-        flog("RX", rssi, lqi, packet, d.c_str(), "");
-      }
-    }
-
-    UI::Log(lbuf);
-    rx_cnt++;
+      p += sprintf(p, " no decoder");
   }
+
+  if (frames.empty()) {
+    p += sprintf(p, ": %.64s", bytes_to_hex(packet).c_str());
+    if (packet.size() > 64)
+      p += sprintf(p, "...");
+  }
+  else
+  {
+    p += sprintf(p, " Frames:");
+    for (auto& f : frames) {
+      auto d = f.describe();
+      p += sprintf(p, " %s", d.c_str());
+      flog("RX", rssi, lqi, packet, d.c_str(), "");
+    }
+  }
+
+  UI::Log(lbuf);
+  rx_cnt++;
 
   radio->Goto(Radio::State::RX);
 
@@ -221,12 +222,16 @@ int main()
       }));
 #endif
 
-    shell->controller->AddBackgroundDevice(std::make_shared<BackgroundTask>([&radio, encoder, decoder]() {
-      if (radio->RXReady())
-        fRX(radio, decoder, encoder);
-      {
-        const std::lock_guard<std::mutex> lock(mtx);
-        radio->Goto(Radio::State::RX);
+    shell->controller->AddBackgroundDevice(std::make_shared<BackgroundTask>([radio, encoder, decoder]() {
+      if (mtx.try_lock()) {
+        if (radio->RXReady()) {
+          mtx.unlock();
+          fRX(radio, decoder, encoder);
+        }
+        else {
+          radio->Goto(Radio::State::RX);
+          mtx.unlock();
+        }
       }
     }));
 

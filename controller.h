@@ -74,7 +74,7 @@ protected:
 
 class BackgroundTask : public DeviceBase {
 public:
-  BackgroundTask(std::function<void()> f) : DeviceBase(), f(f) {}
+  BackgroundTask(std::function<void()> &&f) : DeviceBase(), f(std::move(f)) {}
   virtual ~BackgroundTask() {}
   virtual const char* Name() const override { return ""; }
   virtual void Write(std::ostream &os) override {};
