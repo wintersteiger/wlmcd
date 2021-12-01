@@ -86,9 +86,10 @@ static bool fRX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Decoder> 
     char lbuf[1024];
     char *p = &lbuf[0];
 
-    if (packet.size() > 0) {
-      p += sprintf(p, "RX rssi=%4.0fdBm lqi=%3.0f%% N=%d", rssi, lqi, packet.size());
+    p += sprintf(p, "RX rssi=%4.0fdBm lqi=%3.0f%% N=%d", rssi, lqi, packet.size());
 
+    if (packet.size() > 0)
+    {
       std::string err_str = "";
       bool decoded = false;
 
