@@ -180,8 +180,10 @@ Radio::State SPIRIT1::GetState() const
   return Radio::State::Idle;
 }
 
-bool SPIRIT1::RXReady() const
+bool SPIRIT1::RXReady()
 {
+  status_bytes[0] = Read(RT->_rMC_STATE_1);
+  status_bytes[1] = Read(RT->_rMC_STATE_0);
   return (status_bytes[0] & 0x02) == 0;
 }
 

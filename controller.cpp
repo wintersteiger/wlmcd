@@ -322,6 +322,7 @@ void Controller::Run()
 
   SelectSystem(0);
   running = true;
+  timed_out = true;
   uis[ui_inx]->Reset();
 
   for (size_t i = 0; running; i++)
@@ -378,7 +379,7 @@ void Controller::Run()
         }
       }
 
-      if (timed_out)
+      if (have_timer && timed_out)
       {
         timed_out = false;
         ThreadCleanup();

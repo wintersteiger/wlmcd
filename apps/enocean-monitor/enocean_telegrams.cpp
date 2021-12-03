@@ -88,7 +88,7 @@ namespace EnOcean
     std::vector<uint8_t> payload(1 + 4 + 4, 0);
     payload[0] = 0xA5;
     payload[1] = setpoint;
-    payload[2] = rcu_temperature;
+    payload[2] = setpoint_selection == SetpointSelection::VALVE_POSITION ? rcu_temperature : 0;
     payload[3] = (reference_run ? 0x01 : 0x00) << 7 |
                  (lift_set ? 0x01 : 0x00) << 6 |
                  (valve_open ? 0x01 : 0x00) << 5 |

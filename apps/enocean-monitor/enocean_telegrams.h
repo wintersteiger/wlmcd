@@ -210,8 +210,8 @@ namespace EnOcean
 
       enum class SetpointSelection { VALVE_POSITION = 0, TEMPERATURE = 1 };
 
-      uint8_t setpoint = 42; // == 21 C
-      uint8_t rcu_temperature = 84; // == 21 C
+      uint8_t setpoint = 134; // == 21 C
+      uint8_t rcu_temperature = 134; // == 21 C
       bool reference_run = false;
       bool lift_set = false;
       bool valve_open = false;

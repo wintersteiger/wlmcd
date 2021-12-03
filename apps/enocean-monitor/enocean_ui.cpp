@@ -167,16 +167,16 @@ EnOceanUI::EnOceanUI(const std::unique_ptr<EnOcean::Gateway>& gateway,
           return c->setpoint_selection == t ? "temp" : "valve"; }
       ));
       Add(new LField<float>(UI::statusp, row++, col, 10, "S/P", "°C",
-        [c]() { return (c->setpoint / 80.0f) * 40.0f; },
+        [c]() { return (c->setpoint / 255.0f) * 40.0f; },
         [c](const char *value) {},
         [c]() { c->dirty = true; c->setpoint = std::max(c->setpoint - 1, 0); },
-        [c]() { c->dirty = true; c->setpoint = std::min(c->setpoint + 1, 80); }
+        [c]() { c->dirty = true; c->setpoint = std::min(c->setpoint + 1, 255); }
       ));
       Add(new LField<float>(UI::statusp, row++, col, 10, "RCU temp", "°C",
-        [c]() { return (c->rcu_temperature / 160.0f) * 40.0f; },
+        [c]() { return (c->rcu_temperature / 255.0f) * 40.0f; },
         [c](const char *value) {},
         [c]() { c->rcu_temperature = std::max(c->rcu_temperature - 1, 0); },
-        [c]() { c->rcu_temperature = std::min(c->rcu_temperature + 1, 160); }
+        [c]() { c->rcu_temperature = std::min(c->rcu_temperature + 1, 255); }
       ));
     }
     else
