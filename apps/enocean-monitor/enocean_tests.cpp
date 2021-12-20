@@ -10,7 +10,8 @@
 
 #include <serialization.h>
 
-#include "enocean.h"
+#include "enocean_frame.h"
+#include "enocean_codec.h"
 #include "enocean_tests.h"
 
 static std::vector<const char *> vectors = {
@@ -43,7 +44,7 @@ static int decoder_tests(int argc, const char **argv) {
       auto frames = decoder.get_frames(bytes);
       std::cout << frames.size() << ":";
       for (auto &f : frames)
-        std::cout << " " << f.describe();
+        std::cout << " " << f->describe();
       std::cout << std::endl;
     } catch (const std::runtime_error &err) {
       std::cout << "Failed: " << str << " (" << err.what() << ")" << std::endl;
@@ -61,11 +62,11 @@ static int decoder_tests(int argc, const char **argv) {
       auto frames = decoder.get_frames(enc);
       std::cout << frames.size() << ":";
       for (auto &f : frames)
-        std::cout << " " << f.describe();
+        std::cout << " " << f->describe();
       std::cout << std::endl;
       if (frames.size() != 1)
         throw std::logic_error("incorrect number of frames");
-      auto rstr = bytes_to_hex(frames[0]);
+      auto rstr = to_hex(*frames[0]);
       if (str != rstr)
         throw std::logic_error(std::string(" != ") + rstr);
     } catch (const std::runtime_error &err) {

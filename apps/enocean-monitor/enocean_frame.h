@@ -11,8 +11,6 @@
 #include <serialization.h>
 #include <decoder.h>
 #include <encoder.h>
-#include "state.h"
-#include "field_types.h"
 
 namespace EnOcean
 {
@@ -56,31 +54,11 @@ namespace EnOcean
     bool operator==(const Frame &other) const { return buffer == other.buffer; }
     bool operator!=(const Frame &other) const { return buffer != other.buffer; }
 
-    inline void to_json(json &j) const { }
-    inline void from_json(const json &j) { }
+    inline void to_json(json &j) const { j = buffer; }
+    inline void from_json(const json &j) { buffer = j.get<std::vector<uint8_t>>(); }
 
   protected:
     std::vector<uint8_t> buffer;
-  };
-
-  class Decoder : public ::Decoder {
-  public:
-    Decoder();
-    virtual ~Decoder();
-
-    virtual const std::string& Decode(std::vector<uint8_t> &bytes);
-
-    virtual std::vector<Frame> get_frames(const std::vector<uint8_t> &bytes);
-  };
-
-  class Encoder : public ::Encoder {
-  public:
-    Encoder();
-    virtual ~Encoder();
-
-    virtual std::vector<uint8_t> Encode(const std::vector<uint8_t> &data);
-
-    virtual std::vector<uint8_t> Encode(const Frame& frame);
   };
 }
 

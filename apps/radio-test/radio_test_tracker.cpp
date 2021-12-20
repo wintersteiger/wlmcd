@@ -72,7 +72,7 @@ protected:
 
 void RadioTestTracker::receive(const std::vector<uint8_t> &packet)
 {
-  // UI::Log("PKT: %s", bytes_to_hex(packet).c_str());
+  // UI::Log("PKT: %s", to_hex(packet).c_str());
   num_rx++;
 
   if (packet.size() >= 11)

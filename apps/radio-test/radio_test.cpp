@@ -77,7 +77,7 @@ static bool fRX(std::shared_ptr<Radio> radio)
     if (packet.size() > 0) {
       p += sprintf(p, "RX rssi=%4.0fdBm lqi=%3.0f%% N=%d: ", rssi, lqi, packet.size());
       if (packet.size() < 128)
-        p += sprintf(p, "%s", bytes_to_hex(packet).c_str());
+        p += sprintf(p, "%s", to_hex(packet).c_str());
       else
         p += sprintf(p, "...");
 
@@ -118,7 +118,7 @@ static bool fIRQ(std::shared_ptr<Radio> radio)
 
 static void fTX(std::shared_ptr<Radio> radio, const std::vector<uint8_t> &packet)
 {
-  UI::Log("TX: %s", bytes_to_hex(packet).c_str());
+  UI::Log("TX: %s", to_hex(packet).c_str());
 
   const std::lock_guard<std::mutex> lock(radio_mtx);
   try {

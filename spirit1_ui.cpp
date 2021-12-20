@@ -148,7 +148,7 @@ SPIRIT1UI::SPIRIT1UI(std::shared_ptr<SPIRIT1> spirit1, const uint64_t &irqs)
   Add(new LField<std::string>(w, row++, col, 8, "sync word", "",
     [rt](){
       std::array<uint8_t, 4> sw = { rt->SYNC1(), rt->SYNC2(), rt->SYNC3(), rt->SYNC4() };
-      return bytes_to_hex(sw);
+      return to_hex(sw);
   }));
   Add(new LField<const char*>(w, row++, col, 8, "CRC mode", "", [rt](){
     static const char *values[] = { "None", "0x07", "0x8005", "0x1021", "0x864CBF" };

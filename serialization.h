@@ -27,11 +27,11 @@ inline uint8_t hex_to_byte(char c1, char c2)
 
 std::vector<uint8_t> hex_string_to_bytes(const char *s);
 
-std::string bytes_to_hex(const std::vector<uint8_t> &bytes);
+std::string to_hex(const std::vector<uint8_t> &bytes);
 
 template <size_t SZ>
-inline std::string bytes_to_hex(const std::array<uint8_t, SZ> &bytes) {
-  return bytes_to_hex(std::vector<uint8_t>(bytes.begin(), bytes.end()));
+inline std::string to_hex(const std::array<uint8_t, SZ> &bytes) {
+  return to_hex(std::vector<uint8_t>(bytes.begin(), bytes.end()));
 }
 
 std::vector<uint8_t> from_hex(const std::string &data);
@@ -40,21 +40,21 @@ template <typename T, typename = void>
 struct hex_scalar_serializer
 {
     template <typename BasicJsonType, typename U = T,
-              typename std::enable_if<!(std::is_integral<U>::value && !std::is_same<U, bool>::value), int>::type = 0>
+              typename std::enable_if<!(std::is_integral<U>::value && !std::is_same<U, bool>::value && !std::is_enum<U>::value), int>::type = 0>
     static void from_json(const BasicJsonType& j, U& t)
     {
         nlohmann::from_json(j, t);
     }
 
     template <typename BasicJsonType, typename U = T,
-              typename std::enable_if<!(std::is_integral<U>::value && !std::is_same<U, bool>::value), int>::type = 0>
+              typename std::enable_if<!(std::is_integral<U>::value && !std::is_same<U, bool>::value && !std::is_enum<U>::value), int>::type = 0>
     static void to_json(BasicJsonType& j, const T& t)
     {
         nlohmann::to_json(j, t);
     }
 
     template <typename BasicJsonType, typename U = T,
-              typename std::enable_if<std::is_integral<U>::value && !std::is_same<U, bool>::value, int>::type = 0>
+              typename std::enable_if<std::is_integral<U>::value && !std::is_same<U, bool>::value && !std::is_enum<U>::value, int>::type = 0>
     static void from_json(const BasicJsonType& j, U& t)
     {
       if (!j.is_string())
@@ -67,16 +67,16 @@ struct hex_scalar_serializer
         throw std::runtime_error("unexpected json string length");
 
       t = 0;
-      for (size_t i=0; i < sizeof(t); i += 2) {
+      for (size_t i=0; i < s.size(); i += 2) {
         uint8_t b = 0;
-        if (sscanf(s.c_str(), "%02hhx", &b) != 1)
+        if (sscanf(s.c_str() + i, "%02hhx", &b) != 1)
           throw std::runtime_error("invalid hex character in json string");
         t = t << 8 | b;
       }
     }
 
     template <typename BasicJsonType, typename U = T,
-              typename std::enable_if<std::is_integral<U>::value && !std::is_same<U, bool>::value, int>::type = 0>
+              typename std::enable_if<std::is_integral<U>::value && !std::is_same<U, bool>::value && !std::is_enum<U>::value, int>::type = 0>
     static void to_json(BasicJsonType& j, const T& t) noexcept
     {
       char tmp[2 * sizeof(t) + 1];

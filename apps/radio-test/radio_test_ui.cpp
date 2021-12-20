@@ -15,7 +15,7 @@ RadioTestUI::RadioTestUI(const std::vector<std::shared_ptr<Radio>> radio_devices
   fields.push_back(new Empty(row++, col));
 
   Add(new LField<std::string>(UI::statusp, row++, col, 8, "Our ID", "",
-      [tracker]() { return bytes_to_hex(tracker->id); }));
+      [tracker]() { return to_hex(tracker->id); }));
   Add(new LField<uint64_t>(UI::statusp, row++, col, 8, "# packets RX", "",
       [tracker]() { return tracker->num_rx; }));
   Add(new LField<uint64_t>(UI::statusp, row++, col, 8, "# packets TX", "",
@@ -49,7 +49,7 @@ void RadioTestUI::Update(bool full)
       row++;
       fields.push_back(new Empty(row++, col));
       Add(new LField<std::string>(UI::statusp, row++, col, 8, "Their ID", "",
-        [id]() { return bytes_to_hex(id); }));
+        [id]() { return to_hex(id); }));
       Add(new LField<uint64_t>(UI::statusp, row++, col, 8, "Last seq no", "",
         [&p]() { return p.last_seq_no; }));
       Add(new LField<uint64_t>(UI::statusp, row++, col, 8, "# pings TX", "",

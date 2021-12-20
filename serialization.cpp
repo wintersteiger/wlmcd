@@ -15,7 +15,7 @@ std::vector<uint8_t> hex_string_to_bytes(const char *s)
   return bytes;
 }
 
-std::string bytes_to_hex(const std::vector<uint8_t> &bytes)
+std::string to_hex(const std::vector<uint8_t> &bytes)
 {
   std::string r;
   r.reserve(bytes.size() * 2 + 1);

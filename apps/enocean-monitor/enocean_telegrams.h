@@ -7,7 +7,9 @@
 #include <vector>
 #include <array>
 
-#include "enocean.h"
+#include "json.hpp"
+
+#include "enocean_frame.h"
 
 namespace EnOcean
 {
@@ -17,7 +19,13 @@ namespace EnOcean
     virtual ~DeviceState() {}
     virtual void to_json(json& j) const {}
     virtual void from_json(const json& j) {}
+
+    std::map<uint16_t, std::vector<uint8_t>> extended;
+    double last_rrsi = 0.0;
   };
+
+  std::shared_ptr<DeviceState> mk_device_state(const EEP &eep);
+  std::shared_ptr<DeviceState> mk_device_state(const EEP &eep, const json &j);
 
   class DeviceConfiguration {
   public:
@@ -27,10 +35,30 @@ namespace EnOcean
     EEP eep;
     MID mid;
     bool dirty = false;
+    uint32_t security_code = 0;
+    std::string ddf;
+    std::vector<std::pair<uint16_t, uint8_t>> extended;
 
-    virtual void to_json(json& j) const { j["eep"] = eep; j["mid"] = mid; }
-    virtual void from_json(const json& j) { eep = j["eep"].get<EEP>(); mid = j["mid"].get<MID>(); }
+    virtual void to_json(json& j) const {
+      j["eep"] = eep;
+      j["mid"] = mid;
+      j["security_code"] = security_code;
+      if (!extended.empty())
+        j["extended"] = extended;
+      j["ddf"] = ddf;
+    }
+
+    virtual void from_json(const json& j) {
+      auto eep_it = j.find("eep"); if (eep_it != j.end()) eep = eep_it->get<EEP>();
+      auto mid_it = j.find("mid"); if (mid_it != j.end()) mid = mid_it->get<MID>();
+      auto sec_it = j.find("security_code"); if (sec_it != j.end()) security_code = sec_it->get<uint32_t>();
+      auto ext_it = j.find("extended"); if (ext_it != j.end()) extended = ext_it->get<std::vector<std::pair<uint16_t, uint8_t>>>();
+      auto ddf_it = j.find("ddf"); if (ddf_it != j.end()) ddf = ddf_it->get<std::string>();
+    }
   };
+
+  std::shared_ptr<DeviceConfiguration> mk_device_configuration(const EEP &eep);
+  std::shared_ptr<DeviceConfiguration> mk_device_configuration(const EEP &eep, const json &j);
 
   class Telegram {
   public:
@@ -104,6 +132,10 @@ namespace EnOcean
       uint8_t func, uint8_t type, MID mid, TXID source, TXID destination,
       bool learn_status = true, bool learn_eep_supported = true, bool learn_result = true,
       uint8_t status = 0);
+    Telegram_LEARN_4BS_3(
+      const EEP &eep, MID mid, TXID source, TXID destination,
+      bool learn_status = true, bool learn_eep_supported = true, bool learn_result = true,
+      uint8_t status = 0);
     virtual ~Telegram_LEARN_4BS_3() {}
 
     uint8_t func() const { return frame.data()[0] >> 2; }
@@ -111,6 +143,75 @@ namespace EnOcean
     MID mid() const { return (frame.data()[1] & 0x07 << 8) | frame.data()[2]; }
     EEP eep() const { return { rorg(), func(), type() }; }
     bool learn_type_with_eep() const { return (frame.data()[3] & 0x80) != 0; }
+  };
+
+  enum class RMCC : uint16_t {
+    // Remote Management Control Commands
+    RESERVED = 0x000,
+    UNLOCK = 0x001,
+    LOCK = 0x002,
+    SET_CODE = 0x003,
+    QUERY_ID = 0x004,
+    QUERY_ID_ANSWER = 0x604,
+    QUERY_ID_ANSWER_EXTENDED = 0x704,
+    ACTION_COMMAND = 0x005,
+    PING_COMMAND = 0x006,
+    PING_ANSWER = 0x606,
+    QUERY_FUNCTION = 0x007,
+    QUERY_STATUS = 0x008,
+    QUERY_STATUS_ANSWER = 0x608,
+
+    START_SESSION = 0x009,
+    CLOSE_SESSION = 0x00A,
+
+    // Remote Commissioning Control Commands
+    REMOTE_COMMISSIONING_ACKNOWLEDGE = 0x240,
+    GET_LINK_TABLE_METADATA_QUERY = 0x210,
+    GET_LINK_TABLE_METADATA_RESPONSE = 0x810,
+    GET_LINK_TABLE_QUERY = 0x211,
+    GET_LINK_TABLE_RESPONSE = 0x811,
+    SET_LINK_TABLE_CONTENT = 0x212,
+    GET_LINK_TABLE_GP_ENTRY_QUERY = 0x213,
+    GET_LINK_TABLE_GP_ENTRY_RESPONSE = 0x813,
+    SET_LINK_TABLE_GP_ENTRY_CONTENT = 0x214,
+    GET_SECURITY_PROFILE_QUERY = 0x215,
+    GET_SECURITY_PROFILE_RESPONSE = 0x815,
+    SET_SECURITY_PROFILE = 0x216,
+    REMOTE_SET_LEARN_MODE = 0x220,
+    TRIGGER_OUTBOUND_REMOTE_TEACH_REQUEST = 0x221,
+    GET_DEVICE_CONFIGURATION_QUERY = 0x230,
+    GET_DEVICE_CONFIGURATION_RESPONSE = 0x830,
+    SET_DEVICE_CONFIGURATION_QUERY = 0x231,
+    GET_LINK_BASED_CONFIGURATION_QUERY = 0x232,
+    GET_LINK_BASED_CONFIGURATION_RESPONSE = 0x832,
+    SET_LINK_BASED_CONFIGURATION_QUERY = 0x233,
+    GET_DEVICE_SECURITY_INFORMATION_QUERY = 0x234,
+    GET_DEVICE_SECURITY_INFORMATION_RESPONSE = 0x834,
+    SET_DEVICE_SECURITY_INFORMATION = 0x235,
+    APPLY_CHANGES = 0x226,
+    RESET_DEVICE_DEFAULTS = 0x224,
+    RADIO_LINK_TEST_CONTROL = 0x225,
+    GET_PRODUCT_ID = 0x227,
+    GET_PRODUCT_ID_RESPONSE = 0x827,
+  };
+
+  enum class RMSC : uint8_t {
+    OK_ = 0x00,
+    WRONG_TARGET_ID = 0x01,
+    WRONG_UNLOCK_CODE = 0x02,
+    WRONG_EEP = 0x03,
+    WRONG_MANUFACTURER_ID = 0x04,
+    WRONG_DATA_SIZE = 0x05,
+    NO_CODE_SET = 0x06,
+    NOT_SENT = 0x07,
+    RPC_FAILED = 0x08,
+    MESSAGE_TIME_OUT = 0x09,
+    TOO_LONG_MESSAGE = 0x0A,
+    MESSAGE_PART_ALREADY_RECEIVED = 0x0B,
+    MESSAGE_PART_NOT_RECEIVED = 0x0C,
+    ADDRESS_OUT_OF_RANGE = 0x0D,
+    CODE_DATA_SIZE_EXCEEDED = 0x0E,
+    WRONG_DATA = 0x0F
   };
 
   class Telegram_SYS_EX_ERP1 : public Telegram {
@@ -124,7 +225,7 @@ namespace EnOcean
       if (frame.rorg() != 0xC5 || frame.size() != 16)
         throw std::runtime_error("not a SYS_EX telegram");
     }
-    Telegram_SYS_EX_ERP1(uint8_t SEQ, uint8_t IDX, MID mid, uint16_t fn, const std::vector<uint8_t> &payload, TXID source, uint8_t status);
+    Telegram_SYS_EX_ERP1(uint8_t SEQ, uint8_t IDX, MID mid, RMCC fn, const std::vector<uint8_t> &payload, TXID source, uint8_t status);
     virtual ~Telegram_SYS_EX_ERP1() {}
 
     uint16_t SEQ() const { return frame.data()[0] >> 6; }
@@ -135,233 +236,47 @@ namespace EnOcean
         r = r << 8 | frame.data()[i];
       return r;
     };
-    const uint8_t* raw() const {
-      return &frame.data()[0];
+    RMCC rmcc() const { return static_cast<RMCC>((frame.data()[2] & 0x00F) << 8 | frame.data()[3]); }
+    size_t data_size() const {
+      return IDX() == 0 ? 4 : 8;
+    }
+    const uint8_t* raw_data() const {
+      return IDX() == 0 ? &frame.data()[5] : &frame.data()[1];
     }
   };
 
-  namespace A5_20_01 {
-    class ACT2RCU : public Telegram_4BS {
-    public:
-      ACT2RCU() : Telegram_4BS() {}
-      ACT2RCU(Frame &&f) : Telegram_4BS(std::move(f)) {}
-      ACT2RCU(const Frame &f) : Telegram_4BS(f) {}
-      virtual ~ACT2RCU() {}
-
-      uint8_t current_value() const { return frame.data()[0]; } // 0-100 = 0-100 %
-
-      bool service_on() const { return frame.data()[1] & 0x80; }
-      bool energy_input() const { return frame.data()[1] & 0x40; }
-      bool energy_storage() const { return frame.data()[1] & 0x20; }
-      bool battery_capacity() const { return frame.data()[1] & 0x10; }
-      bool contact_cover_open() const { return frame.data()[1] & 0x08; }
-      bool sensor_failure() const { return frame.data()[1] & 0x04; }
-      bool window_open() const { return frame.data()[1] & 0x02; }
-      bool actuator_obstructed() const { return frame.data()[1] & 0x01; }
-
-      uint8_t temperature() const { return frame.data()[2]; } // 0-255 = 0-40 C
-
-      virtual void to_json(json& j) const {}
-      virtual void from_json(const json& j) {}
+  class SignalTelegram : public Telegram {
+  public:
+    enum class MessageIndex : uint8_t {
+      SMARTAckMailboxEmpty = 0x01,
+      SMARTACKMailboxDoesNotExist = 0x02,
+      SMARTACKResetTriggerLRNRequest = 0x03,
+      TriggerStatusMessageOfDevice = 0x04,
+      LastUnicastMessageAcknowledge = 0x05,
+      EnergyStatusOfDevice = 0x06,
+      RevisionOfDevice = 0x07,
+      Heartbeat = 0x08,
+      RXWindowOpen = 0x09,
+      RXChannelQuality = 0x0A,
+      DutyCycleStatus = 0x0B,
+      ConfigurationOfDeviceChanged = 0x0C,
+      EnergyDeliveryOfTheHarvester = 0x0D,
+      TXModeOff = 0x0E,
+      TXModeOn = 0x0F,
+      BackupBatteryStatus = 0x10,
+      LearnodeStatus = 0x11,
+      ProductID = 0x12
     };
 
-    class RCU2ACT : public Telegram_4BS {
-    public:
-      RCU2ACT(Frame &&f) : Telegram_4BS(std::move(f)) {}
-      virtual ~RCU2ACT() {}
+    SignalTelegram(Frame &&f) : Telegram(std::move(f)) {
+      if (frame.rorg() != 0xD0 || frame.size() < 8 || frame.size() > 21)
+        throw std::runtime_error("not a signal telegram");
+    }
+    SignalTelegram(MessageIndex message_index, const std::vector<uint8_t> &optional_data, TXID source, uint8_t status);
+    virtual ~SignalTelegram() {}
 
-      uint8_t valve_position() const { return frame.data()[0]; }
-
-      uint8_t temperature() const { return frame.data()[1]; }
-
-      bool run_init_sequence() const { return frame.data()[2] & 0x80; }
-      bool lift_set() const { return frame.data()[2] & 0x40; }
-      bool valve_open() const { return frame.data()[2] & 0x20; }
-      bool valve_closed() const { return frame.data()[2] & 0x10; }
-      bool summer_bit() const { return frame.data()[2] & 0x08; }
-      bool temperature_setpoint_mode() const { return frame.data()[2] & 0x04; }
-      bool setpoint_inverse() const { return frame.data()[2] & 0x02; }
-      bool select_function() const { return frame.data()[2] & 0x01; }
-
-      bool data_telegram() const { return frame.data()[3] & 0x08; }
-    };
-
-    class DeviceState : public EnOcean::DeviceState {
-    public:
-      DeviceState() {}
-      virtual ~DeviceState() {}
-
-      void Update(const EnOcean::Frame& frame) {
-        last_frame_time = time(NULL);
-        last_telegram = ACT2RCU(frame);
-      }
-
-      time_t last_frame_time = 0;
-      ACT2RCU last_telegram;
-
-      virtual void to_json(json& j) const override { j["last_frame_time"] = last_frame_time; j["last_telegram"] = last_telegram; }
-      virtual void from_json(const json& j) override { last_frame_time = j["last_frame_time"]; last_telegram = j["last_telegram"]; }
-    };
-
-    class DeviceConfiguration : public EnOcean::DeviceConfiguration {
-    public:
-      DeviceConfiguration() : EnOcean::DeviceConfiguration() {}
-      virtual ~DeviceConfiguration() {}
-
-      enum class SetpointSelection { VALVE_POSITION = 0, TEMPERATURE = 1 };
-
-      uint8_t setpoint = 134; // == 21 C
-      uint8_t rcu_temperature = 134; // == 21 C
-      bool reference_run = false;
-      bool lift_set = false;
-      bool valve_open = false;
-      bool valve_closed = false;
-      bool summer_mode = false;
-      SetpointSelection setpoint_selection = SetpointSelection::TEMPERATURE;
-      bool setpoint_inverse = false;
-      bool select_function = false;
-
-      virtual Frame mk_update(TXID source, TXID destination, uint8_t status);
-
-      virtual void to_json(json& j) const override
-      {
-        EnOcean::DeviceConfiguration::to_json(j);
-        j["setpoint"] = setpoint;
-        j["rcu_temperature"] = rcu_temperature;
-        j["reference_run"] = reference_run;
-        j["lift_set"] = lift_set;
-        j["valve_open"] = valve_open;
-        j["valve_closed"] = valve_closed;
-        j["summer_mode"] = summer_mode;
-        j["setpoint_selection"] = setpoint_selection;
-        j["setpoint_inverse"] = setpoint_inverse;
-        j["select_function"] = select_function;
-      }
-
-      virtual void from_json(const json& j) override
-      {
-        EnOcean::DeviceConfiguration::from_json(j);
-        setpoint = j["setpoint"];
-        rcu_temperature = j["rcu_temperature"];
-        reference_run = j["reference_run"];
-        lift_set = j["lift_set"];
-        valve_open = j["valve_open"];
-        valve_closed = j["valve_closed"];
-        summer_mode = j["summer_mode"];
-        setpoint_selection = j["setpoint_selection"];
-        setpoint_inverse = j["setpoint_inverse"];
-        select_function = j["select_function"];
-      }
-    };
-  };
-
-  namespace A5_20_06 {
-    class ACT2RCU : public Telegram_4BS {
-    public:
-      ACT2RCU() : Telegram_4BS() {}
-      ACT2RCU(Frame &&f) : Telegram_4BS(std::move(f)) {}
-      ACT2RCU(const Frame &f) : Telegram_4BS(f) {}
-      virtual ~ACT2RCU() {}
-
-      uint8_t valve_position() const { return frame.data()[0]; }
-      bool local_offset_absolute() const { return frame.data()[1] & 0x80; }
-      uint8_t local_offset() const { return frame.data()[1] & 0x7F; }
-      uint8_t temperature() const { return frame.data()[2]; }
-
-      bool feed_temp_sensor() const { return frame.data()[3] & 0x80; }
-      bool harvesting() const { return frame.data()[3] & 0x40; }
-      bool charged() const { return frame.data()[3] & 0x20; }
-      bool window_open() const { return frame.data()[3] & 0x10; }
-
-      bool data_telegram() const { return frame.data()[3] & 0x08; }
-      bool radio_errors() const { return frame.data()[3] & 0x04; }
-      bool radio_weak() const { return frame.data()[3] & 0x02; }
-      bool actuator_obstructed() const { return frame.data()[3] & 0x01; }
-
-      virtual void to_json(json& j) const {}
-      virtual void from_json(const json& j) {}
-    };
-
-    class RCU2ACT : public Telegram_4BS {
-    public:
-      RCU2ACT(Frame &&f) : Telegram_4BS(std::move(f)) {}
-      virtual ~RCU2ACT() {}
-
-      uint8_t valve_position() const { return frame.data()[0]; }
-
-      uint8_t temperature() const { return frame.data()[1]; }
-
-      bool reference_run() const { return frame.data()[2] & 0x80; }
-      uint8_t radio_interval() const { return (frame.data()[2] & 0x70) >> 4; }
-      bool summer_bit() const { return frame.data()[2] & 0x08; }
-      bool temperature_setpoint_mode() const { return frame.data()[2] & 0x04; }
-      bool feed_temperature_requested() const { return frame.data()[2] & 0x02; }
-      bool standby() const { return frame.data()[2] & 0x01; }
-
-      bool data_telegram() const { return frame.data()[3] & 0x08; }
-    };
-
-    class DeviceState : public EnOcean::DeviceState {
-    public:
-      DeviceState() {}
-      virtual ~DeviceState() {}
-
-      void Update(const EnOcean::Frame& frame) {
-        last_frame_time = time(NULL);
-        last_telegram = ACT2RCU(frame);
-      }
-
-      time_t last_frame_time = 0;
-      ACT2RCU last_telegram;
-
-      virtual void to_json(json& j) const override { j["last_frame_time"] = last_frame_time; j["last_telegram"] = last_telegram; }
-      virtual void from_json(const json& j) override { last_frame_time = j["last_frame_time"]; last_telegram = j["last_telegram"]; }
-    };
-
-    class DeviceConfiguration : public EnOcean::DeviceConfiguration {
-    public:
-      DeviceConfiguration() : EnOcean::DeviceConfiguration() {}
-      virtual ~DeviceConfiguration() {}
-
-      enum class SetpointSelection { VALVE_POSITION = 0, TEMPERATURE = 1 };
-
-      uint8_t setpoint = 42; // == 21 C
-      uint8_t rcu_temperature = 84; // == 21 C
-      bool reference_run = false;
-      uint8_t communication_interval = 3;
-      bool summer_mode = false;
-      SetpointSelection setpoint_selection = SetpointSelection::TEMPERATURE;
-      bool temperature_selection = false;
-      bool standby = false;
-
-      virtual Frame mk_update(TXID source, TXID destination, uint8_t status);
-
-      virtual void to_json(json& j) const override
-      {
-        EnOcean::DeviceConfiguration::to_json(j);
-        j["setpoint"] = setpoint;
-        j["rcu_temperature"] = rcu_temperature;
-        j["reference_run"] = reference_run;
-        j["communication_interval"] = communication_interval;
-        j["summer_mode"] = summer_mode;
-        j["setpoint_selection"] = setpoint_selection;
-        j["temperature_selection"] = temperature_selection;
-        j["standby"] = standby;
-      }
-
-      virtual void from_json(const json& j) override
-      {
-        EnOcean::DeviceConfiguration::from_json(j);
-        setpoint = j["setpoint"];
-        rcu_temperature = j["rcu_temperature"];
-        reference_run = j["reference_run"];
-        communication_interval = j["communication_interval"];
-        summer_mode = j["summer_mode"];
-        setpoint_selection = j["setpoint_selection"];
-        temperature_selection = j["temperature_selection"];
-        standby = j["standby"];
-      }
-    };
+    MessageIndex message_index() const { return static_cast<MessageIndex>(frame.data()[0]); }
+    const uint8_t* optional_data() const { return &frame.data()[2]; }
   };
 }
 
@@ -371,9 +286,5 @@ inline void to_json(json& j, const EnOcean::DeviceConfiguration& p) { p.to_json(
 inline void from_json(const json& j, EnOcean::DeviceConfiguration& p) { return p.from_json(j); }
 inline void to_json(json& j, const EnOcean::Telegram& p) { p.to_json(j); }
 inline void from_json(const json& j, EnOcean::Telegram& p) { return p.from_json(j); }
-inline void to_json(json& j, const EnOcean::A5_20_06::ACT2RCU& p) { p.to_json(j); }
-inline void from_json(const json& j, EnOcean::A5_20_06::ACT2RCU& p) { return p.from_json(j); }
-inline void to_json(json& j, const EnOcean::A5_20_06::DeviceState& p) { p.to_json(j); }
-inline void from_json(const json& j, EnOcean::A5_20_06::DeviceState& p) { return p.from_json(j); }
 
 #endif // _ENOCEAN_TELEGRAMS_H_

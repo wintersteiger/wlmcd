@@ -41,3 +41,11 @@ uint8_t checksum(const std::vector<uint8_t> &data, bool skip_last)
     r -= data.back();
   return r;
 }
+
+uint8_t checkxor(const std::vector<uint8_t> &data, bool skip_last)
+{
+  uint8_t r = 0;
+  for (auto it = data.begin(); it != (data.end() - (skip_last ? 1 : 0)); it++)
+    r ^= *it;
+  return r;
+}

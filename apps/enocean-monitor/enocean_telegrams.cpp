@@ -2,9 +2,47 @@
 // Licensed under the MIT License.
 
 #include "enocean_telegrams.h"
+#include "enocean_a5_20_01.h"
+#include "enocean_a5_20_06.h"
 
 namespace EnOcean
 {
+  std::shared_ptr<DeviceState> mk_device_state(const EEP &eep)
+  {
+    switch (eep) {
+      case 0xA52001: return std::make_shared<A5_20_01::DeviceState>();
+      case 0xA52006: return std::make_shared<A5_20_06::DeviceState>();
+      default: throw std::runtime_error("unsupported EEP");
+    }
+  }
+
+  std::shared_ptr<DeviceState> mk_device_state(const EEP &eep, const json &j)
+  {
+    switch (eep) {
+      case 0xA52001: return std::make_shared<A5_20_01::DeviceState>(j.get<A5_20_01::DeviceState>());
+      case 0xA52006: return std::make_shared<A5_20_06::DeviceState>(j.get<A5_20_06::DeviceState>());
+      default: throw std::runtime_error("unsupported EEP");
+    }
+  }
+
+  std::shared_ptr<DeviceConfiguration> mk_device_configuration(const EEP &eep)
+  {
+    switch (eep) {
+      case 0xA52001: return std::make_shared<A5_20_01::DeviceConfiguration>();
+      case 0xA52006: return std::make_shared<A5_20_06::DeviceConfiguration>();
+      default: throw std::runtime_error("unsupported EEP");
+    }
+  }
+
+  std::shared_ptr<DeviceConfiguration> mk_device_configuration(const EEP &eep, const json &j)
+  {
+    switch (eep) {
+      case 0xA52001: return std::make_shared<A5_20_01::DeviceConfiguration>(j.get<A5_20_01::DeviceConfiguration>());
+      case 0xA52006: return std::make_shared<A5_20_06::DeviceConfiguration>(j.get<A5_20_06::DeviceConfiguration>());
+      default: throw std::runtime_error("unsupported EEP");
+    }
+  }
+
   AddressedTelegram::AddressedTelegram(const Telegram &t, TXID destination) :
     Telegram()
   {
@@ -83,6 +121,14 @@ namespace EnOcean
     frame = Frame(0xA6, payload, source, status);
   }
 
+  Telegram_LEARN_4BS_3::Telegram_LEARN_4BS_3(
+      const EEP &eep, MID mid, TXID source, TXID destination,
+      bool learn_status, bool learn_eep_supported, bool learn_result,
+      uint8_t status) :
+      Telegram_LEARN_4BS_3(eep.func, eep.type, mid, source, destination,
+                           learn_status, learn_eep_supported, learn_result, status)
+  {}
+
   Frame A5_20_01::DeviceConfiguration::mk_update(TXID source, TXID destination, uint8_t status)
   {
     std::vector<uint8_t> payload(1 + 4 + 4, 0);
@@ -110,7 +156,7 @@ namespace EnOcean
     std::vector<uint8_t> payload(1 + 4 + 4, 0);
     payload[0] = 0xA5;
     payload[1] = setpoint;
-    payload[2] = rcu_temperature;
+    payload[2] = setpoint_selection == SetpointSelection::TEMPERATURE ? 0 : rcu_temperature;
     payload[3] = (reference_run ? 0x01 : 0x00) << 7 |
                  (communication_interval & 0x07) << 4 |
                  (summer_mode ? 0x01 : 0x00) << 3 |
@@ -127,7 +173,8 @@ namespace EnOcean
 
   Telegram_SYS_EX_ERP1::Telegram_SYS_EX_ERP1(
     uint8_t SEQ, uint8_t IDX,
-    MID mid, uint16_t fn, const std::vector<uint8_t> &payload,
+    MID mid, RMCC fn,
+    const std::vector<uint8_t> &payload,
     TXID source, uint8_t status) :
     Telegram()
   {
@@ -145,8 +192,8 @@ namespace EnOcean
       size_t data_length = payload.size();
       data[1] = (data_length >> 1) & 0x0FF;
       data[2] = ((data_length & 0x01) << 7) | ((mid & 0x7FF) >> 4);
-      data[3] = ((mid & 0x00F) << 4) | ((fn & 0xFFF) >> 8);
-      data[4] = fn & 0xFF;
+      data[3] = ((mid & 0x00F) << 4) | ((static_cast<uint16_t>(fn) & 0xFFF) >> 8);
+      data[4] = static_cast<uint16_t>(fn) & 0x0FF;
       for (size_t i = 0; i < 4; i++)
         data[5 + i] = i < payload.size() ? payload[i] : 0;
     }
@@ -159,5 +206,13 @@ namespace EnOcean
       }
     }
     frame = Frame(0xC5, data, source, status);
+  }
+
+  SignalTelegram::SignalTelegram(MessageIndex message_index, const std::vector<uint8_t> &optional_data, TXID source, uint8_t status)
+  {
+    std::vector<uint8_t> payload;
+    payload.push_back(static_cast<uint8_t>(message_index));
+    payload.insert(payload.end(), optional_data.begin(), optional_data.end());
+    frame = Frame(0xD0, payload, source, status);
   }
 }

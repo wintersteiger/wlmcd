@@ -8,6 +8,7 @@
 #include <mutex>
 #include <memory>
 #include <map>
+#include <random>
 
 #include <shell.h>
 #include <serialization.h>
@@ -23,137 +24,74 @@
 #include <bme280.h>
 #include <bme280_ui.h>
 
-#include "enocean.h"
+#include "enocean_frame.h"
+#include "enocean_codec.h"
 #include "enocean_telegrams.h"
 #include "enocean_ui.h"
 #include "enocean_gateway.h"
 
-static volatile int rx_cnt = 0;
-static FILE *logfile = NULL;
-static std::mutex mtx, log_mtx;
+static std::mutex mtx;
 static std::shared_ptr<Shell> shell;
 static std::unique_ptr<EnOcean::Gateway> gateway;
-static uint64_t irqs = 0;
+static uint64_t irqs = 0, num_manual = 0;
 
-static int flog(const char *label, double rssi, double lqi, const std::vector<uint8_t> &raw_packet, const std::string &msg, const std::string &err)
-{
-  int r = 0;
-  if (logfile) {
-    const std::lock_guard<std::mutex> lock(log_mtx);
-    static char time_buf[256];
-    time_t t;
-    time(&t);
-    struct tm * lt = localtime(&t);
-    strftime(time_buf, sizeof(time_buf), "%Y-%m-%d %H:%M:%S", lt);
-    fprintf(logfile, "%s,\"%s\",%0.2f,%0.2f,", time_buf, label, rssi, lqi);
-    for (auto b : raw_packet)
-      fprintf(logfile, "%02x", b);
-    fprintf(logfile, ",\"");
-    for (auto c : msg)
-      if (c == '\"') fprintf(logfile, "\\\"");
-      else fprintf(logfile, "%c", c);
-    fprintf(logfile, "\",\"");
-    for (auto c : err)
-      if (c == '\"') fprintf(logfile, "\\\"");
-      else fprintf(logfile, "%c", c);
-    fprintf(logfile, "\"");
-    fprintf(logfile, "\n");
-    fflush(logfile);
-  }
-  return r;
-}
-
-static bool fRX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Decoder> decoder, std::shared_ptr<EnOcean::Encoder> encoder)
+static bool fRX(std::shared_ptr<Radio> radio)
 {
   const std::lock_guard<std::mutex> lock(mtx);
-
-  std::vector<EnOcean::Frame> frames;
-  double rssi = 0.0;
-  double lqi = 0.0;
 
   std::vector<uint8_t> packet;
   radio->Receive(packet);
 
-  rssi = radio->RSSI();
-  lqi = radio->LQI();
+  double rssi = radio->RSSI();
+  double lqi = radio->LQI();
 
-  char lbuf[1024];
-  char *p = &lbuf[0];
-
-  p += sprintf(p, "RX rssi=%4.0fdBm lqi=%3.0f%% N=%d", rssi, lqi, packet.size());
-
-  if (packet.size() > 0)
-  {
-    std::string err_str = "";
-    bool decoded = false;
-
-    if (decoder)
-    {
-      try {
-        frames = decoder->get_frames(packet);
-      }
-      catch (const std::runtime_error &err) {
-        err_str = err.what();
-        p += sprintf(p, " ERROR: %s", err.what());
-      }
-    }
-    else
-      p += sprintf(p, " no decoder");
-  }
-
-  if (frames.empty()) {
-    p += sprintf(p, ": %.64s", bytes_to_hex(packet).c_str());
-    if (packet.size() > 64)
-      p += sprintf(p, "...");
-  }
-  else
-  {
-    p += sprintf(p, " Frames:");
-    for (auto& f : frames) {
-      auto d = f.describe();
-      p += sprintf(p, " %s", d.c_str());
-      flog("RX", rssi, lqi, packet, d.c_str(), "");
-    }
-  }
-
-  UI::Log(lbuf);
-  rx_cnt++;
+  gateway->receive(std::move(packet), rssi);
 
   radio->Goto(Radio::State::RX);
-
-  for (size_t i=0; i < frames.size(); i++) {
-    const EnOcean::Frame &f = frames[i];
-    if (f.crc_ok() && (i == 0 || f != frames[i-1]))
-      gateway->receive(f, rssi);
-  }
 
   return true;
 }
 
-static void fTX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Encoder> encoder, const EnOcean::Telegram &t)
+static void fTX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Encoder> encoder, const EnOcean::Frame &f)
 {
-  const EnOcean::Frame &f = t;
-  std::string msg = bytes_to_hex(f);
-  UI::Log("TX: %s", msg.c_str());
-  flog("TX", 0.0, 0.0, f, f.describe().c_str(), "TX");
-  auto encoded = encoder->Encode(f);
-  // UI::Log("TX: %s ~ %s", msg.c_str(), bytes_to_hex(encoded).c_str());
-  radio->Transmit(encoded);
-  sleep_ms(5);
-  radio->Transmit(encoded);
-  sleep_ms(20);
-  radio->Transmit(encoded);
+  static std::random_device rd;
+  static std::mt19937 gen(rd());
+  static std::uniform_real_distribution<> rdist(0.0, 1.0);
 
-  radio->Goto(Radio::State::RX);
+  auto encoded = encoder->Encode(f);
+
+  uint64_t slot2 = 1 + 8.0 * rdist(gen);
+  uint64_t slot3 = 20 + 19.0 * rdist(gen);
+  {
+    const std::lock_guard<std::mutex> lock(mtx);
+    radio->Transmit(encoded);
+    radio->Goto(Radio::State::RX);
+  }
+  sleep_ms(slot2-1);
+  // sleep_ms(9);
+  {
+    const std::lock_guard<std::mutex> lock(mtx);
+    radio->Transmit(encoded);
+    radio->Goto(Radio::State::RX);
+  }
+  // sleep_ms(10);
+  sleep_ms(slot3-slot2-1);
+  {
+    const std::lock_guard<std::mutex> lock(mtx);
+    radio->Transmit(encoded);
+    radio->Goto(Radio::State::RX);
+  }
+  // sleep_ms(25);
+  sleep_ms(40-slot3-1);
 }
 
-static bool fIRQ(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Decoder> decoder, std::shared_ptr<EnOcean::Encoder> encoder)
+static bool fIRQ(std::shared_ptr<Radio> radio)
 {
   irqs = radio->IRQHandler();
   if (shell)
     shell->controller->Update(false);
   if (irqs & 0x00000201)
-    return fRX(radio, decoder, encoder);
+    return fRX(radio);
   return true;
 }
 
@@ -169,22 +107,23 @@ static void manualTX(std::shared_ptr<Radio> radio, std::shared_ptr<EnOcean::Enco
   auto rorg = argbytes[0];
   auto payload = std::vector<uint8_t>(argbytes.begin() + 1, argbytes.end());
   EnOcean::Telegram t(EnOcean::Frame(argbytes[0], payload, gateway->txid(), 0x8F));
-  // EnOcean::Telegram t(EnOcean::Frame(argbytes[0], payload, 0x00, 0x8F));
 
-  if (!encapsulate)
-    fTX(radio, encoder, t);
-  else
-    fTX(radio, encoder, EnOcean::AddressedTelegram(t, 0x0580CC3A));
+  if (!encapsulate) {
+    fTX(radio, encoder, static_cast<EnOcean::Frame>(t));
+  }
+  else {
+    EnOcean::Frame f = EnOcean::AddressedTelegram(t, 0x050E3224 /*0x0580CC3A*/);
+    fTX(radio, encoder, f);
+  }
 }
 
 int main()
 {
   try {
     shell = get_shell(1.0);
-    logfile = fopen("log.csv", "a");
     std::string gateway_config = "enocean-gateway.json";
+    std::string gateway_cache = "enocean-gateway.cache.json";
 
-    auto decoder = std::make_shared<EnOcean::Decoder>();
     auto encoder = std::make_shared<EnOcean::Encoder>();
 
 #ifdef USE_C1101
@@ -206,28 +145,28 @@ int main()
       [radio, encoder](const EnOcean::Frame &f){ fTX(radio, encoder, f); });
 
     std::vector<std::shared_ptr<DeviceBase>> radio_devs = {radio};
-    auto bme280 = std::make_shared<BME280>();
-    auto enocean_ui = std::make_shared<EnOceanUI>(gateway, radio_devs, bme280);
+    auto bme280 = std::make_shared<BME280>("bme280.cfg");
+    auto enocean_ui = std::make_shared<EnOceanUI>(gateway, radio_devs, bme280, &num_manual);
 
     std::vector<GPIOWatcher<Radio>*> gpio_watchers;
 #ifdef USE_C1101
     gpio_watchers.push_back(new GPIOWatcher<Radio>("/dev/gpiochip0", 25, "WLMCD-CC1101", radio, true,
-      [encoder, decoder](int, unsigned, const timespec*, std::shared_ptr<Radio> radio) {
-        return fRX(radio, decoder, encoder);
+      [](int, unsigned, const timespec*, std::shared_ptr<Radio> radio) {
+        return fRX(radio);
       }));
 #else
     gpio_watchers.push_back(new GPIOWatcher<Radio>("/dev/gpiochip0", 25, "WLMCD-SPIRIT1", radio, false,
-      [encoder, decoder](int, unsigned, const timespec*, std::shared_ptr<Radio> radio) {
-        return fIRQ(radio, decoder, encoder);
+      [](int, unsigned, const timespec*, std::shared_ptr<Radio> radio) {
+        return fIRQ(radio);
       }));
 #endif
 
-    shell->controller->AddBackgroundDevice(std::make_shared<BackgroundTask>([radio, encoder, decoder]() {
+    shell->controller->AddBackgroundDevice(std::make_shared<BackgroundTask>([radio]() {
       if (mtx.try_lock()) {
         if (radio->RXReady()) {
-          UI::Log("Manual pickup...");
           mtx.unlock();
-          fRX(radio, decoder, encoder);
+          fRX(radio);
+          num_manual++;
         }
         else {
           radio->Goto(Radio::State::RX);
@@ -258,20 +197,36 @@ int main()
       UI::Info("crc8 is %02x", x);
     });
 
+    shell->controller->AddCommand("checksum", [](const std::string &args){
+      auto argbytes = from_hex(args);
+      auto x = checksum(argbytes);
+      UI::Info("checksum is %02x", x);
+    });
+
+    shell->controller->AddCommand("checkxor", [](const std::string &args){
+      auto argbytes = from_hex(args);
+      auto x = checkxor(argbytes);
+      UI::Info("checkxor is %02x", x);
+    });
+
     shell->controller->AddCommand("run", [radio](const std::string &args){
       radio->Goto(Radio::State::RX);
     });
 
-    shell->controller->AddCommand("rx", [radio, decoder, encoder](const std::string &args){
-      return fRX(radio, decoder, encoder);
+    shell->controller->AddCommand("rx", [radio](const std::string &args){
+      return fRX(radio);
     });
 
-    shell->controller->AddCommand("s", [&gateway_config](const std::string &args){
-      return gateway->save(gateway_config);
+    shell->controller->AddCommand("s", [&gateway_config, &gateway_cache](const std::string &args){
+      return gateway->save(gateway_config, gateway_cache);
     });
 
-    shell->controller->AddCommand("p", [&gateway_config](const std::string &args){
+    shell->controller->AddCommand("p", [](const std::string &args){
       return gateway->ping();
+    });
+
+    shell->controller->AddCommand("i", [](const std::string &args){
+      return gateway->inject(std::make_shared<EnOcean::Frame>(from_hex(args)), 0.0);
     });
 
     shell->controller->AddSystem(enocean_ui);
@@ -283,6 +238,7 @@ int main()
     radio->Goto(Radio::State::RX);
 
     shell->controller->Run();
+
     return shell->exit_code;
   }
   catch (std::exception &ex) {
