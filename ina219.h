@@ -30,7 +30,7 @@ public:
   using I2CDevice<uint8_t, uint16_t>::Read;
   using I2CDevice<uint8_t, uint16_t>::Write;
 
-  virtual void Write(std::ostream &os) override;
+  virtual void Write(std::ostream &os) const override;
   virtual void Read(std::istream &is) override;
 
   virtual void UpdateTimed() override;

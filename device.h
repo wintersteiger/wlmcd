@@ -22,8 +22,8 @@ public:
   virtual void UpdateFrequent() {}
   virtual void UpdateInfrequent() {}
 
-  virtual void Write(std::ostream &os) = 0;
-  virtual void Read(std::istream &os) = 0;
+  virtual void Write(std::ostream &os) const = 0;
+  virtual void Read(std::istream &is) = 0;
 
   virtual void Reset() {}
 

@@ -6,7 +6,7 @@
 #include "sleep.h"
 #include "gpio_button_field.h"
 
-GPIOButtonField::GPIOButtonField(WINDOW *wndw, int row, int col, const std::string &key, GPIOButton &button, bool bumpy) :
+GPIOButtonField::GPIOButtonField(WINDOW *wndw, int row, int col, const std::string &key, std::shared_ptr<GPIOButton> button, bool bumpy) :
   IndicatorField(wndw, row, col, key),
   button(button),
   bumpy(bumpy),
@@ -20,12 +20,12 @@ bool GPIOButtonField::Get()
   if (bumpy)
     return bump_state;
   else
-    return button.ReadBuffered();
+    return button->ReadBuffered();
 }
 
 void GPIOButtonField::Set(bool value)
 {
-  button.Write(value);
+  button->Write(value);
   if (bumpy)
     bump_state = value;
 }
@@ -33,10 +33,10 @@ void GPIOButtonField::Set(bool value)
 void GPIOButtonField::Flip()
 {
   if (bumpy) {
-    bool val = button.ReadBuffered();
-    button.Write(!val);
+    bool val = button->ReadBuffered();
+    button->Write(!val);
     sleep_ms(50);
-    button.Write(val);
+    button->Write(val);
     bump_state = !bump_state;
   }
   else {

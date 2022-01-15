@@ -267,7 +267,7 @@ void SPIRIT1::Transmit(const std::vector<uint8_t> &pkt)
 void SPIRIT1::UpdateFrequent() { RT->Refresh(true); }
 void SPIRIT1::UpdateInfrequent() { RT->Refresh(false); }
 
-void SPIRIT1::Write(std::ostream &os) { RT->Write(os); }
+void SPIRIT1::Write(std::ostream &os) const { RT->Write(os); }
 void SPIRIT1::Read(std::istream &is) { RT->Read(is); }
 
 double SPIRIT1::rFrequency() const
@@ -375,7 +375,7 @@ void SPIRIT1::RegisterTable::Refresh(bool frequent)
   }
 }
 
-void SPIRIT1::RegisterTable::Write(std::ostream &os)
+void SPIRIT1::RegisterTable::Write(std::ostream &os) const
 {
   json j, dev, regs;
   char tmp[32];

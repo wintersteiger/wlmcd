@@ -50,7 +50,7 @@ void CCS811::Reset()
   RT->Refresh(false);
 }
 
-void CCS811::Write(std::ostream &os)
+void CCS811::Write(std::ostream &os) const
 {
   RT->Write(os);
 }
@@ -73,7 +73,8 @@ void CCS811::RegisterTable::Refresh(bool frequent)
   }
 }
 
-void CCS811::RegisterTable::Write(std::ostream &os) {
+void CCS811::RegisterTable::Write(std::ostream &os) const
+{
   json j, dev, regs;
   char tmp[17];
   dev["name"] = device.Name();

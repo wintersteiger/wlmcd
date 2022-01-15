@@ -35,7 +35,7 @@ void ES9018K2M::Reset()
   I2CDevice::Reset();
 }
 
-void ES9018K2M::Write(std::ostream &os)
+void ES9018K2M::Write(std::ostream &os) const
 {
   RTS->Main.Write(os);
 }

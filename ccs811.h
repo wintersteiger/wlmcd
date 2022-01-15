@@ -24,7 +24,7 @@ public:
 
   virtual void UpdateTimed() override;
 
-  virtual void Write(std::ostream &os) override;
+  virtual void Write(std::ostream &os) const override;
   virtual void Read(std::istream &is) override;
 
   using I2CDevice<uint8_t, std::vector<uint8_t>>::Bus;

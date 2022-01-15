@@ -315,7 +315,7 @@ TCF(LowBetaAfcOffset, "low b o/s", "kHz", double, {
 
 using namespace RFM69UIFields;
 
-RFM69UI::RFM69UI(std::shared_ptr<RFM69> rfm69, GPIOButton *reset_button) :
+RFM69UI::RFM69UI(std::shared_ptr<RFM69> rfm69, std::shared_ptr<GPIOButton> reset_button) :
   UI(),
   rfm69(rfm69),
   num_status_fields(0)
@@ -329,7 +329,7 @@ RFM69UI::RFM69UI(std::shared_ptr<RFM69> rfm69, GPIOButton *reset_button) :
   EMPTY();
 
   if (reset_button) {
-    Add(new GPIOButtonField(UI::statusp, row++, col+10, "RESET", *reset_button));
+    Add(new GPIOButtonField(UI::statusp, row++, col+10, "RESET", reset_button));
     row++;
   }
 

@@ -32,7 +32,7 @@ void ES9018K2M::RegisterTableSet::MainRT::Refresh(bool frequent)
     buffer[reg->Address()] = device.I2CDevice::Read(reg->Address());
 }
 
-void ES9018K2M::RegisterTableSet::MainRT::Write(std::ostream &os)
+void ES9018K2M::RegisterTableSet::MainRT::Write(std::ostream &os) const
 {
   json j, dev, regs;
   char tmp[17];
@@ -107,7 +107,7 @@ void ES9018K2M::RegisterTableSet::Read(std::istream &is)
   device.RTS->Main.Read(is);
 }
 
-void ES9018K2M::RegisterTableSet::Write(std::ostream &os)
+void ES9018K2M::RegisterTableSet::Write(std::ostream &os) const
 {
   device.RTS->Main.Write(os);
 }

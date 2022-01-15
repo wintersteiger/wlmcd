@@ -131,7 +131,7 @@ void RFM69::UpdateInfrequent()
   RT->Refresh(false);
 }
 
-void RFM69::Write(std::ostream &os)
+void RFM69::Write(std::ostream &os) const
 {
   RT->Write(os);
 }
@@ -274,7 +274,7 @@ void RFM69::RegisterTable::Refresh(bool frequent)
       buffer[i] = device.Read(i);
 }
 
-void RFM69::RegisterTable::Write(std::ostream &os)
+void RFM69::RegisterTable::Write(std::ostream &os) const
 {
   json j, dev, regs;
   dev["name"] = device.Name();

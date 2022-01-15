@@ -115,7 +115,7 @@ void MCP3423::Write(const uint8_t &addr, const std::vector<uint8_t> &values)
   throw std::logic_error("device registers not addressable");
 }
 
-void MCP3423::Write(std::ostream &os)
+void MCP3423::Write(std::ostream &os) const
 {
   RT.Write(os);
 }
@@ -141,7 +141,7 @@ void MCP3423::RegisterTable::Refresh(bool frequent)
     buffer[reg->Address()] = device.Read(reg->Address());
 }
 
-void MCP3423::RegisterTable::Write(std::ostream &os)
+void MCP3423::RegisterTable::Write(std::ostream &os) const
 {
   json j, dev, regs;
   char tmp[17];

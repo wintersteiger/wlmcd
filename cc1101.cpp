@@ -61,7 +61,7 @@ CC1101::~CC1101()
   }
 }
 
-CC1101::State CC1101::GetState() {
+CC1101::State CC1101::GetMState() {
   uint8_t s = Read(RT->_rMARCSTATE);
   return (State)s;
 }
@@ -339,6 +339,15 @@ void CC1101::Setup(const std::vector<uint8_t> &config, const std::vector<uint8_t
   Write(RT->_rPATABLE.Address(), pa_gentle);
 }
 
+Radio::State CC1101::GetState() const
+{
+  switch (RT->MARCSTATE()) {
+    case RX: return Radio::State::RX;
+    case TX: return Radio::State::TX;
+    default: return Radio::State::Idle;
+  }
+}
+
 void CC1101::Goto(Radio::State state)
 {
   switch (state) {
@@ -480,7 +489,7 @@ void CC1101::UpdateInfrequent()
   RT->Refresh(false);
 }
 
-void CC1101::Write(std::ostream &os)
+void CC1101::Write(std::ostream &os) const
 {
   RT->Write(os);
 }
@@ -557,7 +566,7 @@ void CC1101::RegisterTable::Refresh(bool frequent)
     buffer[0xC0 | (0x30 + i)] = device.Read(0xC0 | (0x30 + i));
 }
 
-void CC1101::RegisterTable::Write(std::ostream &os)
+void CC1101::RegisterTable::Write(std::ostream &os) const
 {
   json j, dev, regs;
   char tmp[17];

@@ -47,7 +47,7 @@ LogFile::~LogFile()
     fclose(file);
 }
 
-void LogFile::Write(std::ostream &os) {}
+void LogFile::Write(std::ostream &os) const {}
 void LogFile::Read(std::istream &is) {}
 
 void LogFile::Reset()

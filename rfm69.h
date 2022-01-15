@@ -74,7 +74,7 @@ public:
   virtual void UpdateFrequent();
   virtual void UpdateInfrequent();
 
-  virtual void Write(std::ostream &os);
+  virtual void Write(std::ostream &os) const;
   virtual void Read(std::istream &is);
 
   double rRSSI() const;

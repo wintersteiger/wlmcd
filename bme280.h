@@ -29,7 +29,7 @@ public:
 
   virtual void UpdateTimed() override;
 
-  virtual void Write(std::ostream &os) override;
+  virtual void Write(std::ostream &os) const override;
   virtual void Read(std::istream &is) override;
 
   float Temperature();

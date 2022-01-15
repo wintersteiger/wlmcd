@@ -47,7 +47,7 @@ void BME680::Reset()
   RT->Refresh(false);
 }
 
-void BME680::Write(std::ostream &os)
+void BME680::Write(std::ostream &os) const
 {
   RT->Write(os);
 }
@@ -80,7 +80,8 @@ void BME680::RegisterTable::Refresh(bool frequent)
     buffer[reg->Address()] = device.Read(*reg);
 }
 
-void BME680::RegisterTable::Write(std::ostream &os) {
+void BME680::RegisterTable::Write(std::ostream &os) const
+{
   json j, dev, regs;
   char tmp[17];
   dev["name"] = device.Name();

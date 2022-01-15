@@ -71,7 +71,7 @@ public:
   virtual void UpdateFrequent() override;
   virtual void UpdateInfrequent() override;
 
-  virtual void Write(std::ostream &os) override;
+  virtual void Write(std::ostream &os) const override;
   virtual void Read(std::istream &is) override;
 
   const uint8_t* StatusBytes() const { return &status_bytes[0]; }

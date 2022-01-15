@@ -21,7 +21,7 @@ public:
 
   virtual const char* Name() const override { return "MCP3423"; }
 
-  virtual void Write(std::ostream &os) override;
+  virtual void Write(std::ostream &os) const override;
   virtual void Read(std::istream &is) override;
 
   using Device::Read;

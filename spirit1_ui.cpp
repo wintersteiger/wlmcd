@@ -179,7 +179,7 @@ std::shared_ptr<UI> make_spirit1_raw_ui(std::shared_ptr<SPIRIT1> &device, std::s
   auto ui = make_raw_ui<SPIRIT1, uint8_t, uint8_t>(device, *device->RT);
 
   if (reset_button)
-    ui->Add(new GPIOButtonField(UI::statusp, 0, 0, "RESET", *reset_button));
+    ui->Add(new GPIOButtonField(UI::statusp, 0, 0, "RESET", reset_button));
 
   return ui;
 }

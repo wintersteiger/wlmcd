@@ -262,7 +262,7 @@ public:
     virtual ~N() {}                              \
     virtual void Refresh(bool frequent);         \
     virtual void Read(std::istream &is);         \
-    virtual void Write(std::ostream &os);        \
+    virtual void Write(std::ostream &os) const;  \
     using ::RegisterTable<AT, VT, D>::Write;     \
     using ::RegisterTable<AT, VT, D>::Find;      \
     R;                                           \
@@ -276,24 +276,24 @@ public:
     virtual ~N() {}                                    \
     virtual void Refresh(bool frequent);               \
     virtual void Read(std::istream &is);               \
-    virtual void Write(std::ostream &os);              \
+    virtual void Write(std::ostream &os) const;        \
     using ::RegisterTable<AT, VT, D>::Write;           \
     using ::RegisterTable<AT, VT, D>::Find;            \
     R;                                                 \
   };
 
-#define REGISTER_TABLE_SPARSE_VAR(D, N, AT, R)                 \
-  class D::N : public ::RegisterTableSparseVar<AT, D>          \
-  {                                                            \
-  public:                                                      \
-    N(D &d) : ::RegisterTableSparseVar<AT, D>(d) {}            \
-    virtual ~N() {}                                            \
-    virtual void Refresh(bool frequent);                       \
-    virtual void Read(std::istream &is);                       \
-    virtual void Write(std::ostream &os);                      \
-    using ::RegisterTableSparseVar<AT, D>::Write; \
-    using ::RegisterTableSparseVar<AT, D>::Find;  \
-    R;                                                         \
+#define REGISTER_TABLE_SPARSE_VAR(D, N, AT, R)         \
+  class D::N : public ::RegisterTableSparseVar<AT, D>  \
+  {                                                    \
+  public:                                              \
+    N(D &d) : ::RegisterTableSparseVar<AT, D>(d) {}    \
+    virtual ~N() {}                                    \
+    virtual void Refresh(bool frequent);               \
+    virtual void Read(std::istream &is);               \
+    virtual void Write(std::ostream &os) const;        \
+    using ::RegisterTableSparseVar<AT, D>::Write;      \
+    using ::RegisterTableSparseVar<AT, D>::Find;       \
+    R;                                                 \
   };
 
 #define REGISTER_TABLE_SET_TABLE_W(D, N, AT, VT, R) \
@@ -304,26 +304,25 @@ public:
     virtual ~N##RT() {}                             \
     virtual void Refresh(bool frequent);            \
     virtual void Read(std::istream &is);            \
-    virtual void Write(std::ostream &os);           \
+    virtual void Write(std::ostream &os) const;     \
     using ::RegisterTable<AT, VT, D>::Write;        \
     using ::RegisterTable<AT, VT, D>::Find;         \
     R;                                              \
   };                                                \
   N##RT N;
 
-#define REGISTER_TABLE_SET(D, S, N, T)    \
-  class S::N                              \
-  {                                       \
-  protected:                              \
-    D &device;                            \
-                                          \
-  public:                                 \
-    N(D &device);                         \
-    virtual ~N();                         \
-    T;                                    \
-    void Refresh(bool frequent);          \
-    virtual void Read(std::istream &is);  \
-    virtual void Write(std::ostream &os); \
+#define REGISTER_TABLE_SET(D, S, N, T)          \
+  class S::N                                    \
+  {                                             \
+  protected:                                    \
+    D &device;                                  \
+  public:                                       \
+    N(D &device);                               \
+    virtual ~N();                               \
+    T;                                          \
+    void Refresh(bool frequent);                \
+    virtual void Read(std::istream &is);        \
+    virtual void Write(std::ostream &os) const; \
   };
 
 #endif

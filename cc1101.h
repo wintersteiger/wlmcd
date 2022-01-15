@@ -163,7 +163,7 @@ public:
 
   void Reset() override;
 
-  State GetState();
+  State GetMState();
 
   Config GetConfig();
 
@@ -190,6 +190,7 @@ public:
 
   void Setup(const std::vector<uint8_t> &config, const std::vector<uint8_t> &patable = { 0xC6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
 
+  virtual Radio::State GetState() const override;
   virtual void Goto(Radio::State state) override;
   virtual void Receive(std::vector<uint8_t> &pkt) override;
   virtual void Transmit(const std::vector<uint8_t> &pkt) override;
@@ -197,7 +198,7 @@ public:
   virtual void UpdateFrequent() override;
   virtual void UpdateInfrequent() override;
 
-  virtual void Write(std::ostream &os) override;
+  virtual void Write(std::ostream &os) const override;
   virtual void Read(std::istream &is) override;
 
   double F_XOSC() const { return f_xosc; }

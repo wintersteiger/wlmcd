@@ -36,7 +36,7 @@ void ES9028PRO::Reset()
   // Write(RTS->Main._rSystemRegisters, 0x01); // soft reset
 }
 
-void ES9028PRO::Write(std::ostream &os)
+void ES9028PRO::Write(std::ostream &os) const
 {
   RTS->Main.Write(os);
 }

@@ -41,7 +41,7 @@ void MCP9808::Write(const uint8_t &addr, const uint8_t &value)
   ((I2CDevice<uint8_t, uint8_t>*)this)->Write(addr, value);
 }
 
-void MCP9808::Write(std::ostream &os)
+void MCP9808::Write(std::ostream &os) const
 {
   RT.Write(os);
 }
@@ -68,7 +68,7 @@ void MCP9808::RegisterTable::Refresh(bool frequent)
     buffer[reg->Address()] = device.Read(reg->Address());
 }
 
-void MCP9808::RegisterTable::Write(std::ostream &os)
+void MCP9808::RegisterTable::Write(std::ostream &os) const
 {
   json j, dev, regs;
   char tmp[17];

@@ -56,7 +56,7 @@ void INA219::Reset()
   }
 }
 
-void INA219::Write(std::ostream &os)
+void INA219::Write(std::ostream &os) const
 {
   RT.Write(os);
 }
@@ -150,7 +150,7 @@ void INA219::RegisterTable::Refresh(bool frequent)
     buffer[reg->Address()] = device.Read(*reg);
 }
 
-void INA219::RegisterTable::Write(std::ostream &os)
+void INA219::RegisterTable::Write(std::ostream &os) const
 {
   json j, dev, regs;
   char tmp[17];

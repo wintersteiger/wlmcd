@@ -26,7 +26,64 @@ public:
   virtual void Set(bool value) {
     device.Write(addr, value);
   }
+  virtual void Bump() {
+    device.Write(addr, !Get());
+  }
 };
+
+
+class Selector : public ::IndicatorField {
+protected:
+  size_t addr;
+  RelayDevice &device;
+  std::string left, right;
+
+public:
+  Selector(int row, int col, RelayDevice &device, size_t addr, const std::string &left, const std::string &right) :
+    ::IndicatorField(UI::statusp, row, col, ""), addr(addr), device(device), left(left), right(right) {
+      key_width = 0;
+      units_width =0;
+      value = "**  ";
+      value_width = value.size();
+    }
+  virtual ~Selector() {}
+  virtual bool Get() {
+    return device.ReadBuffered(addr);
+  }
+  virtual bool ReadOnly() { return false; }
+  virtual void Set(bool value) {
+    device.Write(addr, value);
+  }
+  virtual void Bump() {
+    Set(!Get());
+  }
+  virtual void Update(bool full)
+  {
+    if (wndw) {
+      if (attributes != -1) wattron(wndw, attributes);
+      if (full) {
+        if (active) wattron(wndw, A_STANDOUT);
+        snprintf(tmp, sizeof(tmp), "%%- %ds", left.size());
+        mvwprintw(wndw, row, col, tmp, left.c_str());
+        if (active) wattroff(wndw, A_STANDOUT);
+      }
+
+      if (colors != -1) wattron(wndw, COLOR_PAIR(colors));
+      value = Get() ? "**  " : "  **";
+      mvwprintw(wndw, row, col + key_width + 2, " %s ", value);
+      if (colors != -1) wattroff(wndw, COLOR_PAIR(colors));
+
+      if (full) {
+        if (active) wattron(wndw, A_STANDOUT);
+        snprintf(tmp, sizeof(tmp), "%%- %ds", right.size());
+        mvwprintw(wndw, row, col, tmp, right.c_str());
+        if (active) wattroff(wndw, A_STANDOUT);
+      }
+      if (attributes != -1) wattroff(wndw, attributes);
+    }
+  }
+};
+
 
 }
 
