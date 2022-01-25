@@ -89,20 +89,20 @@ void BME280::RegisterTable::Refresh(bool frequent)
   buffer.resize(0xFF, 0);
 
   // Data, Control
-  auto tmp = device.Read(0xF2, 12);
+  auto tmp = device.I2CDevice::Read(0xF2, 12);
   for (size_t i=0; i < 12; i++)
     buffer[0xF2+i] = tmp[i];
 
   // Reset, Chip ID
   for (auto i : {0xE0, 0xD0})
-    buffer[i] = device.Read(i);
+    buffer[i] = device.I2CDevice::Read(i);
 
   if (!frequent) {
     // Calibration values
-    tmp = device.Read(0x88, 25);
+    tmp = device.I2CDevice::Read(0x88, 25);
     for (size_t i=0; i < 25; i++)
       buffer[0x88+i] = tmp[i];
-    tmp = device.Read(0xE1, 16);
+    tmp = device.I2CDevice::Read(0xE1, 16);
     for (size_t i=0; i < 16; i++)
       buffer[0xE1+i] = tmp[i];
   }

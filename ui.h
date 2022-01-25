@@ -24,10 +24,13 @@ protected:
   std::vector<FieldBase*> fields;
   size_t active_field_index;
   std::set<std::shared_ptr<DeviceBase>> devices;
+  static FILE *logfile;
 
 public:
   UI();
   virtual ~UI();
+
+  static void SetLogFile(const std::string &log_file_name = "");
 
   static WINDOW *mainw, *logp, *logboxw, *cmdw, *statusp;
   static uint64_t indicator_value, max_indicator_value;
@@ -73,6 +76,8 @@ public:
   virtual std::string Name() const { return "Unnamed"; }
 
   const std::set<std::shared_ptr<DeviceBase>>& Devices() { return devices; }
+
+  virtual void Reconstruct() {}
 };
 
 #endif

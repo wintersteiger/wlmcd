@@ -124,10 +124,10 @@ public:
     return buffer[r.Address()];
   }
   virtual void Write(const TRegister &reg, const VT &value) {
-    device.Write(reg.Address(), value);
+    device.Write(reg, value);
   }
   virtual void Write(const TRegister &reg, const TVariable &var, const VT &value) {
-    device.Write(reg.Address(), var.Set((*this)(reg), value));
+    device.Write(reg, var.Set((*this)(reg), value));
   }
   virtual TRegister *Find(size_t addr)
   {

@@ -44,11 +44,14 @@ public:
 
   void Update(bool full);
 
+  void Reconstruct();
+
 protected:
   bool running;
   size_t cur_frequent_interval, cur_infrequent_interval;
   double cur_frequency;
   size_t ui_inx, decoder_inx, encoder_inx;
+  std::mutex ui_mtx;
   std::vector<std::shared_ptr<UI>> uis;
   std::vector<std::shared_ptr<Decoder>> decoders;
   std::vector<std::shared_ptr<Encoder>> encoders;

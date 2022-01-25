@@ -71,10 +71,10 @@ public:
   ConfigField<T>(int row, int col, const std::string &key, const std::string &value, const std::string &units, const std::shared_ptr<RFM69> rfm69) :
     Field<T>(UI::statusp, row, col, key, value, units), rfm69(rfm69), rt(*rfm69->RT) {}
   virtual ~ConfigField<T>() {}
-  virtual T Get() = 0;
-  virtual void Update(bool full=false) { Field<T>::Update(full); }
-  virtual bool ReadOnly() { return true; }
-  virtual void Set(const char*) {}
+  virtual T Get() override = 0;
+  virtual void Update(bool full=false) override { Field<T>::Update(full); }
+  virtual bool ReadOnly() const override { return true; }
+  virtual void Set(const char*) override {}
 };
 
 class SettingField : public ConfigField<bool> {

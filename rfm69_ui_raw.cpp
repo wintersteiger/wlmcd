@@ -28,12 +28,12 @@ public:
       value_width = 2;
       units_width = 0;
   }
-  virtual size_t Width() { return key.size() + 4; }
-  virtual uint8_t Get() {
+  virtual size_t Width() override { return key.size() + 4; }
+  virtual uint8_t Get() override {
     uint8_t r = rt(reg);
     return var ? (*var)(r) : r;
   }
-  virtual void Update(bool full=false) {
+  virtual void Update(bool full=false) override {
     if (wndw) {
       key_width = key.size();
       value_width = 2;
@@ -42,9 +42,9 @@ public:
       FieldBase::Update(full);
     }
   }
-  virtual bool Activateable() const { return true; }
-  virtual bool ReadOnly() { return false; }
-  virtual void Set(const char *v_str) {
+  virtual bool Activateable() const override { return true; }
+  virtual bool ReadOnly() const override { return false; }
+  virtual void Set(const char *v_str) override {
     uint8_t v = 0;
     size_t v_str_len = strlen(v_str);
     if (v_str_len == 0 || v_str_len > 2 || sscanf(v_str, "%02hhx", &v) != 1)
@@ -54,7 +54,7 @@ public:
     else
       rt.Write(reg, v);
   }
-  virtual std::string Describe() const {
+  virtual std::string Describe() const override {
     std::string desc;
     if (var) {
       desc = reg.Name() + "::" + var->Name();

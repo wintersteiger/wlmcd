@@ -22,7 +22,7 @@ public:
   virtual bool Get() {
     return device.ReadBuffered(addr);
   }
-  virtual bool ReadOnly() { return false; }
+  virtual bool ReadOnly() const override { return false; }
   virtual void Set(bool value) {
     device.Write(addr, value);
   }
@@ -47,17 +47,17 @@ public:
       value_width = value.size();
     }
   virtual ~Selector() {}
-  virtual bool Get() {
+  virtual bool Get() override {
     return device.ReadBuffered(addr);
   }
-  virtual bool ReadOnly() { return false; }
-  virtual void Set(bool value) {
+  virtual bool ReadOnly() const override { return false; }
+  virtual void Set(bool value) override {
     device.Write(addr, value);
   }
   virtual void Bump() {
     Set(!Get());
   }
-  virtual void Update(bool full)
+  virtual void Update(bool full) override
   {
     if (wndw) {
       if (attributes != -1) wattron(wndw, attributes);
@@ -70,7 +70,7 @@ public:
 
       if (colors != -1) wattron(wndw, COLOR_PAIR(colors));
       value = Get() ? "**  " : "  **";
-      mvwprintw(wndw, row, col + key_width + 2, " %s ", value);
+      mvwprintw(wndw, row, col + key_width + 2, " %s ", value.c_str());
       if (colors != -1) wattroff(wndw, COLOR_PAIR(colors));
 
       if (full) {

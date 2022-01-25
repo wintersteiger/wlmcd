@@ -21,7 +21,7 @@
 #include "encoder.h"
 #include "controller.h"
 
-#define KEY_FUN [](auto ctrl, auto ui, auto d, auto e)
+#define KEY_FUN [this](auto ctrl, auto ui, auto d, auto e)
 
 static volatile bool have_timer = false;
 static volatile bool timed_out = false;
@@ -138,6 +138,8 @@ Controller::Controller(
         d->UpdateInfrequent();
       }
     }
+
+    const std::lock_guard<std::mutex> lock(ui_mtx);
     ui->Reset();
   };
 
@@ -303,8 +305,10 @@ void Controller::ThreadCleanup()
       }
       for (UpdateThread *t : joined)
         threads.erase(t);
-      if (threads.empty() && ui_inx < uis.size())
-          uis[ui_inx]->Update(false);
+      if (threads.empty() && ui_inx < uis.size()) {
+        const std::lock_guard<std::mutex> lock(ui_mtx);
+        uis[ui_inx]->Update(false);
+      }
     }
   }
   catch (std::exception &ex) {
@@ -341,7 +345,10 @@ void Controller::Run()
           size_t inx = key - KEY_F0 - 1;
           if (inx >= uis.size())
             UI::Error("No such UI");
-          else if (ui_inx != inx) {
+          else if (ui_inx != inx)
+          {
+            const std::lock_guard<std::mutex> lock(ui_mtx);
+
             SelectSystem(inx);
             uis[ui_inx]->Reset();
           }
@@ -355,6 +362,8 @@ void Controller::Run()
             device->UpdateFrequent();
           for (auto &device : background_devices)
             device->UpdateFrequent();
+
+          const std::lock_guard<std::mutex> lock(ui_mtx);
           uis[ui_inx]->Update(false);
         }
         catch (std::exception &ex) {
@@ -370,6 +379,8 @@ void Controller::Run()
             device->UpdateInfrequent();
           for (auto &device : background_devices)
             device->UpdateInfrequent();
+
+          const std::lock_guard<std::mutex> lock(ui_mtx);
           uis[ui_inx]->Update(false);
         }
         catch (std::exception &ex) {
@@ -410,10 +421,12 @@ void Controller::Run()
     }
     catch (std::exception &ex) {
       UI::Log("Exception: %s", ex.what());
+      const std::lock_guard<std::mutex> lock(ui_mtx);
       uis[ui_inx]->Update(false);
       sleep_ms(250);
     }
     catch (...) {
+      const std::lock_guard<std::mutex> lock(ui_mtx);
       UI::Log("Caught unknown exception.");
       uis[ui_inx]->Update(false);
       sleep_ms(250);
@@ -435,8 +448,10 @@ void Controller::Stop()
       ThreadCleanup();
       if (num_threads != last) {
         UI::Info("threads to join: %lu", num_threads);
-        if (ui_inx != SIZE_MAX)
+        if (ui_inx != SIZE_MAX) {
+          const std::lock_guard<std::mutex> lock(ui_mtx);
           uis[ui_inx]->Update(false);
+        }
       }
       sleep_ms(10);
       last = num_threads;
@@ -470,6 +485,20 @@ void Controller::AddCommand(const std::string &verb, std::function<void(const st
 
 void Controller::Update(bool full)
 {
- if (ui_inx < uis.size())
+  if (ui_inx < uis.size())
+  {
+    const std::lock_guard<std::mutex> lock(ui_mtx);
     uis[ui_inx]->Update(full);
+  }
+}
+
+void Controller::Reconstruct()
+{
+  const std::lock_guard<std::mutex> lock(ui_mtx);
+
+  for (auto &ui : uis) {
+    ui->Reconstruct();
+    ui->Layout();
+  }
+  uis[ui_inx]->Reset();
 }

@@ -14,10 +14,10 @@ public:
   GPIOButtonField(WINDOW *wndw, int row, int col, const std::string &key, std::shared_ptr<GPIOButton> button, bool bumpy=false);
   virtual ~GPIOButtonField();
 
-  virtual bool ReadOnly() { return false; }
-  virtual bool Get();
-  virtual void Set(bool value);
-  virtual void Flip();
+  virtual bool ReadOnly() const override { return false; }
+  virtual bool Get() override;
+  virtual void Set(bool value) override;
+  virtual void Flip() override;
   virtual bool Flippable() const override { return true; }
 
 protected:

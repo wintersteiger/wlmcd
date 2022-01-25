@@ -74,7 +74,7 @@ uint8_t MCP3423::Read(const uint8_t &addr)
   const std::lock_guard<std::mutex> lock(mtx);
   if (read(fd, &buf[0], 4) != 4)
     throw_errno("failed to read from the I2C bus");
-  int32_t val;
+  int32_t val = 0;
   uint8_t config = buf[3];
   uint8_t num_data_bytes = ((config >> 2) & 0x03) == 0x03 ? 3 : 2;
   uint8_t channel = (config & 0x20) == 0 ? 0 : 1;

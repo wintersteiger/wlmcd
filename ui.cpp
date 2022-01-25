@@ -12,6 +12,7 @@ WINDOW *UI::mainw = NULL, *UI::logp = NULL, *UI::logboxw = NULL, *UI::cmdw = NUL
 unsigned  UI::screen_height = 0, UI::screen_width = 0;
 uint64_t UI::reset_cnt = 0;
 uint64_t UI::indicator_value = 0, UI::max_indicator_value = 0;
+FILE *UI::logfile = NULL;
 
 UI::UI() :
   logp_scrollback(0),
@@ -26,6 +27,17 @@ UI::~UI()
     delete(fields[i]);
     fields[i] = NULL;
   }
+}
+
+void UI::SetLogFile(const std::string &log_file_name)
+{
+  if (logfile) {
+    fclose(logfile);
+    logfile = NULL;
+  }
+
+  if (!log_file_name.empty())
+    logfile = fopen(log_file_name.c_str(), "a");
 }
 
 void UI::Start()
@@ -159,6 +171,8 @@ int UI::End() {
     if (*w) delwin(*w);
     *w = NULL;
   }
+  if (logfile)
+    fclose(logfile);
   int r = endwin();
   mtx.unlock();
   return r;
@@ -192,6 +206,11 @@ int UI::Log(const char *format, ...)
     r = vw_printw(logp, format, argp);
     va_end(argp);
     wrefresh(logp);
+    if (logfile) {
+      fprintf(logfile, "\n%s> ", current_minutes());
+      vfprintf(logfile, format, argp);
+      fflush(logfile);
+    }
     mtx.unlock();
   }
   return r;

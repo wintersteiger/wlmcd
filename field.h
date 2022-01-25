@@ -197,7 +197,8 @@ public:
             std::function<T(void)> &&get,
             std::function<void(const char*)> &&set = nullptr,
             std::function<void()> &&left = nullptr,
-            std::function<void()> &&right = nullptr) :
+            std::function<void()> &&right = nullptr,
+            size_t key_width = 14) :
     Field<T>(wndw, row, col, key, "", units),
     get(get),
     set(set),
@@ -205,6 +206,7 @@ public:
     right(right)
   {
     FieldBase::value_width = value_width;
+    FieldBase::key_width = key_width;
   }
   virtual ~LField() = default;
 

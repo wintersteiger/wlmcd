@@ -57,10 +57,10 @@ public:
   ConfigField<T>(int row, int col, const std::string &key, const std::string &value, const std::string &units, std::shared_ptr<CC1101> cc1101) :
     Field<T>(UI::statusp, row, col, key, value, units), rt(*cc1101->RT) {}
   virtual ~ConfigField<T>() {}
-  virtual T Get() = 0;
-  virtual void Update(bool full=false) { Field<T>::Update(full); }
-  virtual bool ReadOnly() { return false; }
-  virtual void Set(const char*) {}
+  virtual T Get() override = 0;
+  virtual void Update(bool full=false) override { Field<T>::Update(full); }
+  virtual bool ReadOnly() const override { return false; }
+  virtual void Set(const char*) override {}
 };
 
 #define TCF(N,K,U,T,G) \
