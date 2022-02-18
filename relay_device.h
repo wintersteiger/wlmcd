@@ -20,7 +20,7 @@ public:
   using Device::Read;
   using Device::Write;
 
-  virtual void Write(std::ostream &os);
+  virtual void Write(std::ostream &os) const;
   virtual void Read(std::istream &is);
 
   const std::vector<unsigned>& Offsets() const { return offsets; }

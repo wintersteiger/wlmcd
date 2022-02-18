@@ -171,8 +171,10 @@ int UI::End() {
     if (*w) delwin(*w);
     *w = NULL;
   }
-  if (logfile)
+  if (logfile) {
     fclose(logfile);
+    logfile = NULL;
+  }
   int r = endwin();
   mtx.unlock();
   return r;

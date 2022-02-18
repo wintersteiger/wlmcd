@@ -42,7 +42,7 @@ RelayDevice::~RelayDevice()
   free(bulk);
 }
 
-void RelayDevice::Write(std::ostream &os)
+void RelayDevice::Write(std::ostream &os) const
 {
 }
 
