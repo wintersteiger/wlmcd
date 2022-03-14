@@ -32,20 +32,20 @@ void FieldBase::Update(bool full)
     if (attributes != -1) wattron(wndw, attributes);
     if (full) {
       if (active) wattron(wndw, A_STANDOUT);
-      snprintf(tmp, sizeof(tmp), "%%- %ds", key_width);
+      snprintf(tmp, sizeof(tmp), "%%- %zds", key_width);
       mvwprintw(wndw, row, col, tmp, key.c_str());
       if (active) wattroff(wndw, A_STANDOUT);
       mvwprintw(wndw, row, col + key_width, ": ");
     }
     if (colors != -1) wattron(wndw, COLOR_PAIR(colors));
     if (stale && !active) wattron(wndw, A_DIM);
-    snprintf(tmp, sizeof(tmp), "%% %ds", value_width);
+    snprintf(tmp, sizeof(tmp), "%% %zds", value_width);
     mvwprintw(wndw, row, col + key_width + 2, tmp, value.c_str());
     if (stale && !active) wattroff(wndw, A_DIM);
     if (colors != -1) wattroff(wndw, COLOR_PAIR(colors));
     if (full) {
       if (units_width > 0) {
-        snprintf(tmp, sizeof(tmp), "%%- %ds", units_width);
+        snprintf(tmp, sizeof(tmp), "%%- %zds", units_width);
         mvwprintw(wndw, row, col + key_width + 2 + value_width + 1, tmp, units.c_str());
       }
     }
@@ -220,7 +220,7 @@ void Label::Update(bool full)
 {
   assert(key_width > 0);
   if (wndw && full) {
-    snprintf(tmp, sizeof(tmp), "%%- %ds", key_width);
+    snprintf(tmp, sizeof(tmp), "%%- %zds", key_width);
     if (colors != -1) wattron(wndw, COLOR_PAIR(colors));
     if (bold) wattron(wndw, A_BOLD);
     mvwprintw(wndw, row, col, tmp, key.c_str());
@@ -272,11 +272,11 @@ void DecField::Update(bool full)
   assert(key_width > 0);
   if (wndw) {
     char tmp2[256];
-    snprintf(tmp, sizeof(tmp), "%%0%dd", key_width);
+    snprintf(tmp, sizeof(tmp), "%%0%zdd", key_width);
     snprintf(tmp2, sizeof(tmp2), tmp, f());
     key = tmp2;
     if (active) wattron(wndw, A_STANDOUT);
-    snprintf(tmp, sizeof(tmp), "%%- %ds", key_width);
+    snprintf(tmp, sizeof(tmp), "%%- %zds", key_width);
     mvwprintw(wndw, row, col, tmp, key.c_str());
     if (active) wattroff(wndw, A_STANDOUT);
   }
@@ -287,11 +287,11 @@ void HexField::Update(bool full)
   assert(key_width > 0);
   if (wndw) {
     char tmp2[256];
-    snprintf(tmp, sizeof(tmp), "%%0%d" PRIx64, key_width);
+    snprintf(tmp, sizeof(tmp), "%%0%zd" PRIx64, key_width);
     snprintf(tmp2, sizeof(tmp2), tmp, f());
     key = tmp2;
     if (active) wattron(wndw, A_STANDOUT);
-    snprintf(tmp, sizeof(tmp), "%%- %ds", key_width);
+    snprintf(tmp, sizeof(tmp), "%%- %zds", key_width);
     mvwprintw(wndw, row, col, tmp, key.c_str());
     if (active) wattroff(wndw, A_STANDOUT);
   }

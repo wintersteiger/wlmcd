@@ -63,7 +63,7 @@ public:
       if (attributes != -1) wattron(wndw, attributes);
       if (full) {
         if (active) wattron(wndw, A_STANDOUT);
-        snprintf(tmp, sizeof(tmp), "%%- %ds", left.size());
+        snprintf(tmp, sizeof(tmp), "%%- %zds", left.size());
         mvwprintw(wndw, row, col, tmp, left.c_str());
         if (active) wattroff(wndw, A_STANDOUT);
       }
@@ -75,7 +75,7 @@ public:
 
       if (full) {
         if (active) wattron(wndw, A_STANDOUT);
-        snprintf(tmp, sizeof(tmp), "%%- %ds", right.size());
+        snprintf(tmp, sizeof(tmp), "%%- %zds", right.size());
         mvwprintw(wndw, row, col, tmp, right.c_str());
         if (active) wattroff(wndw, A_STANDOUT);
       }

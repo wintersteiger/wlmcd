@@ -256,11 +256,11 @@ const std::string& Evohome::Decoder::Decode(std::vector<uint8_t> &bytes)
   for (size_t i=0; i < 3; i++) {
     int r = get_frbyte(bytes, bpos, &b);
     FAIL_IF_EXT(r != 10, {
-      snprintf(tmp, sizeof(tmp), "Could not read header byte %d.", i);
+      snprintf(tmp, sizeof(tmp), "Could not read header byte %zd.", i);
     });
     bpos += r;
     FAIL_IF_EXT(b != header[i], {
-      snprintf(tmp, sizeof(tmp), "header[%d] %02x != %02x mismatch.", i, b, header[i]);
+      snprintf(tmp, sizeof(tmp), "header[%zd] %02x != %02x mismatch.", i, b, header[i]);
     });
   }
 

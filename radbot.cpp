@@ -238,7 +238,7 @@ const std::string& Radbot::Decoder::Decode(std::vector<uint8_t> &bytes)
 
   if (frame_len >= num_bytes) {
     char buf[2048];
-    sprintf(buf, "not enough frame bytes: frame_len=%d num_bytes=%d", frame_len, num_bytes);
+    sprintf(buf, "not enough frame bytes: frame_len=%zd num_bytes=%zd", frame_len, num_bytes);
     FAIL_IF(frame_len >= num_bytes, buf);
   }
   FAIL_IF(frame_type == 0x00 || frame_type == 0x7F || frame_type == 0xFF, "invalid frame type");

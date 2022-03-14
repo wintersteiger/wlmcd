@@ -92,7 +92,7 @@ void EvohomeUI::Build() {
   for (auto kv: state.devices)
   {
     static char tmp[16];
-    snprintf(tmp, sizeof(tmp), "Device %06x", kv.first);
+    snprintf(tmp, sizeof(tmp), "Device %06zx", kv.first);
     fields.push_back(new Label(UI::statusp, row++, col, tmp));
 
     fields.push_back(new DatetimeEHFld(row++, state, kv.first));

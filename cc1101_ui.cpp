@@ -165,7 +165,7 @@ static std::vector<std::pair<size_t, size_t>> fifo_thr_map = { // { TX, RX }
 };
 TCF(FIFOTXRX,   "FIFO TX/RX",  "B",     const char*,  {
   auto txrx = fifo_thr_map[rt.FIFOTHR() & 0x0F];
-  snprintf(tmp, sizeof(tmp), "%d/%d", txrx.first, txrx.second);
+  snprintf(tmp, sizeof(tmp), "%zd/%zd", txrx.first, txrx.second);
   return tmp;
 });
 
@@ -384,7 +384,7 @@ void GDOField::Update(bool full)
     int r = row, c = col, lcol = -1;
     if (full) {
       static char tmp2[256];
-      snprintf(tmp, sizeof(tmp), "%%- %ds: ", key_width);
+      snprintf(tmp, sizeof(tmp), "%%- %zds: ", key_width);
       snprintf(tmp2, sizeof(tmp2), tmp, "Status");
       mvwprintw(wndw, row, col, "%s", tmp2);
       colon_inx = c + strlen(tmp2);

@@ -5,6 +5,8 @@
 #include <cstring>
 #include <regex>
 
+#include <inttypes.h>
+
 #include "ui.h"
 
 std::mutex UI::mtx;
@@ -152,7 +154,7 @@ void UI::Update(bool full)
 #if 1
   static char indicator_buf[32];
   size_t indicator_width = max_indicator_value > 0 ? std::floor(std::log10(max_indicator_value)) + 1 : 1;
-  snprintf(indicator_buf, sizeof(indicator_buf), "[%0llu]", indicator_value);
+  snprintf(indicator_buf, sizeof(indicator_buf), "[%0" PRIu64  "]", indicator_value);
   mvwprintw(logboxw, logp_h+1, screen_width - (2 + strlen(indicator_buf)), indicator_buf);
   wrefresh(logboxw);
 #endif

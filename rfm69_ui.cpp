@@ -267,11 +267,11 @@ public:
         if (active)
           attributes |= A_STANDOUT;
         char tmp2[256];
-        snprintf(tmp, sizeof(tmp), "%s:  %%0%d" PRIx64, key.c_str(), value_width);
+        snprintf(tmp, sizeof(tmp), "%s:  %%0%zd" PRIx64, key.c_str(), value_width);
         snprintf(tmp2, sizeof(tmp2), tmp, sw);
         value = tmp2;
         if (attributes != -1) wattron(wndw, attributes);
-        snprintf(tmp, sizeof(tmp), "%%- %ds", value_width);
+        snprintf(tmp, sizeof(tmp), "%%- %zds", value_width);
         mvwprintw(wndw, row, col, tmp, value.c_str());
         if (attributes != -1) wattroff(wndw, attributes);
         last_sync_word = sw;
