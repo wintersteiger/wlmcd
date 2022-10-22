@@ -22,7 +22,7 @@ public:
   using DeviceBase::Read;
   using DeviceBase::Write;
 
-  virtual void Write(std::ostream &os);
+  virtual void Write(std::ostream &os) const;
   virtual void Read(std::istream &is);
 
   virtual void Reset();

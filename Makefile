@@ -3,7 +3,7 @@
 
 all: libwlmcd-dev.a libwlmcd-ui.a libwlmcd-dev.so libwlmcd-ui.so tests
 
-CXXFLAGS+=-g -MMD -MP -Wall -Wno-unused-variable -Wno-unused-function
+CXXFLAGS+=-g -MMD -MP -Wall -Wno-unused-variable -Wno-unused-function -std=c++17
 CXXFLAGS+=-I .
 CXXFLAGS+=-Wno-psabi
 CXXFLAGS+=$(shell pkg-config dbus-1 --cflags)
@@ -36,7 +36,8 @@ SRC = errors.cpp integrity.cpp \
 	bme280.cpp bme680.cpp \
 	mcp3423.cpp \
 	ccs811.cpp \
-	spirit1.cpp
+	spirit1.cpp \
+	cpu_temp.cpp
 	# sx1278.cpp
 	# si4463.cpp si4463_rt.cpp
 	# dht22.cpp
@@ -49,6 +50,7 @@ UI_SRC = field.cpp ui.cpp basic_ui.cpp raw_ui.cpp controller.cpp shell.cpp \
 	rfm69_ui_raw.cpp \
 	relay_ui.cpp \
 	ina219_ui.cpp \
+	ds18b20_ui.cpp \
 	rfm69_ui.cpp \
 	mcp9808_ui.cpp \
 	es9018k2m_ui.cpp \

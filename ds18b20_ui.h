@@ -9,7 +9,7 @@
 
 class DS18B20UI : public UI {
 public:
-  DS18B20UI(DS18B20 &ds18b20);
+  DS18B20UI(std::shared_ptr<DS18B20> ds18b20);
   virtual ~DS18B20UI();
 
   virtual std::string Name() const { return "DS18B20"; }

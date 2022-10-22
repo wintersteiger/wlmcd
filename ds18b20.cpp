@@ -18,7 +18,7 @@ DS18B20::~DS18B20()
 {
 }
 
-void DS18B20::Write(std::ostream &os)
+void DS18B20::Write(std::ostream &os) const
 {
   throw std::runtime_error("not supported");
 }
