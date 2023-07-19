@@ -46,6 +46,9 @@ public:
 
   void Reconstruct();
 
+  void NextUI();
+  void PreviousUI();
+
 protected:
   bool running;
   size_t cur_frequent_interval, cur_infrequent_interval;

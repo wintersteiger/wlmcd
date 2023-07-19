@@ -11,6 +11,7 @@
 #include <decoder.h>
 #include <integrity.h>
 #include <sleep.h>
+#include <serialization.h>
 
 #include "radio_test_tracker.h"
 

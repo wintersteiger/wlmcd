@@ -21,6 +21,7 @@
 #include <spirit1_ui.h>
 #include <spirit1_rt.h>
 #include <gpio_button.h>
+#include <serialization.h>
 
 #include "radio_test_ui.h"
 #include "radio_test_tracker.h"

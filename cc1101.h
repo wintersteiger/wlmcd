@@ -226,6 +226,8 @@ public:
 
   virtual double RSSI() override { return rRSSI(); }
   virtual double LQI() override { return rLQI(); }
+
+  virtual bool RXReady() override { return false; }
 };
 
 #endif

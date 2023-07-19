@@ -47,7 +47,7 @@ public:
 
   virtual const char* Name() const { return "Radio Test Tracker"; }
   virtual void UpdateTimed() override;
-  virtual void Write(std::ostream &os) override {}
+  virtual void Write(std::ostream &os) const override {}
   virtual void Read(std::istream &os) override {}
 
 protected:

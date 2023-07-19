@@ -307,17 +307,3 @@ void CharField::Update(bool full)
     if (colors != -1) wattroff(wndw, COLOR_PAIR(colors));
   }
 }
-
-LSwitch::LSwitch(WINDOW *wndw, int row, int col,
-    const std::string &key,
-    std::function<bool(void)> &&get,
-    std::function<void(bool)> &&bset) :
-  LIndicator(wndw, row, col, key, std::move(get)),
-  bset(std::move(bset))
-{
-  if (bset) {
-    set = [&bset](const char *v){
-        bset(v != std::string("0") && v != std::string("false"));
-    };
-  }
-}

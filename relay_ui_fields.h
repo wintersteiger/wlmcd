@@ -19,11 +19,11 @@ public:
   Indicator(int row, int col, RelayDevice &device, size_t addr) :
     ::IndicatorField(UI::statusp, row, col, std::to_string(device.Offsets()[addr])), addr(addr), device(device) {}
   virtual ~Indicator() {}
-  virtual bool Get() {
+  virtual bool Get() override {
     return device.ReadBuffered(addr);
   }
   virtual bool ReadOnly() const override { return false; }
-  virtual void Set(bool value) {
+  virtual void Set(bool value) override {
     device.Write(addr, value);
   }
   virtual void Bump() {

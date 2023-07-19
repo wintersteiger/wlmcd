@@ -10,10 +10,10 @@ CXXFLAGS+=$(shell pkg-config dbus-1 --cflags)
 
 LDFLAGS=-lrt -lcrypto -lgpiod -lpthread -lgpiod
 
-# CXX=clang++-8
-# CXXFLAGS+=-g -fsanitize=address -fno-omit-frame-pointer -D_GLIBCXX_DEBUG
+CXX=clang++-11
+# CXXFLAGS+=-g -fsanitize=address,leak -fno-omit-frame-pointer -D_GLIBCXX_DEBUG
 # CXXFLAGS+=-O1
-# LDFLAGS+=-g -fsanitize=address
+# LDFLAGS+=-g -fsanitize=address,leak
 
 %.o: %.cpp
 	${CXX} ${CXXFLAGS} $< -c -o $@

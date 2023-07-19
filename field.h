@@ -246,20 +246,35 @@ public:
 typedef LIndicator<ENABLED_PAIR, DISABLED_PAIR> LEnabledIndicator;
 typedef LIndicator<LOW_PAIR, ENABLED_PAIR> LWarningIndicator;
 
-class LSwitch : public LIndicator<ENABLED_PAIR, DISABLED_PAIR> {
+template <int ON_COLOR=ENABLED_PAIR, int OFF_COLOR=DISABLED_PAIR>
+class LSwitchT : public LIndicator<ON_COLOR, OFF_COLOR> {
 protected:
   std::function<void(bool)> bset = nullptr;
 
 public:
-  LSwitch(WINDOW *wndw, int row, int col,
-          const std::string &key,
-          std::function<bool(void)> &&get,
-          std::function<void(bool)> &&bset);
-  virtual ~LSwitch() {}
-  using LIndicator::Get;
+  LSwitchT(WINDOW *wndw, int row, int col,
+           const std::string &key,
+           std::function<bool(void)> &&get,
+           std::function<void(bool)> &&bset)
+  : LIndicator<ON_COLOR, OFF_COLOR>(wndw, row, col, key, std::move(get)),
+    bset(std::move(bset))
+  {
+    if (bset) {
+      this->set = [&bset](const char *v){
+        bset(v != std::string("0") && v != std::string("false"));
+      };
+    }
+  }
+
+  virtual ~LSwitchT() {}
+  using LIndicator<ON_COLOR, OFF_COLOR>::Get;
   virtual void Flip() override { if (bset) bset(!Get()); };
   virtual bool Flippable() const override { return bset != nullptr; }
   virtual bool ReadOnly() const override { return bset == nullptr; }
 };
 
+typedef LSwitchT<ENABLED_PAIR, DISABLED_PAIR> LSwitch;
+typedef LSwitchT<ENABLED_PAIR, LOW_PAIR> LOnOffSwitch;
+
 #endif
+

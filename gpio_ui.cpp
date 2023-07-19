@@ -37,23 +37,25 @@ IND(Used, device.LineState(addr).used);
 IND(OpenDrain, device.LineState(addr).open_drain);
 IND(OpenSource, device.LineState(addr).open_source);
 
-#define STR(N, C)                                                                                                                                \
-  class N##Str : public StringField                                                                                                              \
-  {                                                                                                                                              \
-  protected:                                                                                                                                     \
-    gpio_address_t addr;                                                                                                                         \
-    GPIODevice &device;                                                                                                                          \
-                                                                                                                                                 \
-  public:                                                                                                                                        \
-    N##Str(int row, int col, GPIODevice &device, const gpio_address_t &addr) : StringField(UI::statusp, row, col), addr(addr), device(device) {} \
-    virtual ~N##Str() {}                                                                                                                         \
-    virtual const char *Get() { return C; }                                                                                                      \
+#define STR(N, C)                                                              \
+  class N##Str : public StringField {                                          \
+  protected:                                                                   \
+    gpio_address_t addr;                                                       \
+    GPIODevice &device;                                                        \
+    std::string str;                                                           \
+                                                                               \
+  public:                                                                      \
+    N##Str(int row, int col, GPIODevice &device, const gpio_address_t &addr)   \
+        : StringField(UI::statusp, row, col), addr(addr), device(device),      \
+          str(C) {}                                                            \
+    virtual ~N##Str() {}                                                       \
+    virtual const char *Get() { return str.c_str(); }                          \
   };
 
 STR(Name, device.LineState(addr).name);
 STR(Consumer, device.LineState(addr).consumer);
 
-STR(Offset, std::to_string(device.LineState(addr).offset).c_str())
+STR(Offset, std::to_string(device.LineState(addr).offset))
 
 } // GPIOUIFields
 

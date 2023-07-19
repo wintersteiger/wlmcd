@@ -148,7 +148,9 @@ Controller::Controller(
   key_bindings[KEY_END] = KEY_FUN { ui->Last(); };
 
   key_bindings[KEY_PPAGE] = KEY_FUN { ui->ScrollUp(); };
+  key_bindings['J'] = KEY_FUN { ctrl->PreviousUI(); };
   key_bindings[KEY_NPAGE] = KEY_FUN { ui->ScrollDown(); };
+  key_bindings['K'] = KEY_FUN { ctrl->NextUI(); };
 
   key_bindings[KEY_LEFT] = KEY_FUN { ui->Left(); };
   key_bindings[KEY_RIGHT] = KEY_FUN { ui->Right(); };
@@ -287,6 +289,32 @@ bool Controller::SelectSystem(size_t inx)
 
   ui_inx = decoder_inx = encoder_inx = inx;
   return true;
+}
+
+void Controller::NextUI()
+{
+  size_t inx = ui_inx + 1;
+
+  if (inx >= uis.size())
+    UI::Error("No such UI");
+  else if (ui_inx != inx)
+  {
+    SelectSystem(inx);
+    uis[ui_inx]->Reset();
+  }
+}
+
+void Controller::PreviousUI()
+{
+  size_t inx = ui_inx - 1;
+
+  if (inx >= uis.size())
+    UI::Error("No such UI");
+  else if (ui_inx != inx)
+  {
+    SelectSystem(inx);
+    uis[ui_inx]->Reset();
+  }
 }
 
 void Controller::ThreadCleanup()
@@ -483,5 +511,6 @@ void Controller::Reconstruct()
   for (auto &ui : uis)
     ui->Reconstruct();
 
-  uis[ui_inx]->Reset();
+  if (ui_inx < uis.size())
+    uis[ui_inx]->Reset();
 }

@@ -1,6 +1,8 @@
 // Copyright (c) Christoph M. Wintersteiger
 // Licensed under the MIT License.
 
+#include <serialization.h>
+
 #include "radio_test_tracker.h"
 #include "radio_test_ui.h"
 
