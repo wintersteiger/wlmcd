@@ -5,43 +5,46 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <thread>
+#include <chrono>
 
 #include "json.hpp"
 using json = nlohmann::json;
 
 #include "sleep.h"
-#include "spirit1.h"
-#include "spirit1_rt.h"
+#include "s2lp.h"
+#include "s2lp_rt.h"
 
-SPIRIT1::SPIRIT1(unsigned spi_bus, unsigned spi_channel, const std::string &config_file, double f_xo) :
+S2LP::S2LP(unsigned spi_bus, unsigned spi_channel, const std::string &config_file, double f_xo) :
   Device<uint8_t, uint8_t>(),
   SPIDev(spi_bus, spi_channel, 10000000),
   RT(new RegisterTable(*this)),
   f_xo(f_xo),
   tx_done(true),
-  irq_mask(0)
+  irq_mask(0xFFFFFFFF)
 {
   FindAddressBlocks();
   Reset();
 
   if (!config_file.empty()) {
     auto is = std::ifstream(config_file);
-    Read(is);
+    if (is)
+      Read(is);
   }
 
   RT->Refresh(false);
 
-  if (RT->PARTNUM_7_0() != 0x01 || RT->VERSION_7_0() != 0x30)
-    throw std::runtime_error("unknown part no/version");
+  // if (RT->PARTNUM() != 0x03 || RT->VERSION() != 0xC1)
+  //   throw std::runtime_error("unknown part no/version");
 
-  irq_mask = RT->IRQ_MASK_3() << 24 | RT->IRQ_MASK_2() << 16 | RT->IRQ_MASK_1() << 8 | RT->IRQ_MASK_0();
+  irq_mask = RT->IRQ_MASK3() << 24 | RT->IRQ_MASK2() << 16 | RT->IRQ_MASK1() << 8 | RT->IRQ_MASK0();
 
   EnableIRQs();
 }
 
-SPIRIT1::~SPIRIT1() {}
+S2LP::~S2LP() {}
 
-void SPIRIT1::FindAddressBlocks()
+void S2LP::FindAddressBlocks()
 {
   if (address_blocks.empty())
   {
@@ -64,12 +67,9 @@ void SPIRIT1::FindAddressBlocks()
   }
 }
 
-void SPIRIT1::Reset()
+void S2LP::Reset()
 {
-  std::vector<uint8_t> cmd(2, 0);
-  cmd[0] = 0x80;
-  cmd[1] = 0x70;
-  SPIDev::Transfer(cmd);
+  Strobe(Command::SRES);
 
   // if (F_xo() > 26e6) {
   //   uint8_t rv = Read(RT->_rSYNTH_CONFIG_1.Address());
@@ -78,7 +78,7 @@ void SPIRIT1::Reset()
   // }
 }
 
-uint8_t SPIRIT1::Read(const uint8_t &addr)
+uint8_t S2LP::Read(const uint8_t &addr)
 {
   const std::lock_guard<std::mutex> lock(mtx);
   std::vector<uint8_t> res(3, 0);
@@ -90,7 +90,7 @@ uint8_t SPIRIT1::Read(const uint8_t &addr)
   return res[2];
 }
 
-std::vector<uint8_t> SPIRIT1::Read(const uint8_t &addr, size_t length)
+std::vector<uint8_t> S2LP::Read(const uint8_t &addr, size_t length)
 {
   const std::lock_guard<std::mutex> lock(mtx);
   std::vector<uint8_t> res(length + 2, 0);
@@ -104,7 +104,7 @@ std::vector<uint8_t> SPIRIT1::Read(const uint8_t &addr, size_t length)
   return res;
 }
 
-void SPIRIT1::Write(const uint8_t &addr, const uint8_t &value)
+void S2LP::Write(const uint8_t &addr, const uint8_t &value)
 {
   const std::lock_guard<std::mutex> lock(mtx);
   std::vector<uint8_t> b(3);
@@ -116,7 +116,7 @@ void SPIRIT1::Write(const uint8_t &addr, const uint8_t &value)
   status_bytes[1] = b[1];
 }
 
-void SPIRIT1::Write(const uint8_t &addr, const std::vector<uint8_t> &values)
+void S2LP::Write(const uint8_t &addr, const std::vector<uint8_t> &values)
 {
   const std::lock_guard<std::mutex> lock(mtx);
   size_t n = values.size();
@@ -129,14 +129,14 @@ void SPIRIT1::Write(const uint8_t &addr, const std::vector<uint8_t> &values)
   status_bytes[1] = b[1];
 }
 
-void SPIRIT1::Strobe(SPIRIT1::Command cmd, size_t delay_us)
+void S2LP::Strobe(S2LP::Command cmd, size_t delay_us)
 {
   const std::lock_guard<std::mutex> lock(mtx);
   std::vector<uint8_t> b = { 0x80, static_cast<uint8_t>(cmd) };
   SPIDev::Transfer(b);
 }
 
-void SPIRIT1::StrobeFor(SPIRIT1::Command cmd, SPIRIT1::State st, size_t delay_us)
+void S2LP::StrobeFor(S2LP::Command cmd, S2LP::State st, size_t delay_us)
 {
   Strobe(cmd, delay_us);
 
@@ -144,7 +144,7 @@ void SPIRIT1::StrobeFor(SPIRIT1::Command cmd, SPIRIT1::State st, size_t delay_us
   size_t cnt = 0;
   responsive = true;
   do {
-    nst = static_cast<State>(Read(RT->_rMC_STATE_0) >> 1);
+    nst = static_cast<State>(Read(RT->_rMC_STATE0) >> 1);
 
     if (delay_us)
       sleep_us(delay_us);
@@ -156,7 +156,7 @@ void SPIRIT1::StrobeFor(SPIRIT1::Command cmd, SPIRIT1::State st, size_t delay_us
   } while (nst != st);
 }
 
-void SPIRIT1::Goto(Radio::State state)
+void S2LP::Goto(Radio::State state)
 {
   switch (state) {
     case Radio::State::Idle:
@@ -177,7 +177,7 @@ void SPIRIT1::Goto(Radio::State state)
   }
 }
 
-Radio::State SPIRIT1::GetState() const
+Radio::State S2LP::GetState() const
 {
   switch (status_bytes[0] >> 1) {
     case 0x33: return Radio::State::RX;
@@ -186,69 +186,69 @@ Radio::State SPIRIT1::GetState() const
   return Radio::State::Idle;
 }
 
-bool SPIRIT1::RXReady()
+bool S2LP::RXReady()
 {
-  status_bytes[0] = Read(RT->_rMC_STATE_1);
-  status_bytes[1] = Read(RT->_rMC_STATE_0);
+  status_bytes[0] = Read(RT->_rMC_STATE1);
+  status_bytes[1] = Read(RT->_rMC_STATE0);
   return (status_bytes[0] & 0x02) == 0;
 }
 
-double SPIRIT1::RSSI()
+double S2LP::RSSI()
 {
   uint8_t rl = Read(RT->_rRSSI_LEVEL);
   return (rl/2.0) - 130.0;
 }
 
-double SPIRIT1::LQI()
+double S2LP::LQI()
 {
-  uint8_t sqi = Read(RT->_rLINK_QUALIF_1) & 0x7F;
+  uint8_t sqi = Read(RT->_rLINK_QUALIF1) & 0x7F;
   return 100.0 * sqi / 255.0;
 }
 
-void SPIRIT1::Receive(std::vector<uint8_t> &pkt)
+void S2LP::Receive(std::vector<uint8_t> &pkt)
 {
   DisableIRQs();
   pkt.clear();
 
   do
   {
-    uint8_t num_available = Read(RT->_rLINEAR_FIFO_STATUS_0);
+    uint8_t num_available = Read(RT->_rRX_FIFO_STATUS);
     auto t = Read(0xFF, num_available);
     pkt.insert(pkt.end(), t.begin(), t.end());
   }
   while ((status_bytes[0] & 0x02) == 0 && pkt.size() < 255);
 
-  if (RT->RX_MODE_1_0() == 0x01)
+  if (RT->RX_MODE() == 0x01)
     Strobe(Command::SABORT);
 
   EnableIRQs();
 }
 
-uint32_t SPIRIT1::GetIRQs()
+uint32_t S2LP::GetIRQs()
 {
-  return (Read(RT->_rIRQ_STATUS_3) << 24) |
-         (Read(RT->_rIRQ_STATUS_2) << 16) |
-         (Read(RT->_rIRQ_STATUS_1) << 8) |
-          Read(RT->_rIRQ_STATUS_0);
+  return (Read(RT->_rIRQ_STATUS3) << 24) |
+         (Read(RT->_rIRQ_STATUS2) << 16) |
+         (Read(RT->_rIRQ_STATUS1) << 8) |
+          Read(RT->_rIRQ_STATUS0);
 }
 
-void SPIRIT1::EnableIRQs()
+void S2LP::EnableIRQs()
 {
-  Write(RT->_rIRQ_MASK_3, (irq_mask >> 24) & 0xFF);
-  Write(RT->_rIRQ_MASK_2, (irq_mask >> 16) & 0xFF);
-  Write(RT->_rIRQ_MASK_1, (irq_mask >> 8) & 0xFF);
-  Write(RT->_rIRQ_MASK_0, (irq_mask) & 0xFF);
+  Write(RT->_rIRQ_MASK3, (irq_mask >> 24) & 0xFF);
+  Write(RT->_rIRQ_MASK2, (irq_mask >> 16) & 0xFF);
+  Write(RT->_rIRQ_MASK1, (irq_mask >> 8) & 0xFF);
+  Write(RT->_rIRQ_MASK0, (irq_mask) & 0xFF);
 }
 
-void SPIRIT1::DisableIRQs()
+void S2LP::DisableIRQs()
 {
-  Write(RT->_rIRQ_MASK_3, 0);
-  Write(RT->_rIRQ_MASK_2, 0);
-  Write(RT->_rIRQ_MASK_1, 0);
-  Write(RT->_rIRQ_MASK_0, 0);
+  Write(RT->_rIRQ_MASK3, 0);
+  Write(RT->_rIRQ_MASK2, 0);
+  Write(RT->_rIRQ_MASK1, 0);
+  Write(RT->_rIRQ_MASK0, 0);
 }
 
-void SPIRIT1::Transmit(const std::vector<uint8_t> &pkt)
+void S2LP::Transmit(const std::vector<uint8_t> &pkt)
 {
   Strobe(Command::SABORT);
   StrobeFor(Command::READY, State::READY, 100);
@@ -259,7 +259,9 @@ void SPIRIT1::Transmit(const std::vector<uint8_t> &pkt)
   Write(0xFF, pkt);
 
   tx_done = false;
+
   EnableIRQs();
+
   Strobe(Command::TX);
 
   size_t retries = 100;
@@ -269,88 +271,91 @@ void SPIRIT1::Transmit(const std::vector<uint8_t> &pkt)
   tx_done = true;
 }
 
-void SPIRIT1::UpdateFrequent() { RT->Refresh(true); }
-void SPIRIT1::UpdateInfrequent() { RT->Refresh(false); }
+void S2LP::UpdateFrequent() { RT->Refresh(true); }
+void S2LP::UpdateInfrequent() { RT->Refresh(false); }
 
-void SPIRIT1::Write(std::ostream &os) const { RT->Write(os); }
-void SPIRIT1::Read(std::istream &is) { RT->Read(is); }
+void S2LP::Write(std::ostream &os) const { RT->Write(os); }
+void S2LP::Read(std::istream &is) { RT->Read(is); }
 
-double SPIRIT1::rFrequency() const
+double S2LP::rFrequency() const
 {
-  uint32_t SYNT = (RT->SYNT_25_21() << 21) | (RT->SYNT_20_13() << 13) | (RT->SYNT_12_5() << 5) | RT->SYNT_4_0();
-  double B = 1.0;
-  switch (RT->BS()) {
-    case 1: B = 6.0; break;
-    case 3: B = 12.0; break;
-    case 4: B = 16.0; break;
-    case 5: B = 32.0; break;
-  }
+  uint32_t SYNT = (RT->SYNT_27_24() << 24) | (RT->SYNT_23_16() << 16) | (RT->SYNT_15_8() << 8) | RT->SYNT_7_0();
+  double B = RT->BS() == 0 ? 4.0 : 8.0;
   double D = RT->REFDIV() == 0 ? 1.0 :  2.0;
   double Q = F_xo() / ((B*D)/2.0);
-  return Q * (SYNT/pow(2, 18));
+  return Q * (SYNT/pow(2, 20));
 }
 
-void SPIRIT1::wFrequency(double f)
+void S2LP::wFrequency(double f)
 {
-  double B = 1.0;
-  switch (RT->BS()) {
-    case 1: B = 6.0; break;
-    case 3: B = 12.0; break;
-    case 4: B = 16.0; break;
-    case 5: B = 32.0; break;
-  }
-  double D = RT->REFDIV() == 0x00 ? 1.0 :  2.0;
+  double B = RT->BS() == 0 ? 4.0 : 8.0;
+  double D = RT->REFDIV() == 0 ? 1.0 :  2.0;
   double Q = F_xo() / ((B*D)/2.0);
-  uint32_t SYNT = (f * pow(2, 18)) / Q;
-  Write(RT->_rSYNT0, RT->_vSYNT_4_0, SYNT & 0x1F);
-  Write(RT->_rSYNT1, RT->_vSYNT_12_5, (SYNT >> 5) & 0xFF);
-  Write(RT->_rSYNT2, RT->_vSYNT_20_13, (SYNT >> 13) & 0xFF);
-  Write(RT->_rSYNT3, RT->_vSYNT_25_21, (SYNT >> 21) & 0x1F);
+  uint32_t SYNT = (f * pow(2, 20)) / Q;
+  Write(RT->_rSYNT0, RT->_vSYNT_7_0, SYNT);
+  Write(RT->_rSYNT1, RT->_vSYNT_15_8, (SYNT >> 8) & 0xFF);
+  Write(RT->_rSYNT2, RT->_vSYNT_23_16, (SYNT >> 16) & 0xFF);
+  Write(RT->_rSYNT3, RT->_vSYNT_27_24, (SYNT >> 24) & 0x0F);
 }
 
-double SPIRIT1::rDeviation() const
+double S2LP::rDeviation() const
 {
-  return (f_xo * ((8 + RT->FDEV_M()) << (RT->FDEV_E() - 1))) / pow(2, 18);
+  double B = RT->BS() == 0 ? 4.0 : 8.0;
+  double D = RT->REFDIV() == 0 ? 1.0 :  2.0;
+  auto fdev_e = RT->FDEV_E();
+  auto fdev_m = RT->FDEV_M();
+  if (fdev_e == 0)
+    return (f_xo / pow(2, 19)) * (D * fdev_m * B / 8.0) / (D*B);
+  else
+    return (f_xo / pow(2, 19)) * (D * (256 + fdev_m) * pow(2, fdev_e-1) * B / 8.0) / (D*B);
 }
 
-double SPIRIT1::rDatarate() const
+double S2LP::rDatarate() const
 {
-  return (f_clk * ((256 + RT->DATARATE_M()) << RT->DATARATE_E())) / pow(2, 28);
+  uint16_t datarate_m = (RT->DATARATE_M_15_8() << 8) | RT->DATARATE_M_7_0();
+  uint8_t datarate_e = RT->DATARATE_E();
+  if (datarate_e == 0)
+    return f_dig * datarate_m / pow(2, 32.0);
+  else if (datarate_e == 15)
+    return f_dig / (8.0 * datarate_m);
+  else
+    return f_dig * ((pow(2, 16.0) + datarate_m) * pow(2, datarate_e)) / pow(2, 33.0);
 }
 
-void SPIRIT1::wDatarate(double f)
+void S2LP::wDatarate(double f)
 {
-  uint8_t drate_e = log2(f * pow(2, 20) / f_clk);
-  uint8_t drate_m = ((f * pow(2, 28)) / (f_clk * pow(2, drate_e))) - 256;
+  uint8_t drate_e = log2(f * pow(2, 20) / f_dig);
+  uint16_t drate_m = ((f * pow(2, 28)) / (f_dig * pow(2, drate_e))) - 256;
   if (drate_m == 0)
     drate_e++;
-  Write(RT->_rMOD1, RT->_vDATARATE_M, drate_m);
+  Write(RT->_rMOD1, RT->_vDATARATE_M_15_8, drate_m >> 8);
+  Write(RT->_rMOD1, RT->_vDATARATE_M_7_0, drate_m & 0x00FF);
   Write(RT->_rMOD0, RT->_vDATARATE_E, drate_e);
 }
 
-static float filter_bandwidths_24[9][10] = {
-  { 738.6, 416.2, 207.4, 103.7, 51.8, 25.8, 12.9, 6.5, 3.2, 1.7 },
-  { 733.9, 393.1, 196.1,  98.0, 48.9, 24.5, 12.3, 6.1, 3.0, 1.6 },
-  { 709.3, 372.2, 185.6,  92.8, 46.3, 23.2, 11.6, 5.8, 2.9, 1.5 },
-  { 680.1, 351.5, 175.4,  87.7, 43.8, 21.9, 11.0, 5.4, 2.8, 1.4 },
-  { 650.9, 334.2, 166.8,  83.4, 41.6, 20.9, 10.4, 5.2, 2.6, 1.3 },
-  { 619.3, 315.4, 157.5,  78.7, 39.3, 19.7,  9.8, 4.9, 2.5, 1.2 },
-  { 592.9, 300.4, 149.9,  75.0, 37.5, 18.7,  9.3, 4.7, 2.3, 1.2 },
-  { 541.6, 271.8, 135.8,  67.8, 33.9, 17.0,  8.5, 4.2, 2.1, 1.1 },
-  { 499.8, 249.5, 124.6,  62.3, 31.1, 15.6,  7.8, 3.9, 1.9, 1.0 }
+static float filter_bandwidths[9][10] = {
+  { 800.1, 450.9, 224.7, 112.3, 56.1, 28.0, 14.0, 7.0, 3.5, 1.8 },
+  { 795.1, 425.9, 212.4, 106.2, 53.0, 26.5, 13.3, 6.6, 3.3, 1.7 },
+  { 768.4, 403.2, 201.1, 100.5, 50.2, 25.1, 12.6, 6.3, 3.1, 1.6 },
+  { 736.8, 380.8, 190.0,  95.0, 47.4, 23.7, 11.9, 5.9, 3.0, 1.5 },
+  { 705.1, 362.1, 180.7,  90.3, 45.1, 22.6, 11.3, 5.6, 2.8, 1.4 },
+  { 670.9, 341.7, 170.6,  85.3, 42.6, 21.3, 10.6, 5.3, 2.7, 1.3 },
+  { 642.3, 325.4, 162.4,  81.2, 40.6, 20.3, 10.1, 5.1, 2.5, 1.3 },
+  { 586.7, 294.5, 147.1,  73.5, 36.7, 18.4,  9.2, 4.6, 2.3, 1.2 },
+  { 541.4, 270.3, 135.0,  67.5, 33.7, 16.9,  8.4, 4.2, 2.1, 1.1 },
 };
 
-double SPIRIT1::rFilterBandwidth() const
+double S2LP::rFilterBandwidth() const
 {
-  return filter_bandwidths_24[RT->CHFLT_M_3_0()][RT->CHFLT_E_3_0()] * (F_clk()/24e6);
+  return filter_bandwidths[RT->CHFLT_M()][RT->CHFLT_E()] * f_dig/26e6;
 }
 
-double SPIRIT1::rRSSIThreshold() const
+double S2LP::rRSSIThreshold() const
 {
-  return (RT->RSSI_TH() / 2.0) - 130.0;
+  return RT->RSSI_TH();
 }
 
-uint64_t SPIRIT1::IRQHandler()
+uint64_t S2LP::IRQHandler()
 {
   uint32_t irqs = GetIRQs();
   if (irqs & 0x00000004)
@@ -362,7 +367,7 @@ uint64_t SPIRIT1::IRQHandler()
   return irqs;
 }
 
-void SPIRIT1::RegisterTable::Refresh(bool frequent)
+void S2LP::RegisterTable::Refresh(bool frequent)
 {
   const size_t buffer_size = 256;
   if (buffer.size() != buffer_size) {
@@ -376,11 +381,11 @@ void SPIRIT1::RegisterTable::Refresh(bool frequent)
       auto tmp = device.Read(b.first, sz);
       memcpy(buffer.data() + b.first, tmp.data(), sz);
     }
-    device.f_clk = PD_CLKDIV() ? device.f_xo : device.f_xo / 2.0;
+    device.f_dig = PD_CLKDIV() ? device.f_xo : device.f_xo / 2.0;
   }
 }
 
-void SPIRIT1::RegisterTable::Write(std::ostream &os) const
+void S2LP::RegisterTable::Write(std::ostream &os) const
 {
   json j, dev, regs;
   char tmp[32];
@@ -396,7 +401,7 @@ void SPIRIT1::RegisterTable::Write(std::ostream &os) const
   os << std::setw(2) << j << std::endl;
 }
 
-void SPIRIT1::RegisterTable::Read(std::istream &is)
+void S2LP::RegisterTable::Read(std::istream &is)
 {
   json j = json::parse(is);
 
@@ -425,3 +430,9 @@ void SPIRIT1::RegisterTable::Read(std::istream &is)
       throw std::runtime_error(std::string("invalid register '") + e.key() + "'");
   }
 }
+
+uint8_t S2LP::pqi() { return RT->PQI(); }
+
+uint8_t S2LP::sqi() { return RT->SQI(); }
+
+bool S2LP::cs() { return RT->CS(); }

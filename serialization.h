@@ -81,7 +81,7 @@ struct hex_scalar_serializer
     {
       char tmp[2 * sizeof(t) + 1];
       for (size_t i=0; i < sizeof(t); i++)
-        sprintf(&tmp[2*i], "%02X", (t >> (8*(sizeof(t) - i - 1))) & 0xFF);
+        sprintf(&tmp[2*i], "%02llX", (t >> (8*(sizeof(t) - i - 1))) & 0xFF);
       nlohmann::to_json(j, tmp);
     }
 };

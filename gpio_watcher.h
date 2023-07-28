@@ -13,7 +13,7 @@ template <typename T>
 class GPIOWatcher {
 public:
   GPIOWatcher(const char *chip, int offset, const char *consumer,
-              std::shared_ptr<T> data, bool rising_edge,
+              std::shared_ptr<T> data, bool rising_edge, bool active_low,
               std::function<bool(int, unsigned, const struct timespec*, std::shared_ptr<T>&)> f) :
     data(data),
     f(f),
@@ -22,10 +22,11 @@ public:
     thread(NULL)
   {
     struct timespec timeout = { .tv_sec = 0, .tv_nsec = 250000000 };
-    thread = new std::thread([this, chip, offset, consumer, timeout, rising_edge]() {
+    thread = new std::thread([this, chip, offset, consumer, timeout, rising_edge, active_low]() {
       if (gpiod_ctxless_event_monitor(chip, rising_edge ? GPIOD_CTXLESS_EVENT_RISING_EDGE :
                                                           GPIOD_CTXLESS_EVENT_FALLING_EDGE,
-                                      offset, false, consumer, &timeout,
+                                      offset, active_low,
+                                      consumer, &timeout,
                                       NULL /* poll callback */,
                                       EventCallback,
                                       this) != 0)

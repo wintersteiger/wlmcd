@@ -115,7 +115,7 @@ TSF(PLLCal,   "PLL cal",    "",     bytes_t,      { return { rt.VCO_VC_DAC() }; 
 TSF(NumTXRX,  "#TX/#RX",    "B",    pair_uint8_t, { return std::make_pair(rt.TXBYTES(), rt.RXBYTES()); });
 TSF(XOSCCal,  "XOSC cal",   "",     bytes_t,      { return mk_bytes(rt.RCCTRL1_STATUS() & 0x7F, rt.RCCTRL0_STATUS() & 0x7F); });
 
-IND(CS,   uint8_t, { return rt.PKTSTATUS() & 0x40; });
+IND(CS,   uint8_t, { auto x = rt.PKTSTATUS() & 0x40; return x; });
 IND(PQT,  uint8_t, { return rt.PKTSTATUS() & 0x20; });
 IND(CCA,  uint8_t, { return rt.PKTSTATUS() & 0x10; });
 IND(CRC,  uint8_t, { return rt.PKTSTATUS() & 0x80; });
@@ -226,9 +226,9 @@ TCF(POTO,       "PO T/O",       "us",  const char*, { return po_to_map[(rt.MCSM0
 
 STG(PinRdoCtrl, "PINCTRL", { return rt.MCSM0() & 0x02; });
 STG(XOSCSleep,  "XOSLEEP", { return rt.MCSM0() & 0x01; });
-STG(BSCSGate,   "BS/CS", { return rt.FOCCFG() & 0x02; });
+STG(BSCSGate,   "BS/CS", { return rt.FOCCFG() & 0x20; });
 
-TCF(FOCPreK,    "FOC pre",      "K",   uint8_t,     { return (rt.FOCCFG() & 0x18) >> 3; });
+TCF(FOCPreK,    "FOC pre",      "K",   uint8_t,     { return ((rt.FOCCFG() & 0x18) >> 3) + 1; });
 
 static std::vector<const char*> foc_post_map = { "= FOC pre", "0.5" };
 TCF(FOCPostK,   "FOC post",     "K",   const char*, { return foc_post_map[(rt.FOCCFG() & 0x04) >> 2]; });
@@ -262,7 +262,12 @@ TCF(AGCLNAPrio, "LNA priority", "",    const char*,  { return lna_priority_map[(
 
 static std::vector<const char*> cs_rel_th_map = { "0", "+6", "+10", "+14" };
 TCF(CSRelTh,    "CS rel T/H",   "dB",  const char*,  { return cs_rel_th_map[(rt.AGCCTRL1() & 0x30) >> 4]; });
-TCF(CSAbsTh,    "CS abs T/H",   "dB",  int16_t,      { return rt.AGCCTRL1() & 0x0F; });
+TCF(CSAbsTh,    "CS abs T/H",   "dB",  int16_t,      {
+  int16_t r = rt.AGCCTRL1() & 0x0F;
+  if (r & 0x0008)
+    r |= 0xFFF0;
+  return r;
+});
 
 static std::vector<const char*> hyst_level_map = { "none", "low", "medium", "large" };
 TCF(HystLevel,  "Hysteresis",   "",    const char*,  { return hyst_level_map[(rt.AGCCTRL0() & 0xC0) >> 6]; });

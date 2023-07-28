@@ -61,6 +61,14 @@ void Field<bool>::Update(bool full) {
 };
 
 template<>
+void Field<char>::Update(bool full) {
+  char val = Get();
+  snprintf(tmp, sizeof(tmp), "%c", val);
+  this->value = tmp;
+  FieldBase::Update(full);
+};
+
+template<>
 void Field<uint8_t>::Update(bool full) {
   uint8_t val = Get();
   snprintf(tmp, sizeof(tmp), "%7" PRIu8, val);

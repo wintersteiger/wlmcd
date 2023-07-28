@@ -32,6 +32,31 @@ uint8_t crc8(const uint8_t *data, size_t size, uint8_t polynomial, bool skip_las
   return rem;
 }
 
+uint16_t crc16(const std::vector<uint8_t> &data, uint16_t polynomial, uint16_t init, uint16_t xorout, bool skip_last)
+{
+  return crc16(data.data(), data.size(), polynomial, init, xorout, skip_last);
+}
+
+uint16_t crc16(const uint8_t *data, size_t size, uint16_t polynomial, uint16_t init, uint16_t xorout, bool skip_last)
+{
+  uint16_t rem = init;
+
+  for (size_t i=0; i < size; i++)
+  {
+    rem ^= data[i] << 8;
+
+    for (int i = 0; i < 8; i++)
+    {
+      if ((rem & 0x8000) != 0)
+        rem = (rem << 1) ^ polynomial;
+      else
+        rem <<= 1;
+    }
+  }
+
+  return rem ^ xorout;
+}
+
 uint8_t checksum(const std::vector<uint8_t> &data, bool skip_last)
 {
   uint8_t r = 0;

@@ -37,6 +37,7 @@ SRC = errors.cpp integrity.cpp \
 	mcp3423.cpp \
 	ccs811.cpp \
 	spirit1.cpp \
+	s2lp.cpp \
 	cpu_temp.cpp
 	# sx1278.cpp
 	# si4463.cpp si4463_rt.cpp
@@ -58,7 +59,8 @@ UI_SRC = field.cpp ui.cpp basic_ui.cpp raw_ui.cpp controller.cpp shell.cpp \
 	bme280_ui.cpp bme680_ui.cpp \
 	mcp3423_ui.cpp \
 	ccs811_ui.cpp \
-	spirit1_ui.cpp
+	spirit1_ui.cpp \
+	s2lp_ui.cpp
 	# sx1278_ui_raw.cpp sx1278_ui.cpp
 	# si4463_ui_raw.cpp
 	# dht22_ui.cpp
