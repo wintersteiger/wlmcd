@@ -190,6 +190,15 @@ void UI::ResetCmd() {
   mtx.unlock();
 }
 
+static const char *current_day() {
+  static char day_buf[256];
+  time_t t;
+  time(&t);
+  struct tm * lt = localtime(&t);
+  strftime(day_buf, sizeof(day_buf), "%Y%m%d", lt);
+  return day_buf;
+}
+
 static const char *current_minutes() {
   static char time_buf[256];
   time_t t;
@@ -206,12 +215,13 @@ int UI::Log(const char *format, ...)
     mtx.lock();
     va_list argp;
     va_start(argp, format);
-    wprintw(logp, "\n%s> ", current_minutes());
+    const char *cm = current_minutes();
+    wprintw(logp, "\n%s> ", cm);
     r = vw_printw(logp, format, argp);
     va_end(argp);
     wrefresh(logp);
     if (logfile) {
-      fprintf(logfile, "\n%s> ", current_minutes());
+      fprintf(logfile, "\n%s %s> ", current_day(), cm);
       vfprintf(logfile, format, argp);
       fflush(logfile);
     }
