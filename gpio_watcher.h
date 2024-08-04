@@ -4,6 +4,7 @@
 #include <cstring>
 #include <functional>
 #include <thread>
+#include <memory>
 
 #include <errno.h>
 

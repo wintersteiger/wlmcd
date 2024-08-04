@@ -3,14 +3,15 @@
 
 all: libwlmcd-dev.a libwlmcd-ui.a libwlmcd-dev.so libwlmcd-ui.so tests
 
-CXXFLAGS+=-g -MMD -MP -Wall -Wno-unused-variable -Wno-unused-function -std=c++17
+CXXFLAGS+=-g -MMD -MP -Wall -Wno-unused-variable -Wno-unused-function -std=c++17 -fPIC
 CXXFLAGS+=-I .
 CXXFLAGS+=-Wno-psabi
 CXXFLAGS+=$(shell pkg-config dbus-1 --cflags)
 
 LDFLAGS=-lrt -lcrypto -lgpiod -lpthread -lgpiod
 
-CXX=clang++-11
+# CXX=clang++-11
+# CXX=g++
 # CXXFLAGS+=-g -fsanitize=address,leak -fno-omit-frame-pointer -D_GLIBCXX_DEBUG
 # CXXFLAGS+=-O1
 # LDFLAGS+=-g -fsanitize=address,leak
